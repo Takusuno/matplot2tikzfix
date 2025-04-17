@@ -1,34 +1,34 @@
 <p align="center">
-  <a href="https://github.com/nschloe/tikzplotlib"><img alt="tikzplotlib" src="https://nschloe.github.io/tikzplotlib/logo-tikzplotlib.svg" width="60%"></a>
-  <p align="center">The artist formerly known as <em>matplotlib2tikz.</em></p>
+  <a href="https://github.com/ErwindeGelder/tikzplot"><img alt="tikzplot" src="https://nschloe.github.io/tikzplotlib/logo-tikzplotlib.svg" width="60%"></a>
+  <p align="center">The artist formerly known as <em>tikzplotlib.</em></p>
 </p>
 
-[![PyPi Version](https://img.shields.io/pypi/v/tikzplotlib.svg?style=flat-square)](https://pypi.org/project/tikzplotlib)
-[![Packaging status](https://repology.org/badge/tiny-repos/python:tikzplotlib.svg)](https://repology.org/project/python:tikzplotlib/versions)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/tikzplotlib.svg?style=flat-square)](https://pypi.org/pypi/tikzplotlib/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1173089.svg?style=flat-square)](https://doi.org/10.5281/zenodo.1173089)
-[![GitHub stars](https://img.shields.io/github/stars/nschloe/tikzplotlib.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/tikzplotlib)
-[![Downloads](https://pepy.tech/badge/tikzplotlib/month?style=flat-square)](https://pepy.tech/project/tikzplotlib)
+#[![PyPi Version](https://img.shields.io/pypi/v/tikzplotlib.svg?style=flat-square)](https://pypi.org/project/tikzplotlib)
+#[![Packaging status](https://repology.org/badge/tiny-repos/python:tikzplotlib.svg)](https://repology.org/project/python:tikzplotlib/versions)
+#[![PyPI pyversions](https://img.shields.io/pypi/pyversions/tikzplotlib.svg?style=flat-square)](https://pypi.org/pypi/tikzplotlib/)
+#[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1173089.svg?style=flat-square)](https://doi.org/10.5281/zenodo.1173089)
+#[![GitHub stars](https://img.shields.io/github/stars/nschloe/tikzplotlib.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/tikzplotlib)
+#[![Downloads](https://pepy.tech/badge/tikzplotlib/month?style=flat-square)](https://pepy.tech/project/tikzplotlib)
 
 <!--[![PyPi downloads](https://img.shields.io/pypi/dm/tikzplotlib.svg?style=flat-square)](https://pypistats.org/packages/tikzplotlib)-->
 
-[![Documentation Status](https://readthedocs.org/projects/tikzplotlib/badge/?version=latest&style=flat-square)](https://readthedocs.org/projects/tikzplotlib/?badge=latest)
-[![awesome](https://img.shields.io/badge/awesome-yes-brightgreen.svg?style=flat-square)](https://github.com/nschloe/tikzplotlib)
+#[![Documentation Status](https://readthedocs.org/projects/tikzplotlib/badge/?version=latest&style=flat-square)](https://readthedocs.org/projects/tikzplotlib/?badge=latest)
+#[![awesome](https://img.shields.io/badge/awesome-yes-brightgreen.svg?style=flat-square)](https://github.com/nschloe/tikzplotlib)
 
-[![gh-actions](https://img.shields.io/github/workflow/status/nschloe/tikzplotlib/ci?style=flat-square)](https://github.com/nschloe/tikzplotlib/actions?query=workflow%3Aci)
-[![codecov](https://img.shields.io/codecov/c/github/nschloe/tikzplotlib.svg?style=flat-square)](https://codecov.io/gh/nschloe/tikzplotlib)
-[![LGTM](https://img.shields.io/lgtm/grade/python/github/nschloe/tikzplotlib.svg?style=flat-square)](https://lgtm.com/projects/g/nschloe/tikzplotlib)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+#[![gh-actions](https://img.shields.io/github/workflow/status/nschloe/tikzplotlib/ci?style=flat-square)](https://github.com/nschloe/tikzplotlib/actions?query=workflow%3Aci)
+#[![codecov](https://img.shields.io/codecov/c/github/nschloe/tikzplotlib.svg?style=flat-square)](https://codecov.io/gh/nschloe/tikzplotlib)
+#[![LGTM](https://img.shields.io/lgtm/grade/python/github/nschloe/tikzplotlib.svg?style=flat-square)](https://lgtm.com/projects/g/nschloe/tikzplotlib)
+#[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 
-This is tikzplotlib, a Python tool for converting matplotlib figures into
+This is tikzplot, a Python tool for converting matplotlib figures into
 [PGFPlots](https://www.ctan.org/pkg/pgfplots) ([PGF/TikZ](https://www.ctan.org/pkg/pgf))
 figures like
 
-![](https://nschloe.github.io/tikzplotlib/example.png)
+![](https://github.com/ErwindeGelder/tikzplot/example.png)
 
 for native inclusion into LaTeX or ConTeXt documents.
 
-The output of tikzplotlib is in [PGFPlots](https://github.com/pgf-tikz/pgfplots/), a TeX
+The output of tikzplot is in [PGFPlots](https://github.com/pgf-tikz/pgfplots/), a TeX
 library that sits on top of [PGF/TikZ](https://en.wikipedia.org/wiki/PGF/TikZ) and
 describes graphs in terms of axes, data etc. Consequently, the output of tikzplotlib
 
@@ -212,14 +212,13 @@ to install.
     reduce point density for the specified target resolution.
 
     The feature originated from the
-    [matlab2tikz](https://github.com/matlab2tikz/matlab2tikz) project and is adapted to
-    matplotlib.
+    [tikzplotlib](https://github.com/nschloe/tikzplotlib) project.
 
 ### Contributing
 
 If you experience bugs, would like to contribute, have nice examples of what tikzplotlib
 can do, or if you are just looking for more information, then please visit
-[tikzplotlib's GitHub page](https://github.com/nschloe/tikzplotlib).
+[tikzplotlib's GitHub page](https://github.com/ErwindeGelder/tikzplot).
 
 ### Testing
 
