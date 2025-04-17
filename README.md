@@ -235,5 +235,5 @@ pytest
 
 ### License
 
-tikzplotlib is published under the [MIT
+tikzplot is published under the [MIT
 license](https://en.wikipedia.org/wiki/MIT_License).
