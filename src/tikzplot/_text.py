@@ -17,24 +17,23 @@ def draw_text(data, obj):
 
     if isinstance(pos, str):
         tikz_pos = pos
-    else:
-        # from .util import transform_to_data_coordinates
-        # pos = transform_to_data_coordinates(obj, *pos)
+    # from .util import transform_to_data_coordinates
+    # pos = transform_to_data_coordinates(obj, *pos)
 
-        if obj.axes:
-            # If the coordinates are relative to an axis, use `axis cs`.
-            tikz_pos = f"(axis cs:{pos[0]:{ff}},{pos[1]:{ff}})"
-        else:
-            # relative to the entire figure, it's a getting a littler harder. See
-            # <http://tex.stackexchange.com/a/274902/13262> for a solution to the
-            # problem:
-            tikz_pos = (
-                f"({{$(current bounding box.south west)!{pos[0]:{ff}}!"
-                "(current bounding box.south east)$}"
-                "|-"
-                f"{{$(current bounding box.south west)!{pos[1]:{ff}}!"
-                "(current bounding box.north west)$})"
-            )
+    elif obj.axes:
+        # If the coordinates are relative to an axis, use `axis cs`.
+        tikz_pos = f"(axis cs:{pos[0]:{ff}},{pos[1]:{ff}})"
+    else:
+        # relative to the entire figure, it's a getting a littler harder. See
+        # <http://tex.stackexchange.com/a/274902/13262> for a solution to the
+        # problem:
+        tikz_pos = (
+            f"({{$(current bounding box.south west)!{pos[0]:{ff}}!"
+            "(current bounding box.south east)$}"
+            "|-"
+            f"{{$(current bounding box.south west)!{pos[1]:{ff}}!"
+            "(current bounding box.north west)$})"
+        )
 
     text = obj.get_text()
 
@@ -122,7 +121,8 @@ def draw_text(data, obj):
 
 def _transform_positioning(ha, va):
     """Converts matplotlib positioning to pgf node positioning.
-    Not quite accurate but the results are equivalent more or less."""
+    Not quite accurate but the results are equivalent more or less.
+    """
     if ha == "center" and va == "center":
         return None
 
@@ -139,29 +139,14 @@ def _transform_positioning(ha, va):
 
 def _parse_annotation_coords(ff, coords, xy):
     """Convert a coordinate name and xy into a tikz coordinate string"""
-    # todo: add support for all the missing ones
+    # TODO: add support for all the missing ones
     if coords == "data":
         x, y = xy
         return f"(axis cs:{x:{ff}},{y:{ff}})"
-    elif coords == "figure points":
+    if coords == "figure points" or coords == "figure pixels" or coords == "figure fraction" or coords == "axes points" or coords == "axes pixels" or coords == "axes fraction" or coords == "data" or coords == "polar":
         raise NotImplementedError
-    elif coords == "figure pixels":
-        raise NotImplementedError
-    elif coords == "figure fraction":
-        raise NotImplementedError
-    elif coords == "axes points":
-        raise NotImplementedError
-    elif coords == "axes pixels":
-        raise NotImplementedError
-    elif coords == "axes fraction":
-        raise NotImplementedError
-    elif coords == "data":
-        raise NotImplementedError
-    elif coords == "polar":
-        raise NotImplementedError
-    else:
-        # unknown
-        raise NotImplementedError
+    # unknown
+    raise NotImplementedError
 
 
 def _get_arrow_style(obj, data):
@@ -295,8 +280,6 @@ def _bbox(bbox, data, properties, scaling):
         s1 = 1.0 / scaling
         s3 = 3.0 / scaling
         s6 = 6.0 / scaling
-        properties.append(
-            f"dash pattern=on {s1:.3g}pt off {s3:.3g}pt on {s6:.3g}pt off {s3:.3g}pt"
-        )
+        properties.append(f"dash pattern=on {s1:.3g}pt off {s3:.3g}pt on {s6:.3g}pt off {s3:.3g}pt")
     else:
         assert bbox.get_ls() == "solid"

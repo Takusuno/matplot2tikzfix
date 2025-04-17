@@ -27,12 +27,11 @@ def clean_figure(fig=None, target_resolution: int = 600, scale_precision: float 
                            By default 1
     :type scalePrecision: float, optional
 
-    Examples
+    Examples:
     --------
-
         1. 2D lineplot
         ```python
-            from tikzplotlib import get_tikz_code, cleanfigure
+            from tikzplot import get_tikz_code, cleanfigure
 
             x = np.linspace(1, 100, 20)
             y = np.linspace(1, 100, 20)
@@ -58,7 +57,7 @@ def clean_figure(fig=None, target_resolution: int = 600, scale_precision: float 
 
         2. 3D lineplot
         ```python
-            from tikzplotlib import get_tikz_code, cleanfigure
+            from tikzplot import get_tikz_code, cleanfigure
 
             theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
             z = np.linspace(-2, 2, 100)
@@ -85,9 +84,7 @@ def clean_figure(fig=None, target_resolution: int = 600, scale_precision: float 
                 assert numLinesRaw - numLinesClean == 14
         ```
     """
-    if fig is None:
-        fig = plt.gcf()
-    elif fig == "gcf":  # tikzplotlib syntax
+    if fig is None or fig == "gcf":
         fig = plt.gcf()
     _recursive_cleanfigure(
         fig, target_resolution=target_resolution, scale_precision=scale_precision
@@ -126,7 +123,7 @@ def _recursive_cleanfigure(obj, target_resolution=600, scale_precision=1.0):
                 target_resolution=target_resolution,
                 scale_precision=scale_precision,
             )
-        elif isinstance(child, mpl.lines.Line2D):
+        elif isinstance(child, mpl.lines.Line2D) or isinstance(child, mplot3d.art3d.Line3D):
             ax = child.axes
             fig = ax.figure
             _cleanline(
@@ -136,19 +133,7 @@ def _recursive_cleanfigure(obj, target_resolution=600, scale_precision=1.0):
                 target_resolution=target_resolution,
                 scale_precision=scale_precision,
             )
-        elif isinstance(child, mplot3d.art3d.Line3D):
-            ax = child.axes
-            fig = ax.figure
-            _cleanline(
-                fig,
-                ax,
-                linehandle=child,
-                target_resolution=target_resolution,
-                scale_precision=scale_precision,
-            )
-        elif isinstance(child, mpl.image.AxesImage):
-            pass
-        elif isinstance(child, mpl.patches.Patch):
+        elif isinstance(child, mpl.image.AxesImage) or isinstance(child, mpl.patches.Patch):
             pass
         elif isinstance(child, mpl.collections.PathCollection):
             ax = child.axes
@@ -163,9 +148,7 @@ def _recursive_cleanfigure(obj, target_resolution=600, scale_precision=1.0):
         elif isinstance(child, mpl.collections.LineCollection):
             import warnings
 
-            warnings.warn(
-                "Cleaning Line Collections (scatter plot) is not supported yet."
-            )
+            warnings.warn("Cleaning Line Collections (scatter plot) is not supported yet.")
         elif isinstance(child, mplot3d.art3d.Path3DCollection):
             ax = child.axes
             fig = ax.figure
@@ -252,9 +235,7 @@ def _cleanline(fighandle, axhandle, linehandle, target_resolution, scale_precisi
         _update_line_data(linehandle, data)
 
 
-def _clean_collections(
-    fighandle, axhandle, collection, target_resolution, scale_precision
-):
+def _clean_collections(fighandle, axhandle, collection, target_resolution, scale_precision):
     """Clean a 2D or 3D collection, i.e. scatter plot.
 
     :param fighandle: matplotlib figure object
@@ -380,11 +361,11 @@ def _replace_data_with_NaN(data, id_replace, is3D):
     else:
         xData, yData = _split_data_2D(data)
 
-    xData[id_replace] = np.NaN
-    yData[id_replace] = np.NaN
+    xData[id_replace] = np.nan
+    yData[id_replace] = np.nan
     if is3D:
         zData = zData.copy()
-        zData[id_replace] = np.NaN
+        zData[id_replace] = np.nan
 
     if is3D:
         new_data = _stack_data_3D(xData, yData, zData)
@@ -394,7 +375,7 @@ def _replace_data_with_NaN(data, id_replace, is3D):
 
 
 def _remove_data(data, id_remove, is3D):
-    """remove data at id_remove
+    """Remove data at id_remove
 
     :param data: array of x and y data with shape [N, 2]
     :type data: np.ndarray
@@ -439,7 +420,7 @@ def _update_line_data(linehandle, data):
 
 
 def _split_data_2D(data):
-    """data --> xData, yData"""
+    """Data --> xData, yData"""
     xData, yData = np.split(data, 2, axis=1)
     return xData.reshape((-1,)), yData.reshape((-1,))
 
@@ -451,7 +432,7 @@ def _stack_data_2D(xData, yData):
 
 
 def _split_data_3D(data):
-    """data --> xData, yData, zData"""
+    """Data --> xData, yData, zData"""
     xData, yData, zData = np.split(data, 3, axis=1)
     return xData.reshape((-1,)), yData.reshape((-1,)), zData.reshape((-1,))
 
@@ -463,7 +444,7 @@ def _stack_data_3D(xData, yData, zData):
 
 
 def _diff(x, *args, **kwargs):
-    """modification of np.diff(x, *args, **kwargs).
+    """Modification of np.diff(x, *args, **kwargs).
     - If x is empty, return np.array([False])
     - else: return np.diff(x, *args, **kwargs)
 
@@ -474,8 +455,7 @@ def _diff(x, *args, **kwargs):
     """
     if _isempty(x):
         return np.array([False])
-    else:
-        return np.diff(x, *args, **kwargs)
+    return np.diff(x, *args, **kwargs)
 
 
 def _remove_NaNs(data):
@@ -491,9 +471,7 @@ def _remove_NaNs(data):
         pass
     else:
         id_remove = id_remove[
-            np.concatenate(
-                [_diff(id_remove, axis=0) == 1, np.array([False]).reshape((-1,))]
-            )
+            np.concatenate([_diff(id_remove, axis=0) == 1, np.array([False]).reshape((-1,))])
         ]
 
     id_first = np.argwhere(np.logical_not(id_nan))[0]
@@ -634,7 +612,7 @@ def _get_visual_data(axhandle, data, is3D):
 
 
 def _elements(array):
-    """check if array has elements.
+    """Check if array has elements.
     https://stackoverflow.com/questions/11295609/how-can-i-check-whether-the-numpy-array-is-empty-or-not
 
     :param array: array to check if it has any elements
@@ -644,7 +622,7 @@ def _elements(array):
 
 
 def _isempty(array):
-    """proxy for matlab / octave isempty function
+    """Proxy for matlab / octave isempty function
 
     :param array: array to check if it is empty
     :type array: np.ndarray
@@ -653,10 +631,8 @@ def _isempty(array):
 
 
 def _line_has_lines(linehandle):
-    """check if linestyle is not None and linewidth is larger than 0"""
-    hasLines = (linehandle.get_linestyle() is not None) and (
-        linehandle.get_linewidth() > 0.0
-    )
+    """Check if linestyle is not None and linewidth is larger than 0"""
+    hasLines = (linehandle.get_linestyle() is not None) and (linehandle.get_linewidth() > 0.0)
     return hasLines
 
 
@@ -758,8 +734,7 @@ def _move_points_closer(xLim, yLim, data):
     data = _insert_data(data, id_replace, dataInsert)
     if _isempty(id_replace):
         return data
-    else:
-        raise NotImplementedError
+    raise NotImplementedError
 
 
 def _insert_data(data, id_insert, dataInsert):
@@ -857,10 +832,7 @@ def _simplify_line(
         # a line.
 
         id_diff = np.diff(
-            1
-            * np.concatenate(
-                [np.array([False]), np.logical_not(id_nan), np.array([False])]
-            ),
+            1 * np.concatenate([np.array([False]), np.logical_not(id_nan), np.array([False])]),
             axis=0,
         ).reshape((-1,))
         lineStart = np.argwhere(id_diff == 1)
@@ -911,9 +883,7 @@ def _pixelate(x, y, xToPix, yToPix):
     id_orig = np.argsort(dataPixel[:, 0])
     dataPixelSorted = dataPixel[id_orig, :]
 
-    m = np.logical_or(
-        np.diff(dataPixelSorted[:, 0]) != 0, np.diff(dataPixelSorted[:, 1]) != 0
-    )
+    m = np.logical_or(np.diff(dataPixelSorted[:, 0]) != 0, np.diff(dataPixelSorted[:, 1]) != 0)
     mask_sorted = np.concatenate([np.array([True]).reshape((-1,)), m], axis=0)
 
     mask = np.ones(x.shape) == 0
@@ -988,7 +958,7 @@ def _opheim_simplify(x, y, tol):
     :returns: boolean array of shape [N, ] that masks out elements that need not be drawn
     :rtype: np.ndarray
 
-    References
+    References:
     ----------
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.95.5882&rep=rep1&type=pdf
     """
@@ -1162,7 +1132,6 @@ def _corners3D(xLim, yLim, zLim):
     :param zLim: z-axis limits
     :type zLim: list or np.array
     """
-
     # Lower square of the cube
     lowerBottomLeft = np.array([xLim[0], yLim[0], zLim[0]])
     lowerTopLeft = np.array([xLim[0], yLim[1], zLim[0]])
@@ -1247,8 +1216,8 @@ def _segments_intersect(X1, X2, X3, X4):
     Lambda = _cross_lines(X1, X2, X3, X4)
 
     # Check whether lambda is in bound
-    mask1 = np.logical_and(0.0 < Lambda[:, 0], Lambda[:, 0] < 1.0)
-    mask2 = np.logical_and(0.0 < Lambda[:, 1], Lambda[:, 1] < 1.0)
+    mask1 = np.logical_and(Lambda[:, 0] > 0.0, Lambda[:, 0] < 1.0)
+    mask2 = np.logical_and(Lambda[:, 1] > 0.0, Lambda[:, 1] < 1.0)
     mask = np.logical_and(mask1, mask2)
     return mask
 
@@ -1282,9 +1251,7 @@ def _cross_lines(X1, X2, X3, X4):
     :param X4: X4
     :type X4: np.ndarray
     """
-    detA = -(X2[:, 0] - X1[:, 0]) * (X4[1] - X3[1]) + (X2[:, 1] - X1[:, 1]) * (
-        X4[0] - X3[0]
-    )
+    detA = -(X2[:, 0] - X1[:, 0]) * (X4[1] - X3[1]) + (X2[:, 1] - X1[:, 1]) * (X4[0] - X3[0])
 
     id_detA = detA != 0
 
@@ -1296,9 +1263,7 @@ def _cross_lines(X1, X2, X3, X4):
         Rotate = np.array([[0, -1], [1, 0]])
         Lambda[id_detA, 0] = (rhs[id_detA, :] @ Rotate @ (X4 - X3).T) / detA[id_detA]
         Lambda[id_detA, 1] = (
-            np.sum(
-                -(X2[id_detA, :] - X1[id_detA, :]) @ Rotate * rhs[id_detA, :], axis=1
-            )
+            np.sum(-(X2[id_detA, :] - X1[id_detA, :]) @ Rotate * rhs[id_detA, :], axis=1)
             / detA[id_detA]
         )
     return Lambda

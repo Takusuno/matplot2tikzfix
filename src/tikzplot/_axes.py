@@ -95,14 +95,10 @@ class Axes:
         # axes scaling
         if obj.get_xscale() == "log":
             self.axis_options.append("xmode=log")
-            self.axis_options.append(
-                f"log basis x={{{_try_f2i(obj.xaxis._scale.base)}}}"
-            )
+            self.axis_options.append(f"log basis x={{{_try_f2i(obj.xaxis._scale.base)}}}")
         if obj.get_yscale() == "log":
             self.axis_options.append("ymode=log")
-            self.axis_options.append(
-                f"log basis y={{{_try_f2i(obj.yaxis._scale.base)}}}"
-            )
+            self.axis_options.append(f"log basis y={{{_try_f2i(obj.yaxis._scale.base)}}}")
 
         # Possible values for get_axisbelow():
         #   True (zorder = 0.5):   Ticks and gridlines are below all Artists.
@@ -174,7 +170,7 @@ class Axes:
     def get_end_code(self, data):
         if not self.is_subplot:
             return data["flavor"].end("axis") + "\n\n"
-        elif self.is_subplot and self.nsubplots == self.subplot_index:
+        if self.is_subplot and self.nsubplots == self.subplot_index:
             data["is_in_groupplot_env"] = False
             return data["flavor"].end("groupplot") + "\n\n"
 
@@ -215,12 +211,8 @@ class Axes:
 
     def _ticks(self, data, obj):
         # get ticks
-        self.axis_options.extend(
-            _get_ticks(data, "x", obj.get_xticks(), obj.get_xticklabels())
-        )
-        self.axis_options.extend(
-            _get_ticks(data, "y", obj.get_yticks(), obj.get_yticklabels())
-        )
+        self.axis_options.extend(_get_ticks(data, "x", obj.get_xticks(), obj.get_xticklabels()))
+        self.axis_options.extend(_get_ticks(data, "y", obj.get_yticks(), obj.get_yticklabels()))
         self.axis_options.extend(
             _get_ticks(
                 data,
@@ -376,13 +368,9 @@ class Axes:
             colorbar_ticklabels = colorbar.ax.get_xticklabels()
             colorbar_ticklabels_minor = colorbar.ax.get_xticklabels(minor=True)
 
+            colorbar_styles.extend(_get_ticks(data, "x", colorbar_ticks, colorbar_ticklabels))
             colorbar_styles.extend(
-                _get_ticks(data, "x", colorbar_ticks, colorbar_ticklabels)
-            )
-            colorbar_styles.extend(
-                _get_ticks(
-                    data, "minor x", colorbar_ticks_minor, colorbar_ticklabels_minor
-                )
+                _get_ticks(data, "minor x", colorbar_ticks_minor, colorbar_ticklabels_minor)
             )
 
         else:
@@ -409,19 +397,13 @@ class Axes:
             colorbar_ticklabels = colorbar.ax.get_yticklabels()
             colorbar_ylabel = colorbar.ax.get_ylabel()
             colorbar_ticklabels_minor = colorbar.ax.get_yticklabels(minor=True)
+            colorbar_styles.extend(_get_ticks(data, "y", colorbar_ticks, colorbar_ticklabels))
             colorbar_styles.extend(
-                _get_ticks(data, "y", colorbar_ticks, colorbar_ticklabels)
-            )
-            colorbar_styles.extend(
-                _get_ticks(
-                    data, "minor y", colorbar_ticks_minor, colorbar_ticklabels_minor
-                )
+                _get_ticks(data, "minor y", colorbar_ticks_minor, colorbar_ticklabels_minor)
             )
             colorbar_styles.append("ylabel={" + colorbar_ylabel + "}")
 
-        mycolormap, is_custom_cmap = _mpl_cmap2pgf_cmap(
-            colorbar.mappable.get_cmap(), data
-        )
+        mycolormap, is_custom_cmap = _mpl_cmap2pgf_cmap(colorbar.mappable.get_cmap(), data)
         if is_custom_cmap:
             self.axis_options.append("colormap=" + mycolormap)
         else:
@@ -432,9 +414,7 @@ class Axes:
         self.axis_options.append(f"point meta max={limits[1]:{ff}}")
 
         if colorbar_styles:
-            self.axis_options.append(
-                "colorbar style={{{}}}".format(",".join(colorbar_styles))
-            )
+            self.axis_options.append("colorbar style={{{}}}".format(",".join(colorbar_styles)))
 
     def _subplot(self, obj, data):
         # https://github.com/matplotlib/matplotlib/issues/7225#issuecomment-252173667
@@ -463,9 +443,7 @@ class Axes:
         label_style = ""
 
         major_tick_labels = (
-            obj.xaxis.get_majorticklabels()
-            if x_or_y == "x"
-            else obj.yaxis.get_majorticklabels()
+            obj.xaxis.get_majorticklabels() if x_or_y == "x" else obj.yaxis.get_majorticklabels()
         )
 
         if not major_tick_labels:
@@ -483,9 +461,7 @@ class Axes:
                 values.append(f"rotate={tick_labels_rotation[0]}")
         else:
             values.append(
-                "rotate={{{},0}}[\\ticknum]".format(
-                    ",".join(str(x) for x in tick_labels_rotation)
-                )
+                "rotate={{{},0}}[\\ticknum]".format(",".join(str(x) for x in tick_labels_rotation))
             )
 
         tick_labels_horizontal_alignment = [
@@ -612,9 +588,7 @@ def _get_ticks(data, xy, ticks, ticklabels):
         if pgfplots_ticks:
             ff = data["float format"]
             axis_options.append(
-                "{}tick={{{}}}".format(
-                    xy, ",".join([f"{el:{ff}}" for el in pgfplots_ticks])
-                )
+                "{}tick={{{}}}".format(xy, ",".join([f"{el:{ff}}" for el in pgfplots_ticks]))
             )
         else:
             val = "{}" if "minor" in xy else "\\empty"
@@ -666,9 +640,9 @@ def _mpl_cmap2pgf_cmap(cmap, data):
     if isinstance(cmap, mpl.colors.LinearSegmentedColormap):
         return _handle_linear_segmented_color_map(cmap, data)
 
-    assert isinstance(
-        cmap, mpl.colors.ListedColormap
-    ), "Only LinearSegmentedColormap and ListedColormap are supported"
+    assert isinstance(cmap, mpl.colors.ListedColormap), (
+        "Only LinearSegmentedColormap and ListedColormap are supported"
+    )
     return _handle_listed_color_map(cmap, data)
 
 
@@ -759,13 +733,10 @@ def _handle_linear_segmented_color_map(cmap, data):
     ff = data["float format"]
     for k, x in enumerate(X):
         color_changes.append(
-            f"rgb({x}{unit})="
-            f"({colors[k][0]:{ff}},{colors[k][1]:{ff}},{colors[k][2]:{ff}})"
+            f"rgb({x}{unit})=({colors[k][0]:{ff}},{colors[k][1]:{ff}},{colors[k][2]:{ff}})"
         )
 
-    colormap_string = "{{mymap}}{{[1{}]\n  {}\n}}".format(
-        unit, ";\n  ".join(color_changes)
-    )
+    colormap_string = "{{mymap}}{{[1{}]\n  {}\n}}".format(unit, ";\n  ".join(color_changes))
     is_custom_colormap = True
     return (colormap_string, is_custom_colormap)
 
@@ -797,7 +768,7 @@ def _handle_listed_color_map(cmap, data):
 
     unit = "pt"
     ff = data["float format"]
-    if cmap.N is None or cmap.N == len(cmap.colors):
+    if cmap.N is None or len(cmap.colors) == cmap.N:
         colors = [
             f"rgb({k}{unit})=({rgb[0]:{ff}},{rgb[1]:{ff}},{rgb[2]:{ff}})"
             for k, rgb in enumerate(cmap.colors)
@@ -823,8 +794,7 @@ def _scale_to_int(X, max_val):
 
 
 def _gcd_array(X):
-    """
-    Return the largest real value h such that all elements in x are integer
+    """Return the largest real value h such that all elements in x are integer
     multiples of h.
     """
     greatest_common_divisor = 0.0

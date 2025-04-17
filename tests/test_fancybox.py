@@ -19,7 +19,6 @@ def draw_bbox(ax, bb_obj):
         zorder=10.0,
     )
     ax.add_patch(p_bbox)
-    return
 
 
 def box1(ax):
@@ -43,7 +42,6 @@ def box1(ax):
 
     # draw the original bbox in black
     draw_bbox(ax, bb)
-    return
 
 
 def box2(ax):
@@ -81,11 +79,9 @@ def box2(ax):
     # ax.plot(l[:,0], l[:,1], '.')
 
     draw_bbox(ax, bb)
-    return
 
 
 def box3(ax):
-
     # mutation_scale determine overall scale of the mutation,
     # i.e. both pad and rounding_size is scaled according to this
     # value.
@@ -114,11 +110,9 @@ def box3(ax):
     # ax.plot(l[:,0], l[:,1], '.')
 
     draw_bbox(ax, bb)
-    return
 
 
 def box4(ax):
-
     # When the aspect ratio of the axes is not 1, the fancy box may
     # not be what you expected (green)
 
@@ -156,7 +150,6 @@ def box4(ax):
     )
 
     draw_bbox(ax, bb)
-    return
 
 
 def plot():

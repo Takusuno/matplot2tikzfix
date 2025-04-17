@@ -47,9 +47,7 @@ def plot():
         va="center",
         color="b",
         weight="demi",
-        bbox=dict(
-            boxstyle="rarrow", ls="dashed", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)
-        ),
+        bbox=dict(boxstyle="rarrow", ls="dashed", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)),
     )
     plt.text(
         4,
@@ -61,9 +59,7 @@ def plot():
         va="center",
         color="b",
         weight="heavy",
-        bbox=dict(
-            boxstyle="larrow", ls="dotted", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)
-        ),
+        bbox=dict(boxstyle="larrow", ls="dotted", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)),
     )
     plt.text(
         2,

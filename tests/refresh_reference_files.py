@@ -3,8 +3,7 @@ import importlib.util
 import pathlib
 
 import matplotlib.pyplot as plt
-
-import tikzplotlib as tpl
+import tikzplot as tpl
 
 
 def _main():

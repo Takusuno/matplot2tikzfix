@@ -1,7 +1,7 @@
 def plot():
-    import matplotlib.cm as cm
     import matplotlib.pyplot as plt
     import numpy as np
+    from matplotlib import cm
 
     x, y = np.meshgrid(np.linspace(0, 1), np.linspace(0, 1))
     z = x**2 - y**2

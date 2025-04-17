@@ -1,41 +1,102 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
-[tool.isort]
-profile = "black"
+requires = ["setuptools>=68", "setuptools_scm[toml]>=8"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "tikzplotlib"
-authors = [{name = "Nico Schlömer", email = "nico.schloemer@gmail.com"}]
+name = "tikzplot"
 description = "Convert matplotlib figures into TikZ/PGFPlots"
 readme = "README.md"
 license = {file = "LICENSE"}
-classifiers = [
-  "Development Status :: 5 - Production/Stable",
-  "Framework :: Matplotlib",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Topic :: Multimedia :: Graphics :: Graphics Conversion",
-  "Topic :: Scientific/Engineering :: Visualization",
-]
 keywords = ["latex", "tikz", "matplotlib", "graphics"]
 dynamic = ["version"]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
   "matplotlib >= 1.4.0",
   "numpy",
   "Pillow",
   "webcolors",
 ]
+authors = [
+    {name="Nico Schlömer", email="nico.schloemer@gmail.com"},
+    {name="Erwin de Gelder", email="erwindegelder@gmail.com"},
+]
 
-[project.urls]
-Code = "https://github.com/nschloe/tikzplotlib"
-Issues = "https://github.com/nschloe/tikzplotlib/issues"
-Funding = "https://github.com/sponsors/nschloe"
+# Enables the usage of setuptools_scm
+[tool.setuptools_scm]
+
+[project.optional-dependencies]
+lint = [
+    "mypy",
+    "ruff"
+]
+test = [
+    "pytest==7.4.1",
+    "pytest-cov==4.1.0",
+    "coverage[toml]==7.3.1",
+]
+dev = [
+    "tox",
+    "tox-pyenv-redux",
+    "tikzplot[lint]",
+    "tikzplot[test]",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src"]
+extend-exclude = [
+    "conf.py",
+]
+target-version = "py38"
+lint.select = ["ALL"]
+lint.ignore = [
+    "COM812",   # Conflicts with the formatter
+    "ISC001",   # Conflicts with the formatter
+    "PT001",    # https://github.com/astral-sh/ruff/issues/8796#issuecomment-1825907715
+    "PT023",    # https://github.com/astral-sh/ruff/issues/8796#issuecomment-1825907715
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101", # Use of `assert` detected
+    "D103", # Missing docstring in public function
+]
+"**/__init__.py" = [
+    "F401", # Imported but unused
+]
+"docs/**" = [
+    "INP001",   # Requires __init__.py but docs folder is not a package.
+]
+
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`(https://github.com/astral-sh/ruff/issues/5434)
+keep-runtime-typing = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+disallow_untyped_defs = true # Functions need to be annotated
+warn_unused_ignores = true
+exclude = [
+    "tikzplot-\\d+", # Ignore temporary folder created by setuptools when building an sdist
+    "venv.*/",
+    "build/",
+    "dist/",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = """
+    --import-mode=append
+    --cov=tikzplot
+    --cov-config=pyproject.toml
+    --cov-report=
+    """
+
+[tool.coverage.paths]
+# Maps coverage measured in site-packages to source files in src
+source = ["src/", ".tox/*/lib/python*/site-packages/"]
+
+[tool.coverage.html]
+directory = "reports/coverage_html"

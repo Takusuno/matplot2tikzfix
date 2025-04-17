@@ -8,11 +8,9 @@ from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from . import _axes
+from . import _axes, _legend, _line2d, _patch, _path, _text
 from . import _image as img
-from . import _legend, _line2d, _patch, _path
 from . import _quadmesh as qmsh
-from . import _text
 from .__about__ import __version__
 
 
@@ -48,14 +46,14 @@ def get_tikz_code(
 
     :param axis_width: If not ``None``, this will be used as figure width within the
                        TikZ/PGFPlots output. If ``axis_height`` is not given,
-                       ``tikzplotlib`` will try to preserve the original width/height
+                       ``tikzplot`` will try to preserve the original width/height
                        ratio.  Note that ``axis_width`` can be a string literal, such as
                        ``'\\axis_width'``.
     :type axis_width: str
 
     :param axis_height: If not ``None``, this will be used as figure height within the
                         TikZ/PGFPlots output. If ``axis_width`` is not given,
-                        ``tikzplotlib`` will try to preserve the original width/height
+                        ``tikzplot`` will try to preserve the original width/height
                         ratio.  Note that ``axis_width`` can be a string literal, such
                         as ``'\\axis_height'``.
     :type axis_height: str
@@ -117,7 +115,7 @@ def get_tikz_code(
     :param show_info: Show extra info on the command line. Default is ``False``.
     :type show_info: bool
 
-    :param include_disclaimer: Include tikzplotlib disclaimer in the output.
+    :param include_disclaimer: Include tikzplot disclaimer in the output.
                                Set ``False`` to make tests reproducible.
                                Default is ``True``.
     :type include_disclaimer: bool
@@ -190,9 +188,7 @@ def get_tikz_code(
         data["dpi"] = dpi
     else:
         savefig_dpi = mpl.rcParams["savefig.dpi"]
-        data["dpi"] = (
-            savefig_dpi if isinstance(savefig_dpi, int) else mpl.rcParams["figure.dpi"]
-        )
+        data["dpi"] = savefig_dpi if isinstance(savefig_dpi, int) else mpl.rcParams["figure.dpi"]
 
     data["float format"] = float_format
     data["table_row_sep"] = table_row_sep
@@ -201,8 +197,7 @@ def get_tikz_code(
         data["flavor"] = Flavors[flavor.lower()]
     except KeyError:
         raise ValueError(
-            f"Unsupported TeX flavor {flavor!r}. "
-            f"Please choose from {', '.join(map(repr, Flavors))}"
+            f"Unsupported TeX flavor {flavor!r}. Please choose from {', '.join(map(repr, Flavors))}"
         )
 
     # print message about necessary pgfplot libs to command line
@@ -214,14 +209,14 @@ def get_tikz_code(
 
     # Check if there is still an open groupplot environment. This occurs if not
     # all of the group plot slots are used.
-    if "is_in_groupplot_env" in data and data["is_in_groupplot_env"]:
+    if data.get("is_in_groupplot_env"):
         content.extend(data["flavor"].end("groupplot") + "\n\n")
 
     # write disclaimer to the file header
     code = """"""
 
     if include_disclaimer:
-        disclaimer = f"This file was created with tikzplotlib v{__version__}."
+        disclaimer = f"This file was created with tikzplot v{__version__}."
         code += _tex_comment(disclaimer)
 
     # write the contents
@@ -274,15 +269,13 @@ def _get_color_definitions(data):
     # sort by key
     sorted_keys = sorted(data["custom colors"].keys(), key=lambda x: x.lower())
     d = {key: data["custom colors"][key] for key in sorted_keys}
-    return [
-        f"\\definecolor{{{name}}}{{{space}}}{{{val}}}"
-        for name, (space, val) in d.items()
-    ]
+    return [f"\\definecolor{{{name}}}{{{space}}}{{{val}}}" for name, (space, val) in d.items()]
 
 
 def _print_pgfplot_libs_message(data):
     """Prints message to screen indicating the use of PGFPlots and its
-    libraries."""
+    libraries.
+    """
     print(70 * "=")
     print("Please add the following lines to your LaTeX preamble:\n")
     print(data["flavor"].preamble(data))
@@ -290,7 +283,7 @@ def _print_pgfplot_libs_message(data):
 
 
 class _ContentManager:
-    """Basic Content Manager for tikzplotlib
+    """Basic Content Manager for tikzplot
 
     This manager uses a dictionary to map z-order to an array of content
     to be drawn at the z-order.
@@ -316,12 +309,11 @@ class _ContentManager:
 def _draw_collection(data, child):
     if isinstance(child, mpl.collections.PathCollection):
         return _path.draw_pathcollection(data, child)
-    elif isinstance(child, mpl.collections.LineCollection):
+    if isinstance(child, mpl.collections.LineCollection):
         return _line2d.draw_linecollection(data, child)
-    elif isinstance(child, mpl.collections.QuadMesh):
+    if isinstance(child, mpl.collections.QuadMesh):
         return qmsh.draw_quadmesh(data, child)
-    else:
-        return _patch.draw_patchcollection(data, child)
+    return _patch.draw_patchcollection(data, child)
 
 
 def _recurse(data, obj):
@@ -353,9 +345,7 @@ def _recurse(data, obj):
 
             # populate content and add axis environment if desired
             if data["add axis environment"]:
-                content.extend(
-                    ax.get_begin_code() + children_content + [ax.get_end_code(data)], 0
-                )
+                content.extend(ax.get_begin_code() + children_content + [ax.get_end_code(data)], 0)
             else:
                 content.extend(children_content, 0)
                 # print axis environment options, if told to show infos
@@ -386,9 +376,7 @@ def _recurse(data, obj):
         elif isinstance(child, (mpl.axis.XAxis, mpl.axis.YAxis)):
             pass
         else:
-            warnings.warn(
-                f"tikzplotlib: Don't know how to handle object {type(child)}."
-            )
+            warnings.warn(f"tikzplot: Don't know how to handle object {type(child)}.")
     return data, content.flatten()
 
 

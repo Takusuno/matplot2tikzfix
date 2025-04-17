@@ -21,9 +21,7 @@ def plot():
     axes[2].legend((l,), ("LL",), loc=0)
 
     # Legend best location is "lower right"
-    (l,) = axes[3].plot(
-        t, 2 * np.cos(5.0 * t) * np.exp(-0.5 * t) + 0.2 * t, linewidth=0.5
-    )
+    (l,) = axes[3].plot(t, 2 * np.cos(5.0 * t) * np.exp(-0.5 * t) + 0.2 * t, linewidth=0.5)
     axes[3].legend((l,), ("LR",), loc=0)
 
     # Legend best location is "center left"

@@ -54,9 +54,7 @@ def draw_line2d(data, obj):
     if alpha is not None:
         addplot_options.append(f"opacity={alpha}")
 
-    linestyle = mypath.mpl_linestyle2pgfplots_linestyle(
-        data, obj.get_linestyle(), line=obj
-    )
+    linestyle = mypath.mpl_linestyle2pgfplots_linestyle(data, obj.get_linestyle(), line=obj)
     if linestyle is not None and linestyle != "solid":
         addplot_options.append(linestyle)
 
@@ -66,9 +64,7 @@ def draw_line2d(data, obj):
     is_filled = marker_face_color is not None and not (
         isinstance(marker_face_color, str) and marker_face_color.lower() == "none"
     )
-    data, marker, extra_mark_options = _mpl_marker2pgfp_marker(
-        data, obj.get_marker(), is_filled
-    )
+    data, marker, extra_mark_options = _mpl_marker2pgfp_marker(data, obj.get_marker(), is_filled)
     if marker:
         _marker(
             obj,
@@ -122,9 +118,7 @@ def draw_linecollection(data, obj):
         data, options = mypath.get_draw_options(data, obj, color, None, style, width)
 
         # TODO what about masks?
-        data, cont, _, _ = mypath.draw_path(
-            data, path, draw_options=options, simplify=False
-        )
+        data, cont, _, _ = mypath.draw_path(data, path, draw_options=options, simplify=False)
         content.append(cont + "\n")
 
     return data, content
@@ -156,9 +150,7 @@ def _marker(
         else:
             # python starts at index 0, pgfplots at index 1
             pgf_marker = [1 + m for m in mark_every]
-            addplot_options.append(
-                "mark indices = {" + ", ".join(map(str, pgf_marker)) + "}"
-            )
+            addplot_options.append("mark indices = {" + ", ".join(map(str, pgf_marker)) + "}")
 
     mark_options = ["solid"]
     mark_options += extra_mark_options
@@ -246,9 +238,7 @@ def _table(obj, data):  # noqa: C901
         # Replace float xmin/xmax by datetime
         # <https://github.com/matplotlib/matplotlib/issues/13727>.
         data["current axes"].axis_options = [
-            option
-            for option in data["current axes"].axis_options
-            if not option.startswith("xmin")
+            option for option in data["current axes"].axis_options if not option.startswith("xmin")
         ]
         xmin, xmax = data["current mpl axes obj"].get_xlim()
         mindate = num2date(xmin).strftime("%Y-%m-%d %H:%M")
@@ -272,9 +262,7 @@ def _table(obj, data):  # noqa: C901
         if "unbounded coords=jump" not in data["current axes"].axis_options:
             data["current axes"].axis_options.append("unbounded coords=jump")
 
-    plot_table = [
-        f"{x:{xformat}}{col_sep}{y:{ff}}{table_row_sep}" for x, y in zip(xdata, ydata)
-    ]
+    plot_table = [f"{x:{xformat}}{col_sep}{y:{ff}}{table_row_sep}" for x, y in zip(xdata, ydata)]
 
     min_extern_length = 3
 

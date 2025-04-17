@@ -139,9 +139,7 @@ def draw_pathcollection(data, obj):
         if obj.get_cmap():
             mycolormap, is_custom_cmap = _mpl_cmap2pgf_cmap(obj.get_cmap(), data)
             draw_options.append("scatter")
-            draw_options.append(
-                "colormap" + ("=" if is_custom_cmap else "/") + mycolormap
-            )
+            draw_options.append("colormap" + ("=" if is_custom_cmap else "/") + mycolormap)
     else:
         # gather the draw options
         add_individual_color_code = False
@@ -158,10 +156,7 @@ def draw_pathcollection(data, obj):
             else:
                 assert len(ec) == len(dd)
                 labels.append("draw")
-                ec_strings = [
-                    ",".join(fmt.format(item) for item in row)
-                    for row in ec[:, :3] * 255
-                ]
+                ec_strings = [",".join(fmt.format(item) for item in row) for row in ec[:, :3] * 255]
                 dd_strings = np.column_stack([dd_strings, ec_strings])
                 add_individual_color_code = True
                 ec = None
@@ -179,10 +174,7 @@ def draw_pathcollection(data, obj):
             else:
                 assert len(fc) == len(dd)
                 labels.append("fill")
-                fc_strings = [
-                    ",".join(fmt.format(item) for item in row)
-                    for row in fc[:, :3] * 255
-                ]
+                fc_strings = [",".join(fmt.format(item) for item in row) for row in fc[:, :3] * 255]
                 dd_strings = np.column_stack([dd_strings, fc_strings])
                 add_individual_color_code = True
                 fc = None
@@ -234,9 +226,7 @@ def draw_pathcollection(data, obj):
         draw_options = ["draw=none"]
 
     if marker0 is not None:
-        data, pgfplots_marker, marker_options = _mpl_marker2pgfp_marker(
-            data, marker0, is_filled
-        )
+        data, pgfplots_marker, marker_options = _mpl_marker2pgfp_marker(data, marker0, is_filled)
         draw_options += [f"mark={pgfplots_marker}"]
         if marker_options:
             draw_options += ["mark options={{{}}}".format(",".join(marker_options))]
@@ -253,11 +243,7 @@ def draw_pathcollection(data, obj):
         if is_contour:
             dd = path.vertices
             # https://matplotlib.org/stable/api/path_api.html
-            codes = (
-                path.codes
-                if path.codes is not None
-                else np.array([1] + [2] * (len(dd) - 1))
-            )
+            codes = path.codes if path.codes is not None else np.array([1] + [2] * (len(dd) - 1))
             dd_strings = []
             for row, code in zip(dd, codes):
                 if code == 1:  # MOVETO
@@ -274,8 +260,7 @@ def draw_pathcollection(data, obj):
             labels.append("sizedata")
             draw_options.extend(
                 [
-                    "visualization depends on="
-                    + "{\\thisrow{sizedata} \\as\\perpointmarksize}",
+                    "visualization depends on=" + "{\\thisrow{sizedata} \\as\\perpointmarksize}",
                     "scatter",
                     "scatter/@pre marker code/.append style="
                     + "{/tikz/mark size=\\perpointmarksize}",
@@ -355,12 +340,7 @@ def get_draw_options(data, obj, ec, fc, ls, lw, hatch=None):
 
     # handle transparency
     ff = data["float format"]
-    if (
-        ec is not None
-        and fc is not None
-        and ec_rgba[3] != 1.0
-        and ec_rgba[3] == fc_rgba[3]
-    ):
+    if ec is not None and fc is not None and ec_rgba[3] != 1.0 and ec_rgba[3] == fc_rgba[3]:
         draw_options.append(f"opacity={ec[3]:{ff}}")
     else:
         if ec is not None and 0 < ec_rgba[3] < 1.0:
@@ -448,10 +428,7 @@ def mpl_linestyle2pgfplots_linestyle(data, line_style, line=None):
             return None
 
         if len(line_style[1]) == 2:
-            return (
-                "dash pattern="
-                f"on {line_style[1][0]:{ff}}pt off {line_style[1][1]:{ff}}pt"
-            )
+            return f"dash pattern=on {line_style[1][0]:{ff}}pt off {line_style[1][1]:{ff}}pt"
 
         assert len(line_style[1]) == 4
         return (
@@ -478,8 +455,7 @@ def mpl_linestyle2pgfplots_linestyle(data, line_style, line=None):
             lst.append(
                 "dash pattern="
                 + " ".join(
-                    f"on {a:{ff}}pt off {b:{ff}}pt"
-                    for a, b in zip(dashSeq[0::2], dashSeq[1::2])
+                    f"on {a:{ff}}pt off {b:{ff}}pt" for a, b in zip(dashSeq[0::2], dashSeq[1::2])
                 )
             )
 

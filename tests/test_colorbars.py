@@ -14,9 +14,7 @@ def plot():
     # ColorbarBase derives from ScalarMappable and puts a colorbar in a specified axes,
     # so it has everything needed for a standalone colorbar.  There are many more
     # kwargs, but the following gives a basic continuous colorbar with ticks and labels.
-    cb1 = mpl.colorbar.ColorbarBase(
-        ax[0], cmap=cmap, norm=norm, orientation="horizontal"
-    )
+    cb1 = mpl.colorbar.ColorbarBase(ax[0], cmap=cmap, norm=norm, orientation="horizontal")
     cb1.set_label("Some Units")
 
     # The second example illustrates the use of a ListedColormap, a BoundaryNorm, and

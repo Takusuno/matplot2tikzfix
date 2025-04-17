@@ -24,7 +24,6 @@ def new_filepath(data, file_kind, ext):
               filesystem and rel_filepath is the path to be used in the tex
               code.
     """
-
     nb_key = file_kind + "number"
     if nb_key not in data.keys():
         data[nb_key] = -1

@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 from matplotlib import pyplot as plt
-
-from tikzplotlib import clean_figure, get_tikz_code
+from tikzplot import clean_figure, get_tikz_code
 
 RC_PARAMS = {"figure.figsize": [5, 5], "figure.dpi": 220, "pgf.rcfonts": False}
 
@@ -177,9 +176,7 @@ class Test_plottypes:
             ax = plt.axes(projection="3d")
 
             # Plot the surface.
-            surf = ax.plot_surface(
-                X, Y, Z, cmap=cm.coolwarm, linewidth=0, antialiased=False
-            )
+            surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 
             # Customize the z axis.
             ax.set_zlim(-1.01, 1.01)
@@ -247,9 +244,7 @@ class Test_plottypes:
             ax = plt.axes(projection="3d")
 
             def cc(arg):
-                """
-
-                :param arg:
+                """:param arg:
 
                 """
                 return mcolors.to_rgba(arg, alpha=0.6)
@@ -262,9 +257,7 @@ class Test_plottypes:
                 ys[0], ys[-1] = 0, 0
                 verts.append(list(zip(xs, ys)))
 
-            poly = PolyCollection(
-                verts, facecolors=[cc("r"), cc("g"), cc("b"), cc("y")]
-            )
+            poly = PolyCollection(verts, facecolors=[cc("r"), cc("g"), cc("b"), cc("y")])
             poly.set_alpha(0.7)
             ax.add_collection3d(poly, zs=zs, zdir="y")
 
@@ -314,12 +307,7 @@ class Test_plottypes:
             # Make the direction data for the arrows
             u = np.sin(np.pi * x) * np.cos(np.pi * y) * np.cos(np.pi * z)
             v = -np.cos(np.pi * x) * np.sin(np.pi * y) * np.cos(np.pi * z)
-            w = (
-                np.sqrt(2.0 / 3.0)
-                * np.cos(np.pi * x)
-                * np.cos(np.pi * y)
-                * np.sin(np.pi * z)
-            )
+            w = np.sqrt(2.0 / 3.0) * np.cos(np.pi * x) * np.cos(np.pi * y) * np.sin(np.pi * z)
 
             ax.quiver(x, y, z, u, v, w, length=0.1, normalize=True)
             with pytest.warns(Warning):
@@ -363,7 +351,7 @@ class Test_plottypes:
 
 class Test_lineplot_markers:
     def test_line_no_markers(self):
-        """test high-level usage for simple example.
+        """Test high-level usage for simple example.
         Test is successful if generated tikz code saves correct amount of lines
         """
         x = np.linspace(1, 100, 20)
@@ -389,7 +377,7 @@ class Test_lineplot_markers:
         plt.close("all")
 
     def test_no_line_markers(self):
-        """test high-level usage for simple example.
+        """Test high-level usage for simple example.
         Test is successful if generated tikz code saves correct amount of lines
         """
         x = np.linspace(1, 100, 20)
@@ -415,7 +403,7 @@ class Test_lineplot_markers:
         plt.close("all")
 
     def test_line_markers(self):
-        """test high-level usage for simple example.
+        """Test high-level usage for simple example.
         Test is successful if generated tikz code saves correct amount of lines
         """
         x = np.linspace(1, 100, 20)
@@ -466,7 +454,7 @@ class Test_lineplot_markers:
 
 class Test_subplots:
     def test_subplot(self):
-        """octave code
+        """Octave code
         ```octave
             addpath ("../matlab2tikz/src")
 
@@ -489,7 +477,6 @@ class Test_subplots:
             cleanfigure;
         ```
         """
-
         x = np.linspace(1, 100, 20)
         y = np.linspace(1, 100, 20)
 

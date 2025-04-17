@@ -1,8 +1,9 @@
-""" Bar Chart With Errorbar test
+"""Bar Chart With Errorbar test
 This tests plots a bar chart with error bars.  The errorbars need to be drawn
 at the correct z-order to be successful.
 
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 

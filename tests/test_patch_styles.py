@@ -6,9 +6,7 @@ def plot():
     fig = plt.figure()
     axis = fig.add_subplot(1, 1, 1)
 
-    col = PolyCollection(
-        [], facecolors="none", edgecolors="red", linestyle="--", linewidth=1.2
-    )
+    col = PolyCollection([], facecolors="none", edgecolors="red", linestyle="--", linewidth=1.2)
     col.set_zorder(1)
     axis.add_collection(col)
     axis.set_xlim(0.5, 2.5)

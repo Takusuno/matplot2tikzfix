@@ -5,8 +5,7 @@ import tempfile
 
 import matplotlib
 import matplotlib.pyplot as plt
-
-import tikzplotlib
+import tikzplot
 
 
 def print_tree(obj, indent=""):
@@ -34,7 +33,7 @@ def assert_equality(
     plot, filename, assert_compilation=False, flavor="latex", **extra_get_tikz_code_args
 ):
     plot()
-    code = tikzplotlib.get_tikz_code(
+    code = tikzplot.get_tikz_code(
         include_disclaimer=False,
         float_format=".8g",
         flavor=flavor,
@@ -49,7 +48,7 @@ def assert_equality(
 
     if assert_compilation:
         plot()
-        code = tikzplotlib.get_tikz_code(
+        code = tikzplot.get_tikz_code(
             include_disclaimer=False,
             standalone=True,
             flavor=flavor,
@@ -90,7 +89,7 @@ def _compile(code, flavor):
 
 def compare_mpl_tex(plot, flavor="latex"):
     plot()
-    code = tikzplotlib.get_tikz_code(standalone=True)
+    code = tikzplot.get_tikz_code(standalone=True)
     directory = os.getcwd()
     filename = "test-0.png"
     plt.savefig(filename)

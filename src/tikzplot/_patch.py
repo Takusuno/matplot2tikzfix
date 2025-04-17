@@ -33,12 +33,11 @@ def draw_patch(data, obj):
     if isinstance(obj, mpl.patches.Rectangle):
         # rectangle specialization
         return _draw_rectangle(data, obj, draw_options)
-    elif isinstance(obj, mpl.patches.Ellipse):
+    if isinstance(obj, mpl.patches.Ellipse):
         # ellipse specialization
         return _draw_ellipse(data, obj, draw_options)
-    else:
-        # regular patch
-        return _draw_polygon(data, obj, draw_options)
+    # regular patch
+    return _draw_polygon(data, obj, draw_options)
 
 
 def _is_in_legend(obj):
@@ -90,9 +89,7 @@ def draw_patchcollection(data, obj):
             path = path.transformed(mpl.transforms.Affine2D(t).translate(*off))
 
         data, draw_options = mypath.get_draw_options(data, obj, ec, fc, ls, w)
-        data, cont, draw_options, is_area = mypath.draw_path(
-            data, path, draw_options=draw_options
-        )
+        data, cont, draw_options, is_area = mypath.draw_path(data, path, draw_options=draw_options)
         content.append(cont)
 
     legend_type = "area legend" if is_area else "line legend"
@@ -103,9 +100,7 @@ def draw_patchcollection(data, obj):
 
 
 def _draw_polygon(data, obj, draw_options):
-    data, content, _, is_area = mypath.draw_path(
-        data, obj.get_path(), draw_options=draw_options
-    )
+    data, content, _, is_area = mypath.draw_path(data, obj.get_path(), draw_options=draw_options)
     legend_type = "area legend" if is_area else "line legend"
     content += _patch_legend(obj, draw_options, legend_type)
 
@@ -125,9 +120,7 @@ def _draw_rectangle(data, obj, draw_options):
     # Get actual label, bar charts by default only give rectangles labels of
     # "_nolegend_". See <https://stackoverflow.com/q/35881290/353337>.
     handles, labels = obj.axes.get_legend_handles_labels()
-    labelsFound = [
-        label for h, label in zip(handles, labels) if obj in h.get_children()
-    ]
+    labelsFound = [label for h, label in zip(handles, labels) if obj in h.get_children()]
     if len(labelsFound) == 1:
         label = labelsFound[0]
 
@@ -159,9 +152,7 @@ def _draw_ellipse(data, obj, draw_options):
     ff = data["float format"]
 
     if obj.angle != 0:
-        draw_options.append(
-            f"rotate around={{{obj.angle:{ff}}:(axis cs:{x:{ff}},{y:{ff}})}}"
-        )
+        draw_options.append(f"rotate around={{{obj.angle:{ff}}:(axis cs:{x:{ff}},{y:{ff}})}}")
 
     do = ",".join(draw_options)
     content = (
@@ -178,9 +169,7 @@ def _draw_circle(data, obj, draw_options):
     x, y = obj.center
     ff = data["float format"]
     do = ",".join(draw_options)
-    content = (
-        f"\\draw[{do}] (axis cs:{x:{ff}},{y:{ff}}) circle ({obj.get_radius():{ff}});\n"
-    )
+    content = f"\\draw[{do}] (axis cs:{x:{ff}},{y:{ff}}) circle ({obj.get_radius():{ff}});\n"
     content += _patch_legend(obj, draw_options, "area legend")
     return data, content
 

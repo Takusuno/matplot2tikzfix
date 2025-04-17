@@ -3,14 +3,14 @@
 This tests plots a subclass of Collection, which contains enough information
 as a base class to be rendered.
 """
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 class TransformedEllipseCollection(matplotlib.collections.Collection):
-    """
-    A gutted version of matplotlib.collections.EllipseCollection that lets us
+    """A gutted version of matplotlib.collections.EllipseCollection that lets us
     pass the transformation matrix directly.
 
     This is useful for plotting cholesky factors of covariance matrices.
