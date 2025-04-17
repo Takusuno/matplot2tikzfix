@@ -1,12 +1,15 @@
 import numpy as np
 import pytest
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 from tikzplot import clean_figure, get_tikz_code
+
+mpl.use("Agg")
 
 RC_PARAMS = {"figure.figsize": [5, 5], "figure.dpi": 220, "pgf.rcfonts": False}
 
 
-class Test_plottypes:
+class TestPlottypes:
     """Testing plot types found here https://matplotlib.org/3.1.1/tutorials/introductory/sample_plots.html"""
 
     def test_plot(self):
@@ -349,7 +352,7 @@ class Test_plottypes:
         plt.close("all")
 
 
-class Test_lineplot_markers:
+class TestLineplotMarkers:
     def test_line_no_markers(self):
         """Test high-level usage for simple example.
         Test is successful if generated tikz code saves correct amount of lines
@@ -452,7 +455,7 @@ class Test_lineplot_markers:
         plt.close("all")
 
 
-class Test_subplots:
+class TestSubplots:
     def test_subplot(self):
         """Octave code
         ```octave
@@ -502,7 +505,7 @@ class Test_subplots:
         plt.close("all")
 
 
-class Test_logscale:
+class TestLogscale:
     def test_ylog(self):
         x = np.linspace(0, 3, 100)
         y = np.exp(x)
