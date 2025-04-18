@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tikzplot"
+name = "matplot2tikz"
 description = "Convert matplotlib figures into TikZ/PGFPlots"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -37,8 +37,8 @@ test = [
 dev = [
     "tox",
     "tox-pyenv-redux",
-    "tikzplot[lint]",
-    "tikzplot[test]",
+    "matplot2tikz[lint]",
+    "matplot2tikz[test]",
 ]
 
 [tool.ruff]
@@ -79,7 +79,7 @@ convention = "google"
 disallow_untyped_defs = true # Functions need to be annotated
 warn_unused_ignores = true
 exclude = [
-    "tikzplot-\\d+", # Ignore temporary folder created by setuptools when building an sdist
+    "matplot2tikz-\\d+", # Ignore temporary folder created by setuptools when building an sdist
     "venv.*/",
     "build/",
     "dist/",
@@ -89,7 +89,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 addopts = """
     --import-mode=append
-    --cov=tikzplot
+    --cov=matplot2tikz
     --cov-config=pyproject.toml
     --cov-report=
     """

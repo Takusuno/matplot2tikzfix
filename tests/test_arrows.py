@@ -62,7 +62,7 @@ def plot():
 #     # plt.show()
 #
 #     plot()
-#     import tikzplot
-#     code = tikzplot.get_tikz_code(include_disclaimer=False, standalone=True)
+#     import matplot2tikz
+#     code = matplot2tikz.get_tikz_code(include_disclaimer=False, standalone=True)
 #     plt.close()
 #     helpers._does_compile(code)

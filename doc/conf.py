@@ -64,8 +64,7 @@ html_theme = "alabaster"
 
 html_theme_options = {
     # "logo": "meshplex-logo.svg",
-    "github_user": "nschloe",
-    "github_repo": "tikzplot",
+    "github_repo": "matplot2tikz",
     "github_banner": True,
     "github_button": False,
 }

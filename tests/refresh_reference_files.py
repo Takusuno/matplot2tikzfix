@@ -3,7 +3,7 @@ import importlib.util
 import pathlib
 
 import matplotlib.pyplot as plt
-import tikzplot as tpl
+import matplot2tikz as mp2t
 
 
 def _main():
@@ -29,7 +29,7 @@ def _main():
         module = importlib.import_module(mod)
         module.plot()
 
-        code = tpl.get_tikz_code(include_disclaimer=False, float_format=".8g")
+        code = mp2t.get_tikz_code(include_disclaimer=False, float_format=".8g")
         plt.close("all")
 
         tex_filename = mod + "_reference.tex"

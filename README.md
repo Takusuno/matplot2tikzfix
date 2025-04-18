@@ -1,32 +1,17 @@
-# Tikzplot
+# matplot2tikz
 The artist formerly known as <em>tikzplotlib</em>.
 
-<!--[![PyPi Version](https://img.shields.io/pypi/v/tikzplot.svg?style=flat-square)](https://pypi.org/project/tikzplot)
-[![Packaging status](https://repology.org/badge/tiny-repos/python:tikzplot.svg)](https://repology.org/project/python:tikzplot/versions)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/tikzplot.svg?style=flat-square)](https://pypi.org/pypi/tikzplot/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1173089.svg?style=flat-square)](https://doi.org/10.5281/zenodo.1173089)
-[![GitHub stars](https://img.shields.io/github/stars/nschloe/tikzplot.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/tikzplot)
-[![Downloads](https://pepy.tech/badge/tikzplot/month?style=flat-square)](https://pepy.tech/project/tikzplot)-->
-
-<!--[![PyPi downloads](https://img.shields.io/pypi/dm/tikzplot.svg?style=flat-square)](https://pypistats.org/packages/tikzplot)-->
-
-<!--[![Documentation Status](https://readthedocs.org/projects/tikzplot/badge/?version=latest&style=flat-square)](https://readthedocs.org/projects/tikzplot/?badge=latest)
-[![awesome](https://img.shields.io/badge/awesome-yes-brightgreen.svg?style=flat-square)](https://github.com/nschloe/tikzplot)
-
-[![gh-actions](https://img.shields.io/github/workflow/status/nschloe/tikzplot/ci?style=flat-square)](https://github.com/nschloe/tikzplot/actions?query=workflow%3Aci)
-[![codecov](https://img.shields.io/codecov/c/github/nschloe/tikzplot.svg?style=flat-square)](https://codecov.io/gh/nschloe/tikzplot)-->
-
-This is tikzplot, a Python tool for converting matplotlib figures into
+This is matplot2tikz, a Python tool for converting matplotlib figures into
 [PGFPlots](https://www.ctan.org/pkg/pgfplots) ([PGF/TikZ](https://www.ctan.org/pkg/pgf))
 figures like
 
-![](https://github.com/ErwindeGelder/tikzplot/example.png)
+![](https://github.com/ErwindeGelder/matplot2tikz/example.png)
 
 for native inclusion into LaTeX or ConTeXt documents.
 
-The output of tikzplot is in [PGFPlots](https://github.com/pgf-tikz/pgfplots/), a TeX
+The output of matplot2tikz is in [PGFPlots](https://github.com/pgf-tikz/pgfplots/), a TeX
 library that sits on top of [PGF/TikZ](https://en.wikipedia.org/wiki/PGF/TikZ) and
-describes graphs in terms of axes, data etc. Consequently, the output of tikzplot
+describes graphs in terms of axes, data etc. Consequently, the output of matplot2tikz
 
 -   retains more information,
 -   can be more easily understood, and
@@ -51,9 +36,9 @@ plt.ylabel("Voltage (mV)")
 plt.title("Simple plot $\\frac{\\alpha}{2}$")
 plt.grid(True)
 
-import tikzplot
+import matplot2tikz
 
-tikzplot.save("test.tex")
+matplot2tikz.save("test.tex")
 ```
 
 <!--close the figure and reset defaults
@@ -122,11 +107,11 @@ Notably, [3D plots don't work](https://github.com/matplotlib/matplotlib/issues/7
 
 ## Installation
 
-tikzplot is [available from the Python Package
-Index](https://pypi.org/project/tikzplot/), so simply do
+matplot2tikz is [available from the Python Package
+Index](https://pypi.org/project/matplot2tikz/), so simply do
 
 ```
-pip install tikzplot
+pip install matplot2tikz
 ```
 
 to install.
@@ -135,14 +120,14 @@ to install.
 
 1. Generate your matplotlib plot as usual.
 
-2. Instead of `pyplot.show()`, invoke tikzplot by
+2. Instead of `pyplot.show()`, invoke matplot2tikz by
 
     ```python
-    import tikzplot
+    import matplot2tikz
 
-    tikzplot.save("mytikz.tex")
+    matplot2tikz.save("mytikz.tex")
     # or
-    tikzplot.save("mytikz.tex", flavor="context")
+    matplot2tikz.save("mytikz.tex", flavor="context")
     ```
 
     to store the TikZ file as `mytikz.tex`.
@@ -182,11 +167,11 @@ to install.
     You can also get the code via:
 
     ```python
-    import tikzplot
+    import matplot2tikz
 
-    tikzplot.Flavors.latex.preamble()
+    matplot2tikz.Flavors.latex.preamble()
     # or
-    tikzplot.Flavors.context.preamble()
+    matplot2tikz.Flavors.context.preamble()
     ```
 
 4. [Optional] Clean up the figure before exporting to tikz using the `clean_figure`
@@ -198,10 +183,10 @@ to install.
 
     # ... do your plotting
 
-    import tikzplot
+    import matplot2tikz
 
-    tikzplot.clean_figure()
-    tikzplot.save("test.tex")
+    matplot2tikz.clean_figure()
+    matplot2tikz.save("test.tex")
     ```
 
     The command will remove points that are outside the axes limits, simplify curves and
@@ -212,14 +197,14 @@ to install.
 
 ## Contributing
 
-If you experience bugs, would like to contribute, have nice examples of what tikzplot
+If you experience bugs, would like to contribute, have nice examples of what matplot2tikz
 can do, or if you are just looking for more information, then please visit
-[tikzplot's GitHub page](https://github.com/ErwindeGelder/tikzplot).
+[matplot2tikz's GitHub page](https://github.com/ErwindeGelder/matplot2tikz).
 
 For contributing, follow these steps:
 Yes, you can help! Follow the steps below to contribute to this package:
 
-1. Download the git repository, e.g., using `git clone git@github.com:ErwindeGelder/tikzplot.git`
+1. Download the git repository, e.g., using `git clone git@github.com:ErwindeGelder/matplot2tikz.git`
 2. Create a virtual environment, e.g., using python -m venv venv
 3. Activate the virtual environment (e.g., on Windows, `venv\Scripts\activate.bat`)
 4. Install the necessary libraries using `pip install -e .[dev]`
@@ -251,5 +236,5 @@ owner", let us know!
 
 ## License
 
-tikzplot is published under the [MIT
+matplot2tikz is published under the [MIT
 license](https://en.wikipedia.org/wiki/MIT_License).
