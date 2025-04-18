@@ -41,7 +41,7 @@ def add_custom_pattern(mpl_hatch, pattern_name, pattern_definition=None):
     If the pattern definition is passed, it could be added at the start of the code in a
     similar fashion to
     > data["custom colors"] = {}
-    in get_tikz_code(). tikzplot pattern definitions would mend the bad
+    in get_tikz_code(). matplot2tikz pattern definitions would mend the bad
     correspondence between the mpl hatches and tikz patterns, with custom patterns for
     the mpl hatches 'o' and 'O'.
 
@@ -60,7 +60,7 @@ def __validate_hatch(hatch):
     """Warn about the shortcomings of patterns"""
     if len(hatch) > 1:
         warnings.warn(
-            f"tikzplot: Hatch '{hatch}' cannot be rendered. "
+            f"matplot2tikz: Hatch '{hatch}' cannot be rendered. "
             + "Only single character hatches are supported, e.g., "
             + r"{'/', '\', '|', '-', '+', 'x', 'o', 'O', '.', '*'}. "
             + f"Hatch '{hatch[0]}' will be used."
@@ -69,7 +69,7 @@ def __validate_hatch(hatch):
 
     if hatch in BAD_MP_HATCH:
         warnings.warn(
-            f"tikzplot: The hatches {BAD_MP_HATCH} do not have good PGF" + " counterparts."
+            f"matplot2tikz: The hatches {BAD_MP_HATCH} do not have good PGF" + " counterparts."
         )
     return hatch
 
@@ -88,7 +88,7 @@ def _mpl_hatch2pgfp_pattern(data, hatch, color_name, color_rgba):
     try:
         pgfplots_pattern = _MP_HATCH2PGF_PATTERN[hatch]
     except KeyError:
-        warnings.warn(f"tikzplot: The hatch {hatch} is ignored.")
+        warnings.warn(f"matplot2tikz: The hatch {hatch} is ignored.")
         return data, []
 
     data["tikz libs"].add("patterns")

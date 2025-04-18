@@ -31,7 +31,7 @@ def clean_figure(fig=None, target_resolution: int = 600, scale_precision: float 
     --------
         1. 2D lineplot
         ```python
-            from tikzplot import get_tikz_code, cleanfigure
+            from matplot2tikz import get_tikz_code, cleanfigure
 
             x = np.linspace(1, 100, 20)
             y = np.linspace(1, 100, 20)
@@ -57,7 +57,7 @@ def clean_figure(fig=None, target_resolution: int = 600, scale_precision: float 
 
         2. 3D lineplot
         ```python
-            from tikzplot import get_tikz_code, cleanfigure
+            from matplot2tikz import get_tikz_code, cleanfigure
 
             theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
             z = np.linspace(-2, 2, 100)

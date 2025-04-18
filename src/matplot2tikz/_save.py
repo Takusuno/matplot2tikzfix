@@ -46,14 +46,14 @@ def get_tikz_code(
 
     :param axis_width: If not ``None``, this will be used as figure width within the
                        TikZ/PGFPlots output. If ``axis_height`` is not given,
-                       ``tikzplot`` will try to preserve the original width/height
+                       ``matplot2tikz`` will try to preserve the original width/height
                        ratio.  Note that ``axis_width`` can be a string literal, such as
                        ``'\\axis_width'``.
     :type axis_width: str
 
     :param axis_height: If not ``None``, this will be used as figure height within the
                         TikZ/PGFPlots output. If ``axis_width`` is not given,
-                        ``tikzplot`` will try to preserve the original width/height
+                        ``matplot2tikz`` will try to preserve the original width/height
                         ratio.  Note that ``axis_width`` can be a string literal, such
                         as ``'\\axis_height'``.
     :type axis_height: str
@@ -115,7 +115,7 @@ def get_tikz_code(
     :param show_info: Show extra info on the command line. Default is ``False``.
     :type show_info: bool
 
-    :param include_disclaimer: Include tikzplot disclaimer in the output.
+    :param include_disclaimer: Include matplot2tikz disclaimer in the output.
                                Set ``False`` to make tests reproducible.
                                Default is ``True``.
     :type include_disclaimer: bool
@@ -216,7 +216,7 @@ def get_tikz_code(
     code = """"""
 
     if include_disclaimer:
-        disclaimer = f"This file was created with tikzplot v{__version__}."
+        disclaimer = f"This file was created with matplot2tikz v{__version__}."
         code += _tex_comment(disclaimer)
 
     # write the contents
@@ -283,7 +283,7 @@ def _print_pgfplot_libs_message(data):
 
 
 class _ContentManager:
-    """Basic Content Manager for tikzplot
+    """Basic Content Manager for matplot2tikz
 
     This manager uses a dictionary to map z-order to an array of content
     to be drawn at the z-order.
@@ -376,7 +376,7 @@ def _recurse(data, obj):
         elif isinstance(child, (mpl.axis.XAxis, mpl.axis.YAxis)):
             pass
         else:
-            warnings.warn(f"tikzplot: Don't know how to handle object {type(child)}.")
+            warnings.warn(f"matplot2tikz: Don't know how to handle object {type(child)}.")
     return data, content.flatten()
 
 
