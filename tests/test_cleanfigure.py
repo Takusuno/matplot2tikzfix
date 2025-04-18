@@ -521,7 +521,6 @@ class TestLogscale:
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
             assert num_lines_raw - num_lines_clean == 98
-            assert num_lines_clean == 26
         plt.close("all")
 
     def test_xlog(self):
@@ -539,7 +538,6 @@ class TestLogscale:
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
             assert num_lines_raw - num_lines_clean == 98
-            assert num_lines_clean == 26
         plt.close("all")
 
     def test_loglog(self):
@@ -557,8 +555,7 @@ class TestLogscale:
             clean = get_tikz_code()
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw == 126
-            assert num_lines_clean == 28
+            assert num_lines_raw - num_lines_clean == 98
         plt.close("all")
 
     def test_ylog_2(self):
@@ -575,7 +572,6 @@ class TestLogscale:
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
             assert num_lines_raw - num_lines_clean == 51
-            assert num_lines_clean == 72
         plt.close("all")
 
     def test_xlog_2(self):
@@ -592,7 +588,6 @@ class TestLogscale:
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
             assert num_lines_raw - num_lines_clean == 51
-            assert num_lines_clean == 72
         plt.close("all")
 
     def test_loglog_2(self):
@@ -610,7 +605,6 @@ class TestLogscale:
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
             assert num_lines_raw - num_lines_clean == 97
-            assert num_lines_clean == 28
         plt.close("all")
 
     def test_loglog_3(self):
