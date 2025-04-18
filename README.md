@@ -1,24 +1,20 @@
-<p align="center">
-  <a href="https://github.com/ErwindeGelder/tikzplot"><img alt="tikzplot" src="https://nschloe.github.io/tikzplotlib/logo-tikzplotlib.svg" width="60%"></a>
-  <p align="center">The artist formerly known as <em>tikzplotlib.</em></p>
-</p>
+# Tikzplot
+The artist formerly known as <em>tikzplotlib</em>.
 
-<!--[![PyPi Version](https://img.shields.io/pypi/v/tikzplotlib.svg?style=flat-square)](https://pypi.org/project/tikzplotlib)
-[![Packaging status](https://repology.org/badge/tiny-repos/python:tikzplotlib.svg)](https://repology.org/project/python:tikzplotlib/versions)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/tikzplotlib.svg?style=flat-square)](https://pypi.org/pypi/tikzplotlib/)
+<!--[![PyPi Version](https://img.shields.io/pypi/v/tikzplot.svg?style=flat-square)](https://pypi.org/project/tikzplot)
+[![Packaging status](https://repology.org/badge/tiny-repos/python:tikzplot.svg)](https://repology.org/project/python:tikzplot/versions)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/tikzplot.svg?style=flat-square)](https://pypi.org/pypi/tikzplot/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1173089.svg?style=flat-square)](https://doi.org/10.5281/zenodo.1173089)
-[![GitHub stars](https://img.shields.io/github/stars/nschloe/tikzplotlib.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/tikzplotlib)
-[![Downloads](https://pepy.tech/badge/tikzplotlib/month?style=flat-square)](https://pepy.tech/project/tikzplotlib)-->
+[![GitHub stars](https://img.shields.io/github/stars/nschloe/tikzplot.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/tikzplot)
+[![Downloads](https://pepy.tech/badge/tikzplot/month?style=flat-square)](https://pepy.tech/project/tikzplot)-->
 
-<!--[![PyPi downloads](https://img.shields.io/pypi/dm/tikzplotlib.svg?style=flat-square)](https://pypistats.org/packages/tikzplotlib)-->
+<!--[![PyPi downloads](https://img.shields.io/pypi/dm/tikzplot.svg?style=flat-square)](https://pypistats.org/packages/tikzplot)-->
 
-<!--[![Documentation Status](https://readthedocs.org/projects/tikzplotlib/badge/?version=latest&style=flat-square)](https://readthedocs.org/projects/tikzplotlib/?badge=latest)
-[![awesome](https://img.shields.io/badge/awesome-yes-brightgreen.svg?style=flat-square)](https://github.com/nschloe/tikzplotlib)
+<!--[![Documentation Status](https://readthedocs.org/projects/tikzplot/badge/?version=latest&style=flat-square)](https://readthedocs.org/projects/tikzplot/?badge=latest)
+[![awesome](https://img.shields.io/badge/awesome-yes-brightgreen.svg?style=flat-square)](https://github.com/nschloe/tikzplot)
 
-[![gh-actions](https://img.shields.io/github/workflow/status/nschloe/tikzplotlib/ci?style=flat-square)](https://github.com/nschloe/tikzplotlib/actions?query=workflow%3Aci)
-[![codecov](https://img.shields.io/codecov/c/github/nschloe/tikzplotlib.svg?style=flat-square)](https://codecov.io/gh/nschloe/tikzplotlib)
-[![LGTM](https://img.shields.io/lgtm/grade/python/github/nschloe/tikzplotlib.svg?style=flat-square)](https://lgtm.com/projects/g/nschloe/tikzplotlib)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)-->
+[![gh-actions](https://img.shields.io/github/workflow/status/nschloe/tikzplot/ci?style=flat-square)](https://github.com/nschloe/tikzplot/actions?query=workflow%3Aci)
+[![codecov](https://img.shields.io/codecov/c/github/nschloe/tikzplot.svg?style=flat-square)](https://codecov.io/gh/nschloe/tikzplot)-->
 
 This is tikzplot, a Python tool for converting matplotlib figures into
 [PGFPlots](https://www.ctan.org/pkg/pgfplots) ([PGF/TikZ](https://www.ctan.org/pkg/pgf))
@@ -30,7 +26,7 @@ for native inclusion into LaTeX or ConTeXt documents.
 
 The output of tikzplot is in [PGFPlots](https://github.com/pgf-tikz/pgfplots/), a TeX
 library that sits on top of [PGF/TikZ](https://en.wikipedia.org/wiki/PGF/TikZ) and
-describes graphs in terms of axes, data etc. Consequently, the output of tikzplotlib
+describes graphs in terms of axes, data etc. Consequently, the output of tikzplot
 
 -   retains more information,
 -   can be more easily understood, and
@@ -55,9 +51,9 @@ plt.ylabel("Voltage (mV)")
 plt.title("Simple plot $\\frac{\\alpha}{2}$")
 plt.grid(True)
 
-import tikzplotlib
+import tikzplot
 
-tikzplotlib.save("test.tex")
+tikzplot.save("test.tex")
 ```
 
 <!--close the figure and reset defaults
@@ -124,29 +120,29 @@ great examples of how to make your plot look even better.
 Of course, not all figures produced by matplotlib can be converted without error.
 Notably, [3D plots don't work](https://github.com/matplotlib/matplotlib/issues/7243).
 
-### Installation
+## Installation
 
-tikzplotlib is [available from the Python Package
-Index](https://pypi.org/project/tikzplotlib/), so simply do
+tikzplot is [available from the Python Package
+Index](https://pypi.org/project/tikzplot/), so simply do
 
 ```
-pip install tikzplotlib
+pip install tikzplot
 ```
 
 to install.
 
-### Usage
+## Usage
 
 1. Generate your matplotlib plot as usual.
 
-2. Instead of `pyplot.show()`, invoke tikzplotlib by
+2. Instead of `pyplot.show()`, invoke tikzplot by
 
     ```python
-    import tikzplotlib
+    import tikzplot
 
-    tikzplotlib.save("mytikz.tex")
+    tikzplot.save("mytikz.tex")
     # or
-    tikzplotlib.save("mytikz.tex", flavor="context")
+    tikzplot.save("mytikz.tex", flavor="context")
     ```
 
     to store the TikZ file as `mytikz.tex`.
@@ -186,11 +182,11 @@ to install.
     You can also get the code via:
 
     ```python
-    import tikzplotlib
+    import tikzplot
 
-    tikzplotlib.Flavors.latex.preamble()
+    tikzplot.Flavors.latex.preamble()
     # or
-    tikzplotlib.Flavors.context.preamble()
+    tikzplot.Flavors.context.preamble()
     ```
 
 4. [Optional] Clean up the figure before exporting to tikz using the `clean_figure`
@@ -202,10 +198,10 @@ to install.
 
     # ... do your plotting
 
-    import tikzplotlib
+    import tikzplot
 
-    tikzplotlib.clean_figure()
-    tikzplotlib.save("test.tex")
+    tikzplot.clean_figure()
+    tikzplot.save("test.tex")
     ```
 
     The command will remove points that are outside the axes limits, simplify curves and
@@ -214,26 +210,46 @@ to install.
     The feature originated from the
     [tikzplotlib](https://github.com/nschloe/tikzplotlib) project.
 
-### Contributing
+## Contributing
 
-If you experience bugs, would like to contribute, have nice examples of what tikzplotlib
+If you experience bugs, would like to contribute, have nice examples of what tikzplot
 can do, or if you are just looking for more information, then please visit
-[tikzplotlib's GitHub page](https://github.com/ErwindeGelder/tikzplot).
+[tikzplot's GitHub page](https://github.com/ErwindeGelder/tikzplot).
 
-### Testing
+For contributing, follow these steps:
+Yes, you can help! Follow the steps below to contribute to this package:
 
-tikzplotlib has automatic unit testing to make sure that the software doesn't
-accidentally get worse over time. In `test/`, a number of test cases are specified.
-Those run through tikzplotlib and compare the output with a previously stored reference
-TeX file.
+1. Download the git repository, e.g., using `git clone git@github.com:ErwindeGelder/tikzplot.git`
+2. Create a virtual environment, e.g., using python -m venv venv
+3. Activate the virtual environment (e.g., on Windows, `venv\Scripts\activate.bat`)
+4. Install the necessary libraries using `pip install -e .[dev]`
+5. The main branch is protected, meaning that you cannot directly push changes to this branch. 
+   Therefore, if you want to make changes, do so in a seperate branch. For example, you can create 
+   a new branch using `git checkout -b feature/my_awesome_new_feature`.
+6. Before pushing changes, ensure that the code adheres to the linting rules and that the tests are 
+   successful. To run the linting and testing, tox first needs to know where it can find the
+   different Python versions that are supported. One way to do so is by making use of pyenv or 
+   pyenv-win. Note that you only need to do this once for a single machine.
+7. Run tox run -e lint. If issues arise, fix them. You can do the linting commands manually using:
+   1. `ruff format . --check` (remove the `--check` flag to let `ruff` do the formatting)
+   2. `ruff check .`
+   3. `mypy .`
+   4. NOTE: Currently, all three steps result in many of errors. Ideally, we come to a state where
+      all checks pass succesfully and that only commits without errors are merged into the main
+      branch. For now, however, commits that do not make performance worse, should be allowed to be
+      merged on the main branch.
+8. Run `tox run -f test`
+9. Check if the tests covered everything using the coverage report in 
+   `/reports/coverage_html/index.html`
+10. Push changes to GitHub. If everything is OK and you want to merge your changes to the `main`
+    branch, create a pull request.
+    Ideally, there is at least one reviewer who reviews the pull request before the merge.
 
-To run the tests, just check out this repository and type
+Note that currently only "Code owners" can merge pull requests onto the `main` branch. This is to
+ensure that not everyone can break the main code (even unintentially). If you want to be a "Code
+owner", let us know!
 
-```
-pytest
-```
-
-### License
+## License
 
 tikzplot is published under the [MIT
 license](https://en.wikipedia.org/wiki/MIT_License).
