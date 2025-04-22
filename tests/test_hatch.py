@@ -46,7 +46,7 @@ def plot():
     ax3.add_patch(p)
     ax3.set_xlim((0, 6))
     ax3.set_ylim((0, 2.5))
-    ax3.legend()
+    ax3.legend(loc="upper right")
 
     return fig
 
