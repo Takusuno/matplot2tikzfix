@@ -5,7 +5,7 @@ This is matplot2tikz, a Python tool for converting matplotlib figures into
 [PGFPlots](https://www.ctan.org/pkg/pgfplots) ([PGF/TikZ](https://www.ctan.org/pkg/pgf))
 figures like
 
-![](https://github.com/ErwindeGelder/matplot2tikz/example.png)
+![](https://raw.githubusercontent.com/ErwindeGelder/matplot2tikz/refs/heads/main/example.png)
 
 for native inclusion into LaTeX or ConTeXt documents.
 
