@@ -17,8 +17,8 @@ dependencies = [
   "webcolors",
 ]
 authors = [
-    {name="Nico Schlömer", email="nico.schloemer@gmail.com"},
     {name="Erwin de Gelder", email="erwindegelder@gmail.com"},
+    {name="Nico Schlömer", email="nico.schloemer@gmail.com"},
 ]
 
 # Enables the usage of setuptools_scm
