@@ -202,7 +202,6 @@ can do, or if you are just looking for more information, then please visit
 [matplot2tikz's GitHub page](https://github.com/ErwindeGelder/matplot2tikz).
 
 For contributing, follow these steps:
-Yes, you can help! Follow the steps below to contribute to this package:
 
 1. Download the git repository, e.g., using `git clone git@github.com:ErwindeGelder/matplot2tikz.git`
 2. Create a virtual environment, e.g., using python -m venv venv
@@ -219,13 +218,16 @@ Yes, you can help! Follow the steps below to contribute to this package:
    1. `ruff format . --check` (remove the `--check` flag to let `ruff` do the formatting)
    2. `ruff check .`
    3. `mypy .`
-   4. NOTE: Currently, all three steps result in many of errors. Ideally, we come to a state where
+   4. NOTE: Currently, all three steps result in many errors. Ideally, we come to a state where
       all checks pass succesfully and that only commits without errors are merged into the main
       branch. For now, however, commits that do not make performance worse, should be allowed to be
       merged on the main branch.
 8. Run `tox run -f test`
 9. Check if the tests covered everything using the coverage report in 
    `/reports/coverage_html/index.html`
+
+   NOTE: Currently, now all code is covered. Ideally, all code is covered, but for now, ensure that 
+   all *new* code is covered by the testing.
 10. Push changes to GitHub. If everything is OK and you want to merge your changes to the `main`
     branch, create a pull request.
     Ideally, there is at least one reviewer who reviews the pull request before the merge.
