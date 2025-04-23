@@ -1,5 +1,6 @@
 import functools
 import re
+
 import matplotlib.transforms
 import numpy as np
 
@@ -58,8 +59,7 @@ def _common_texification(text):
 
 # https://github.com/nschloe/tikzplotlib/pull/603
 def _tex_escape(text):
-    r"""
-    Do some necessary and/or useful substitutions for texts to be included in
+    r"""Do some necessary and/or useful substitutions for texts to be included in
     LaTeX documents.
     This distinguishes text-mode and math-mode by replacing the math separator
     ``$`` with ``\(\displaystyle %s\)``. Escaped math separators (``\$``)

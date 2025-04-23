@@ -1,6 +1,7 @@
+import re
+
 import matplotlib as mpl
 import numpy as np
-import re
 
 from . import _color
 from ._util import _common_texification

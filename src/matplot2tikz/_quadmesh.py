@@ -4,7 +4,7 @@ from . import _files
 
 
 def draw_quadmesh(data, obj):
-    """Returns the PGFPlots code for an graphics environment holding a
+    """Returns the PGFPlots code for a graphics environment holding a
     rendering of the object.
     """
     content = []
@@ -30,7 +30,7 @@ def draw_quadmesh(data, obj):
     image = Image.frombuffer(
         "RGBA", ren.get_canvas_width_height(), ren.buffer_rgba(), "raw", "RGBA", 0, 1
     )
-    # Crop the image to the actual content (removing the the regions otherwise
+    # Crop the image to the actual content (removing the regions otherwise
     # used for axes, etc.)
     # 'image.crop' expects the crop box to specify the left, upper, right, and
     # lower pixel. 'cbox.extents' gives the left, lower, right, and upper
