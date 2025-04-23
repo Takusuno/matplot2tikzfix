@@ -1,7 +1,15 @@
+"""Test semilogy plot."""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     a = [pow(10, i) for i in range(10)]
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
@@ -12,7 +20,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

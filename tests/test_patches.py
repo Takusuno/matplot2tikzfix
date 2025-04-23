@@ -1,40 +1,41 @@
-def plot():
-    import matplotlib as mpl
-    import numpy as np
-    from matplotlib import pyplot as plt
-    from matplotlib.collections import PatchCollection
-    from matplotlib.patches import (
-        Circle,
-        Ellipse,
-        FancyArrowPatch,
-        Polygon,
-        Rectangle,
-        Wedge,
-    )
-    from matplotlib.path import Path
+"""Test all kind of patches."""
 
-    np.random.seed(123)
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.collections import PatchCollection
+from matplotlib.figure import Figure
+from matplotlib.patches import Circle, Ellipse, FancyArrowPatch, Polygon, Rectangle, Wedge
+from matplotlib.path import Path
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
+
+
+def plot() -> Figure:
+    rng = np.random.default_rng(123)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    N = 3
-    x = np.random.rand(N)
-    y = np.random.rand(N)
-    radii = 0.1 * np.random.rand(N)
+    n_points = 3
+    x = rng.random(size=n_points)
+    y = rng.random(size=n_points)
+    radii = 0.1 * rng.random(size=n_points)
     patches = []
     for x1, y1, r in zip(x, y, radii):
         circle = Circle((x1, y1), r)
         patches.append(circle)
 
-    rect = Rectangle(xy=[0.0, 0.25], width=1.0, height=0.5, angle=-45.0)
+    rect = Rectangle(xy=(0.0, 0.25), width=1.0, height=0.5, angle=-45.0)
     patches.append(rect)
 
-    x = np.random.rand(N)
-    y = np.random.rand(N)
-    radii = 0.1 * np.random.rand(N)
-    theta1 = 360.0 * np.random.rand(N)
-    theta2 = 360.0 * np.random.rand(N)
+    x = rng.random(size=n_points)
+    y = rng.random(size=n_points)
+    radii = 0.1 * rng.random(size=n_points)
+    theta1 = 360.0 * rng.random(size=n_points)
+    theta2 = 360.0 * rng.random(size=n_points)
     for x1, y1, r, t1, t2 in zip(x, y, radii, theta1, theta2):
         wedge = Wedge((x1, y1), r, t1, t2)
         patches.append(wedge)
@@ -47,22 +48,22 @@ def plot():
         Wedge((0.8, 0.3), 0.2, 45, 90, width=0.10),  # Ring sector
     ]
 
-    for _ in range(N):
-        polygon = Polygon(np.random.rand(N, 2), closed=True)
+    for _ in range(n_points):
+        polygon = Polygon(rng.random(size=(n_points, 2)), closed=True)
         patches.append(polygon)
 
-    colors = 100 * np.random.rand(len(patches))
+    colors = 100 * rng.random(size=len(patches))
     p = PatchCollection(patches, cmap=mpl.cm.viridis, alpha=0.4)
     p.set_array(np.array(colors))
     ax.add_collection(p)
 
-    ellipse = Ellipse(xy=[1.0, 0.5], width=1.0, height=0.5, angle=45.0, alpha=0.4)
+    ellipse = Ellipse(xy=(1.0, 0.5), width=1.0, height=0.5, angle=45.0, alpha=0.4)
     ax.add_patch(ellipse)
 
-    circle = Circle(xy=[0.0, 1.0], radius=0.5, color="r", alpha=0.4)
+    circle = Circle(xy=(0.0, 1.0), radius=0.5, color="r", alpha=0.4)
     ax.add_patch(circle)
 
-    arrow = FancyArrowPatch(posA=[0.25, 0.25], posB=[0.5, 0.25], arrowstyle="->")
+    arrow = FancyArrowPatch(posA=(0.25, 0.25), posB=(0.5, 0.25), arrowstyle="->")
     ax.add_patch(arrow)
 
     curved_arrow = FancyArrowPatch(
@@ -79,7 +80,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

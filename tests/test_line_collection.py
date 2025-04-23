@@ -1,18 +1,28 @@
-def plot():
-    # Example from
-    # <http://matplotlib.org/examples/pylab_examples/line_collection2.html>
-    import matplotlib.pyplot as plt
-    import numpy as np
-    from matplotlib.collections import LineCollection
+"""Test collection of lines.
 
+Example from <http://matplotlib.org/examples/pylab_examples/line_collection2.html>
+"""
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.collections import LineCollection
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
+
+
+def plot() -> Figure:
     fig = plt.figure()
 
     # In order to efficiently plot many lines in a single set of axes,
     # Matplotlib has the ability to add the lines all at once. Here is a
     # simple example showing how it is done.
 
-    N = 10
-    x = np.arange(N)
+    n_lines = 10
+    x = np.arange(n_lines)
     # Here are many sets of y to plot vs x
     ys = [x + i for i in x]
 
@@ -45,7 +55,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

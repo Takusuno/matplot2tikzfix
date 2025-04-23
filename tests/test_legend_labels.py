@@ -1,7 +1,16 @@
-def plot():
-    import numpy as np
-    from matplotlib import pyplot as plt
+"""Test legend with labels."""
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
+
+
+def plot() -> Figure:
     fig = plt.figure()
 
     x = np.ma.arange(0, 2 * np.pi, 0.4)
@@ -17,7 +26,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, "test_legend_labels_reference.tex")
