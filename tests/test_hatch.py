@@ -1,15 +1,20 @@
+"""Hatch demo code from https://matplotlib.org/3.1.1/gallery/shapes_and_collections/hatch_demo.html.
+
+Slightly modified to test more aspects of the hatch implementation.
+"""
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import pytest
+from matplotlib.figure import Figure
+from matplotlib.patches import Ellipse, Polygon
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
-    """Hatch demo code from
-    https://matplotlib.org/3.1.1/gallery/shapes_and_collections/hatch_demo.html
-
-    Slightly modified to test more aspects of the hatch implementation
-    """
-    import matplotlib.pyplot as plt
-    from matplotlib.patches import Ellipse, Polygon
-
+def plot() -> Figure:
     fig, (ax1, ax2, ax3) = plt.subplots(3)
 
     ax1.bar(range(1, 5), range(1, 5), color="red", edgecolor="black", hatch="/")
@@ -42,7 +47,7 @@ def plot():
         zorder=2,
         label="Polygon",
     )
-    p._hatch_color = (0.5, 0.3, 0.8, 0.7)
+    p._hatch_color = (0.5, 0.3, 0.8, 0.7)  # noqa: SLF001  # Only way is via private member access
     ax3.add_patch(p)
     ax3.set_xlim((0, 6))
     ax3.set_ylim((0, 2.5))
@@ -51,8 +56,6 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     with pytest.warns(UserWarning):
         assert_equality(plot, "test_hatch_reference.tex")

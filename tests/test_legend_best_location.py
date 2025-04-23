@@ -1,4 +1,4 @@
-"""Test different marker options."""
+"""Test different locations of legend based on 'best location'."""
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt

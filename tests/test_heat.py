@@ -1,19 +1,24 @@
-import matplotlib
+"""Test heatmap."""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     fig = plt.figure()
     x, y = np.ogrid[-10:10:100j, -10:10:100j]
     extent = (x.min(), x.max(), y.min(), y.max())
-    cmap = matplotlib.colormaps.get_cmap("gray")
+    cmap = mpl.colormaps.get_cmap("gray")
     plt.imshow(x * y, extent=extent, cmap=cmap)
     plt.colorbar()
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, "test_heat_reference.tex")
