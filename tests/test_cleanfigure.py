@@ -247,9 +247,6 @@ class TestPlottypes:
             ax = plt.axes(projection="3d")
 
             def cc(arg):
-                """:param arg:
-
-                """
                 return mcolors.to_rgba(arg, alpha=0.6)
 
             xs = np.arange(0, 10, 0.4)
