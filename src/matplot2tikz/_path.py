@@ -22,7 +22,11 @@ def draw_path(data, path, draw_options=None, simplify=None):
     ):
         return data, "", None, False
 
-    x_is_date = isinstance(data["current mpl axes obj"].xaxis.converter, DateConverter)
+    try:
+        converter = data["current mpl axes obj"].xaxis.get_converter()
+    except AttributeError:
+        converter = data["current mpl axes obj"].xaxis.converter
+    x_is_date = isinstance(converter, DateConverter)
     nodes = []
     ff = data["float format"]
     xformat = "" if x_is_date else ff
@@ -65,7 +69,7 @@ def draw_path(data, path, draw_options=None, simplify=None):
             # P0 is the point of the previous step which is needed to compute
             # Q1.
             #
-            # Cannot draw quadratic Bezier curves as the beginning of of a path
+            # Cannot draw quadratic Bezier curves as the beginning of a path
             assert prev is not None
             Q1 = 1.0 / 3.0 * prev + 2.0 / 3.0 * vert[0:2]
             Q2 = 2.0 / 3.0 * vert[0:2] + 1.0 / 3.0 * vert[2:4]
