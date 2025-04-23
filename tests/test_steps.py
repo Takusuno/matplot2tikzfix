@@ -1,7 +1,16 @@
-def plot():
-    import matplotlib.pyplot as plt
-    import numpy as np
+"""Test step plots."""
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
+
+
+def plot() -> Figure:
     fig = plt.figure()
     x = np.arange(5)
     y1 = np.array([1, 2, 1, 4, 2])
@@ -20,7 +29,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

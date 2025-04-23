@@ -1,10 +1,16 @@
-import pytest
+"""Test subplots that have colorbars."""
+
+import matplotlib as mpl
+import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
-    import numpy as np
-    from matplotlib import pyplot as plt
-
+def plot() -> Figure:
     data = np.zeros((3, 3))
     data[:2, :2] = 1.0
 
@@ -22,9 +28,5 @@ def plot():
     return fig
 
 
-# TODO reintroduce
-@pytest.mark.skip("Fails?")
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

@@ -1,12 +1,21 @@
-import os
+"""Test plots with rotated labels."""
+
 import tempfile
+from pathlib import Path
+from typing import Tuple
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import pytest
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+
 import matplot2tikz
-from matplotlib import pyplot as plt
+
+mpl.use("Agg")
 
 
-def __plot():
+def __plot() -> Tuple[Figure, Axes]:
     fig, ax = plt.subplots()
 
     x = [1, 2, 3, 4]
@@ -19,7 +28,7 @@ def __plot():
 
 
 @pytest.mark.parametrize(
-    "x_alignment, y_alignment, x_tick_label_width, y_tick_label_width, rotation",
+    ("x_alignment", "y_alignment", "x_tick_label_width", "y_tick_label_width", "rotation"),
     [
         (None, None, "1rem", "3rem", 90),
         (None, "center", "1rem", "3rem", 90),
@@ -38,8 +47,12 @@ def __plot():
     ],
 )
 def test_rotated_labels_parameters(
-    x_alignment, y_alignment, x_tick_label_width, y_tick_label_width, rotation
-):
+    x_alignment: str,
+    y_alignment: str,
+    x_tick_label_width: str,
+    y_tick_label_width: str,
+    rotation: float,
+) -> None:
     fig, _ = __plot()
 
     if x_alignment:
@@ -49,7 +62,7 @@ def test_rotated_labels_parameters(
 
     # convert to tikz file
     _, tmp_base = tempfile.mkstemp()
-    tikz_file = tmp_base + "_tikz.tex"
+    tikz_file = Path(tmp_base + "_tikz.tex")
 
     extra_dict = {}
 
@@ -64,14 +77,16 @@ def test_rotated_labels_parameters(
     plt.close(fig)
 
     # delete file
-    os.unlink(tikz_file)
+    tikz_file.unlink()
 
 
 @pytest.mark.parametrize(
-    "x_tick_label_width, y_tick_label_width",
+    ("x_tick_label_width", "y_tick_label_width"),
     [(None, None), ("1rem", None), (None, "3rem"), ("2rem", "3rem")],
 )
-def test_rotated_labels_parameters_different_values(x_tick_label_width, y_tick_label_width):
+def test_rotated_labels_parameters_different_values(
+    x_tick_label_width: str, y_tick_label_width: str
+) -> None:
     fig, ax = __plot()
 
     plt.xticks(ha="left", rotation=90)
@@ -81,7 +96,7 @@ def test_rotated_labels_parameters_different_values(x_tick_label_width, y_tick_l
 
     # convert to tikz file
     _, tmp_base = tempfile.mkstemp()
-    tikz_file = tmp_base + "_tikz.tex"
+    tikz_file = Path(tmp_base + "_tikz.tex")
 
     extra_dict = {}
 
@@ -96,10 +111,10 @@ def test_rotated_labels_parameters_different_values(x_tick_label_width, y_tick_l
     plt.close(fig)
 
     # delete file
-    os.unlink(tikz_file)
+    tikz_file.unlink()
 
 
-def test_rotated_labels_parameters_no_ticks():
+def test_rotated_labels_parameters_no_ticks() -> None:
     fig, ax = __plot()
 
     ax.xaxis.set_ticks([])
@@ -109,7 +124,7 @@ def test_rotated_labels_parameters_no_ticks():
 
     # convert to tikz file
     _, tmp_base = tempfile.mkstemp()
-    tikz_file = tmp_base + "_tikz.tex"
+    tikz_file = Path(tmp_base + "_tikz.tex")
 
     matplot2tikz.save(tikz_file, axis_width="7.5cm")
 
@@ -117,4 +132,4 @@ def test_rotated_labels_parameters_no_ticks():
     plt.close(fig)
 
     # delete file
-    os.unlink(tikz_file)
+    tikz_file.unlink()

@@ -1,7 +1,8 @@
+import matplotlib as mpl
 import numpy as np
 import pytest
-import matplotlib as mpl
 from matplotlib import pyplot as plt
+
 from matplot2tikz import clean_figure, get_tikz_code
 
 mpl.use("Agg")

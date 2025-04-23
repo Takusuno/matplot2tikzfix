@@ -1,4 +1,9 @@
+"""Test _quadmesh.py."""
+
+import matplotlib as mpl
 from matplotlib.figure import Figure
+
+mpl.use("Agg")
 
 
 def plot() -> Figure:

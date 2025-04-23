@@ -1,14 +1,22 @@
+"""Test scatter plot with different colors."""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     fig = plt.figure()
-    np.random.seed(123)
+    rng = np.random.default_rng(123)
     n = 4
     plt.scatter(
-        np.random.rand(n),
-        np.random.rand(n),
+        rng.random(n),
+        rng.random(n),
         color=np.array(
             [
                 [1.0, 0.6, 0.0],
@@ -29,7 +37,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")
