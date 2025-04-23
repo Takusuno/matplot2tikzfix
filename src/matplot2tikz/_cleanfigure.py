@@ -461,7 +461,7 @@ def _diff(x, *args, **kwargs):
 def _remove_NaNs(data):
     """Removes superfluous NaNs in the data, i.e. those at the end/beginning of the data and consecutive ones.
 
-    :param linehandle: matplotlib linehandle object
+    :param data: data to check
 
     :returns: data without NaNs
     """
@@ -482,7 +482,7 @@ def _remove_NaNs(data):
         id_remove = np.arange(len(data))
     else:
         id_remove = np.concatenate(
-            [np.arange(0, id_first), id_remove, np.arange(id_last + 1, len(data))]
+            [np.arange(0, id_first[0]), id_remove, np.arange(id_last[0] + 1, len(data))]
         )
     data = np.delete(data, id_remove, axis=0)
     return data
