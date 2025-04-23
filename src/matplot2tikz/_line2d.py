@@ -195,6 +195,12 @@ def _table(obj, data):  # noqa: C901
         xdata = xdata_alt
     else:
         if isinstance(xdata_alt[0], str):
+            # Remove old xtick,xticklabels (if any).
+            data["current axes"].axis_options = [
+                option
+                for option in data["current axes"].axis_options
+                if not (option.startswith("xtick=") or option.startswith("xticklabels="))
+            ]
             data["current axes"].axis_options += [
                 "xtick={{{}}}".format(",".join([f"{x:{ff}}" for x in xdata])),
                 "xticklabels={{{}}}".format(",".join(xdata_alt)),
@@ -244,6 +250,13 @@ def _table(obj, data):  # noqa: C901
         mindate = num2date(xmin).strftime("%Y-%m-%d %H:%M")
         maxdate = num2date(xmax).strftime("%Y-%m-%d %H:%M")
         data["current axes"].axis_options.append(f"xmin={mindate}, xmax={maxdate}")
+
+        # Also remove xtick stuff, as it will result in compilation error in LaTeX
+        data["current axes"].axis_options = [
+            option
+            for option in data["current axes"].axis_options
+            if not (option.startswith("xtick=") or option.startswith("xticklabels="))
+        ]
     else:
         opts = []
         xformat = ff

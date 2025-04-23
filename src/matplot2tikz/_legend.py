@@ -143,7 +143,9 @@ def _get_location_from_best(obj):
     upper_left_axes = np.array([x0_axes[0], x1_axes[1]], dtype=np.float64)
     upper_right_axes = x1_axes
     center_axes = x0_axes + dimension_axes / 2.0
-    center_left_axes = np.array([x0_axes[0], x0_axes[1] + dimension_axes[1] / 2.0], dtype=np.float64)
+    center_left_axes = np.array(
+        [x0_axes[0], x0_axes[1] + dimension_axes[1] / 2.0], dtype=np.float64
+    )
     center_right_axes = np.array(
         [x1_axes[0], x0_axes[1] + dimension_axes[1] / 2.0], dtype=np.float64
     )

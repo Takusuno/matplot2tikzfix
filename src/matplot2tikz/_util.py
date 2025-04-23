@@ -47,7 +47,9 @@ _NO_ESCAPE = r"(?<!\\)(?:\\\\)*"
 _split_math = re.compile(_NO_ESCAPE + r"\$").split
 _replace_mathdefault = functools.partial(
     # Replace \mathdefault (when not preceded by an escape) by empty string.
-    re.compile(_NO_ESCAPE + r"(\\mathdefault)").sub, "")
+    re.compile(_NO_ESCAPE + r"(\\mathdefault)").sub,
+    "",
+)
 
 
 def _common_texification(text):
@@ -69,6 +71,7 @@ def _tex_escape(text):
     text = text.replace("\N{MINUS SIGN}", r"\ensuremath{-}")
     # Work around <https://github.com/matplotlib/matplotlib/issues/15493>
     text = text.replace("&", r"\&")
+    text = text.replace("_", r"\_")
     # split text into normaltext and inline math parts
     parts = _split_math(text)
     for i, s in enumerate(parts):

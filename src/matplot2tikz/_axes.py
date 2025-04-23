@@ -1,5 +1,6 @@
 import matplotlib as mpl
 import numpy as np
+import re
 
 from . import _color
 from ._util import _common_texification
@@ -411,6 +412,8 @@ class Axes:
 
     def _subplot(self, obj, data):
         # https://github.com/matplotlib/matplotlib/issues/7225#issuecomment-252173667
+        if obj.get_subplotspec() is None:
+            return
         geom = obj.get_subplotspec().get_topmost_subplotspec().get_geometry()
 
         self.nsubplots = geom[0] * geom[1]
@@ -550,12 +553,15 @@ def _get_ticks(data, xy, ticks, ticklabels):
         try:
             label_float = float(label.replace("\N{MINUS SIGN}", "-"))
         except ValueError:
-            is_label_required = True
-            break
-        else:
-            if abs(label_float - tick) > 1.0e-10 + 1.0e-10 * abs(tick):
+            # Check if label is in format "$\matchdefault{<base>^{<exponent>}}$" (for log plots)
+            match = re.search(r"\$\\mathdefault\{(\d+)\^\{(-?\d+(?:\.\d+)?)\}\}\$", label)
+            if match is None:
                 is_label_required = True
                 break
+            label_float = float(match.group(1)) ** float(match.group(2))
+        if abs(label_float - tick) > 1.0e-10 + 1.0e-10 * abs(tick):
+            is_label_required = True
+            break
 
     pgfplots_ticks = []
     pgfplots_ticklabels = []

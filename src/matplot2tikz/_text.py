@@ -143,7 +143,16 @@ def _parse_annotation_coords(ff, coords, xy):
     if coords == "data":
         x, y = xy
         return f"(axis cs:{x:{ff}},{y:{ff}})"
-    if coords == "figure points" or coords == "figure pixels" or coords == "figure fraction" or coords == "axes points" or coords == "axes pixels" or coords == "axes fraction" or coords == "data" or coords == "polar":
+    if (
+        coords == "figure points"
+        or coords == "figure pixels"
+        or coords == "figure fraction"
+        or coords == "axes points"
+        or coords == "axes pixels"
+        or coords == "axes fraction"
+        or coords == "data"
+        or coords == "polar"
+    ):
         raise NotImplementedError
     # unknown
     raise NotImplementedError

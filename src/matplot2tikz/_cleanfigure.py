@@ -100,9 +100,9 @@ def _recursive_cleanfigure(obj, target_resolution=600, scale_precision=1.0):
         If a list or an np.array is provided, it is interpreted as [H, W].
         By default 600
     :type target_resolution: int, list or np.array, optional
-    :param scalePrecision: scalar value indicating precision when scaling down.
+    :param scale_precision: scalar value indicating precision when scaling down.
         By default 1
-    :type scalePrecision: float, optional
+    :type scale_precision: float, optional
     """
     for child in obj.get_children():
         if isinstance(child, mpl.spines.Spine):
@@ -167,6 +167,10 @@ def _recursive_cleanfigure(obj, target_resolution=600, scale_precision=1.0):
             import warnings
 
             warnings.warn("Cleaning Poly3DCollections is not supported yet.")
+        elif isinstance(child, mpl.contour.QuadContourSet):
+            import warnings
+
+            warnings.warn("Cleaning QuadContourSet is not supported yet.")
         else:
             pass
 
@@ -461,7 +465,7 @@ def _diff(x, *args, **kwargs):
 def _remove_NaNs(data):
     """Removes superfluous NaNs in the data, i.e. those at the end/beginning of the data and consecutive ones.
 
-    :param linehandle: matplotlib linehandle object
+    :param data: data to check
 
     :returns: data without NaNs
     """
@@ -482,7 +486,7 @@ def _remove_NaNs(data):
         id_remove = np.arange(len(data))
     else:
         id_remove = np.concatenate(
-            [np.arange(0, id_first), id_remove, np.arange(id_last + 1, len(data))]
+            [np.arange(0, id_first[0]), id_remove, np.arange(id_last[0] + 1, len(data))]
         )
     data = np.delete(data, id_remove, axis=0)
     return data

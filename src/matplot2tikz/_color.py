@@ -31,7 +31,9 @@ def _get_closest_colour_name(rgb):
     for name in webcolors.names("css3"):
         wc_rgb = webcolors.name_to_rgb(name)
 
-        diff = (rgb[0]-wc_rgb.red)**2 + (rgb[1]-wc_rgb.green)**2 + (rgb[2]-wc_rgb.blue)**2
+        diff = (
+            (rgb[0] - wc_rgb.red) ** 2 + (rgb[1] - wc_rgb.green) ** 2 + (rgb[2] - wc_rgb.blue) ** 2
+        )
         if diff < mindiff:
             match = name
             mindiff = diff
