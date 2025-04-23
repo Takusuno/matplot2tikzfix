@@ -100,9 +100,9 @@ def _recursive_cleanfigure(obj, target_resolution=600, scale_precision=1.0):
         If a list or an np.array is provided, it is interpreted as [H, W].
         By default 600
     :type target_resolution: int, list or np.array, optional
-    :param scalePrecision: scalar value indicating precision when scaling down.
+    :param scale_precision: scalar value indicating precision when scaling down.
         By default 1
-    :type scalePrecision: float, optional
+    :type scale_precision: float, optional
     """
     for child in obj.get_children():
         if isinstance(child, mpl.spines.Spine):
@@ -167,6 +167,10 @@ def _recursive_cleanfigure(obj, target_resolution=600, scale_precision=1.0):
             import warnings
 
             warnings.warn("Cleaning Poly3DCollections is not supported yet.")
+        elif isinstance(child, mpl.contour.QuadContourSet):
+            import warnings
+
+            warnings.warn("Cleaning QuadContourSet is not supported yet.")
         else:
             pass
 
