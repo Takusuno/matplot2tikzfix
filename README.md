@@ -41,53 +41,42 @@ import matplot2tikz
 matplot2tikz.save("test.tex")
 ```
 
-<!--close the figure and reset defaults
-<!--pytest-codeblocks:cont-->
-
-```python
-import matplotlib as mpl
-
-plt.close()
-mpl.rcParams.update(mpl.rcParamsDefault)
-```
-
 -->
 (see above) gives
 
 ```latex
 \begin{tikzpicture}
 
-\definecolor{color0}{rgb}{0.886274509803922,0.290196078431373,0.2}
-\definecolor{color1}{rgb}{0.203921568627451,0.541176470588235,0.741176470588235}
-
+\definecolor{chocolate2267451}{RGB}{226,74,51}
+\definecolor{dimgray85}{RGB}{85,85,85}
+\definecolor{gainsboro229}{RGB}{229,229,229}
+\definecolor{steelblue52138189}{RGB}{52,138,189}
 \begin{axis}[
-axis background/.style={fill=white!89.8039215686275!black},
+axis background/.style={fill=gainsboro229},
 axis line style={white},
 tick align=outside,
 tick pos=left,
 title={Simple plot \(\displaystyle \frac{\alpha}{2}\)},
 x grid style={white},
-xlabel={time (s)},
+xlabel=\textcolor{dimgray85}{time (s)},
 xmajorgrids,
 xmin=-0.095, xmax=1.995,
-xtick style={color=white!33.3333333333333!black},
+xtick style={color=dimgray85},
 y grid style={white},
-ylabel={Voltage (mV)},
+ylabel=\textcolor{dimgray85}{Voltage (mV)},
 ymajorgrids,
 ymin=-1.1, ymax=1.1,
-ytick style={color=white!33.3333333333333!black}
+ytick style={color=dimgray85}
 ]
-\addplot [line width=1.64pt, color0, mark=*, mark size=3, mark options={solid}]
+\addplot [line width=1.64pt, chocolate2267451, mark=*, mark size=3, mark options={solid}]
 table {%
 0 0
-0.1 0.587785252292473
 % [...]
 1.9 -0.587785252292473
 };
-\addplot [line width=1.64pt, color1, mark=*, mark size=3, mark options={solid}]
+\addplot [line width=1.64pt, steelblue52138189, mark=*, mark size=3, mark options={solid}]
 table {%
 0 1
-0.1 0.809016994374947
 % [...]
 1.9 0.809016994374947
 };
@@ -136,7 +125,7 @@ to install.
    so is via
 
     ```latex
-    \input{/path/to/mytikz.tex}
+    \input{/path/to/mytikz}
     ```
 
     Also make sure that the packages for PGFPlots and proper Unicode support and are
