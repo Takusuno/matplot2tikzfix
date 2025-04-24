@@ -20,6 +20,14 @@ authors = [
     {name="Erwin de Gelder", email="erwindegelder@gmail.com"},
     {name="Nico Schlömer", email="nico.schloemer@gmail.com"},
 ]
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 
 # Enables the usage of setuptools_scm
 [tool.setuptools_scm]
