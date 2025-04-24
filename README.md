@@ -1,6 +1,12 @@
 # matplot2tikz
 The artist formerly known as <em>tikzplotlib</em>.
 
+![PyPI - Version](https://img.shields.io/pypi/v/matplot2tikz)
+![GitHub License](https://img.shields.io/github/license/ErwindeGelder/matplot2tikz)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/matplot2tikz)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/matplot2tikz)
+
 This is matplot2tikz, a Python tool for converting matplotlib figures into
 [PGFPlots](https://www.ctan.org/pkg/pgfplots) ([PGF/TikZ](https://www.ctan.org/pkg/pgf))
 figures like
