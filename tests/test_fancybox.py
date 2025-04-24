@@ -1,13 +1,25 @@
-# Taken from http://matplotlib.org/examples/pylab_examples/fancybox_demo.html
+"""Test fancy bbox patches.
+
+Taken from http://matplotlib.org/examples/pylab_examples/fancybox_demo.html
+"""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.patches import FancyBboxPatch
 
+from .helpers import assert_equality
+
+mpl.use("Agg")
+
+
 # Bbox object around which the fancy box will be drawn.
-bb = mtransforms.Bbox([[0.3, 0.4], [0.7, 0.6]])
+bb = mtransforms.Bbox(([0.3, 0.4], [0.7, 0.6]))
 
 
-def draw_bbox(ax, bb_obj):
+def draw_bbox(ax: Axes, bb_obj: mtransforms.Bbox) -> None:
     # boxstyle=square with pad=0, i.e. bbox itself.
     p_bbox = FancyBboxPatch(
         (bb_obj.xmin, bb_obj.ymin),
@@ -21,7 +33,7 @@ def draw_bbox(ax, bb_obj):
     ax.add_patch(p_bbox)
 
 
-def box1(ax):
+def box1(ax: Axes) -> None:
     # a fancy box with round corners. pad=0.1
     p_fancy = FancyBboxPatch(
         (bb.xmin, bb.ymin),
@@ -36,15 +48,11 @@ def box1(ax):
 
     ax.text(0.1, 0.8, "boxstyle='round, pad=0.1'", size=10, transform=ax.transAxes)
 
-    # # draws control points for the fancy box.
-    # l = p_fancy.get_path().vertices
-    # ax.plot(l[:,0], l[:,1], '.')
-
     # draw the original bbox in black
     draw_bbox(ax, bb)
 
 
-def box2(ax):
+def box2(ax: Axes) -> None:
     # bbox=round has two optional argument. pad and rounding_size.
     # They can be set during the initialization.
     p_fancy = FancyBboxPatch(
@@ -63,8 +71,6 @@ def box2(ax):
     # forgotten even if the boxstyle name is same.
 
     p_fancy.set_boxstyle("round,pad=0.1, rounding_size=0.2")
-    # or
-    # p_fancy.set_boxstyle('round', pad=0.1, rounding_size=0.2)
 
     ax.text(
         0.1,
@@ -74,14 +80,10 @@ def box2(ax):
         transform=ax.transAxes,
     )
 
-    # # draws control points for the fancy box.
-    # l = p_fancy.get_path().vertices
-    # ax.plot(l[:,0], l[:,1], '.')
-
     draw_bbox(ax, bb)
 
 
-def box3(ax):
+def box3(ax: Axes) -> None:
     # mutation_scale determine overall scale of the mutation,
     # i.e. both pad and rounding_size is scaled according to this
     # value.
@@ -105,14 +107,10 @@ def box3(ax):
         transform=ax.transAxes,
     )
 
-    # # draws control points for the fancy box.
-    # l = p_fancy.get_path().vertices
-    # ax.plot(l[:,0], l[:,1], '.')
-
     draw_bbox(ax, bb)
 
 
-def box4(ax):
+def box4(ax: Axes) -> None:
     # When the aspect ratio of the axes is not 1, the fancy box may
     # not be what you expected (green)
 
@@ -152,7 +150,7 @@ def box4(ax):
     draw_bbox(ax, bb)
 
 
-def plot():
+def plot() -> Figure:
     fig = plt.figure()
     plt.clf()
 
@@ -187,7 +185,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, "test_fancybox_reference.tex")

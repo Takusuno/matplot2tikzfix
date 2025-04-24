@@ -1,8 +1,9 @@
-# assert repeated exports of the same plot produce the same output file
+"""Assert repeated exports of the same plot produce the same output file."""
 
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 # We create the tikz files in separate subprocesses, as when producing those in
 # the same process, the order of axis parameters is deterministic.
@@ -20,7 +21,7 @@ matplot2tikz.save(sys.argv[1])
 """
 
 
-def test():
+def test() -> None:
     _, tmp_base = tempfile.mkstemp()
     # trade-off between test duration and probability of false negative
     n_tests = 4
@@ -28,25 +29,27 @@ def test():
     for _ in range(n_tests):
         tikz_file = tmp_base + "_tikz.tex"
         try:
-            _ = subprocess.check_output(
+            _ = subprocess.check_output(  # noqa: S603
                 [sys.executable, "-", tikz_file],
                 input=plot_code.encode(),
                 stderr=subprocess.STDOUT,
+                shell=False,
             )
-            sp = subprocess.Popen(
-                ["python3", "-", tikz_file],
+            sp = subprocess.Popen(  # noqa: S603
+                [sys.executable, "-", tikz_file],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
+                shell=False,
             )
             _, _ = sp.communicate(plot_code.encode())
         except subprocess.CalledProcessError as e:
-            print("Command output:")
-            print("=" * 70)
-            print(e.output)
-            print("=" * 70)
+            print("Command output:")  # noqa: T201
+            print("=" * 70)  # noqa: T201
+            print(e.output)  # noqa: T201
+            print("=" * 70)  # noqa: T201
             raise
-        with open(tikz_file) as f:
+        with Path(tikz_file).open() as f:
             tikzs.append(f.read())
     for t in tikzs[1:]:
         assert t == tikzs[0]
