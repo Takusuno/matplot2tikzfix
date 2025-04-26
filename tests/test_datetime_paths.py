@@ -1,13 +1,24 @@
+"""Test plot with datetimes."""
+
 import datetime as date
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import dates
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     fig = plt.figure()
 
-    times = [date.datetime(2020, 1, 1, 12, 00), date.datetime(2020, 1, 2, 12, 00)]
+    times = [
+        date.datetime(2020, 1, 1, 12, 0, 0, tzinfo=date.timezone.utc),
+        date.datetime(2020, 1, 2, 12, 0, 0, tzinfo=date.timezone.utc),
+    ]
     line = [2, 2]
     upper = [3, 4]
     lower = [1, 0]
@@ -20,7 +31,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

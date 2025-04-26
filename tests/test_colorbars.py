@@ -1,8 +1,15 @@
+"""Test different colorbars."""
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     # Make a figure and axes with dimensions as desired.
     fig, ax = plt.subplots(3)
 
@@ -33,7 +40,7 @@ def plot():
         norm=norm,
         # to use 'extend', you must
         # specify two extra boundaries:
-        boundaries=[0] + bounds + [13],
+        boundaries=[0, *bounds, 13],
         extend="both",
         ticks=bounds,  # optional
         spacing="proportional",
@@ -55,7 +62,7 @@ def plot():
         ax[2],
         cmap=cmap,
         norm=norm,
-        boundaries=[-10] + bounds + [10],
+        boundaries=[-10, *bounds, 10],
         extend="both",
         # Make the length of each extension
         # the same as the length of the
@@ -70,7 +77,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, "test_colorbars_reference.tex", assert_compilation=False)

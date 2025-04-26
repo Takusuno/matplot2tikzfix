@@ -1,14 +1,25 @@
+"""Test plot with datetimes."""
+
 import datetime as date
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import dates
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     fig = plt.figure()
 
     values = [50, 50.02]
-    time = [date.datetime(2016, 10, 10, 18, 00), date.datetime(2016, 10, 10, 18, 15)]
+    time = [
+        date.datetime(2016, 10, 10, 18, 0, 0, tzinfo=date.timezone.utc),
+        date.datetime(2016, 10, 10, 18, 15, 0, tzinfo=date.timezone.utc),
+    ]
     plt.plot(time, values)
     hfmt = dates.DateFormatter("%H:%M")
     ax = plt.gca()
@@ -16,7 +27,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

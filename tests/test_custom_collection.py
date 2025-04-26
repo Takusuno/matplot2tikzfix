@@ -1,43 +1,52 @@
-"""Custom collection test
+"""Custom collection test.
 
 This tests plots a subclass of Collection, which contains enough information
 as a base class to be rendered.
 """
 
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.backend_bases import RendererBase
+from matplotlib.collections import Collection
+from matplotlib.figure import Figure
+from matplotlib.transforms import Affine2D, IdentityTransform
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-class TransformedEllipseCollection(matplotlib.collections.Collection):
-    """A gutted version of matplotlib.collections.EllipseCollection that lets us
-    pass the transformation matrix directly.
+class TransformedEllipseCollection(Collection):
+    """A gutted version of matplotlib.collections.EllipseCollection.
 
+    This one lets us pass the transformation matrix directly.
     This is useful for plotting cholesky factors of covariance matrices.
     """
-
-    def __init__(self, matrices, **kwargs):
+    def __init__(self, matrices: np.ndarray, **kwargs) -> None:  # noqa: ANN003
+        """Initialize TransformedEllipseCollection."""
         super().__init__(**kwargs)
-        self.set_transform(matplotlib.transforms.IdentityTransform())
+        self.set_transform(IdentityTransform())
         self._transforms = np.zeros(matrices.shape[:-2] + (3, 3))
         self._transforms[..., :2, :2] = matrices
         self._transforms[..., 2, 2] = 1
-        self._paths = [matplotlib.path.Path.unit_circle()]
+        self._paths = [mpl.path.Path.unit_circle()]
 
-    def _set_transforms(self):
+    def _set_transforms(self) -> None:
         """Calculate transforms immediately before drawing."""
         m = self.axes.transData.get_affine().get_matrix().copy()
         m[:2, 2:] = 0
-        self.set_transform(matplotlib.transforms.Affine2D(m))
+        self.set_transform(Affine2D(m))
 
-    @matplotlib.artist.allow_rasterization
-    def draw(self, renderer):
+    @mpl.artist.allow_rasterization
+    def draw(self, renderer: RendererBase) -> None:
+        """Draw ellipse."""
         self._set_transforms()
         super().draw(renderer)
 
 
-def rot(theta):
-    """Get a stack of rotation matrices"""
+def rot(theta: np.ndarray) -> np.ndarray:
+    """Get a stack of rotation matrices."""
     return np.stack(
         [
             np.stack([np.cos(theta), -np.sin(theta)], axis=-1),
@@ -47,8 +56,7 @@ def rot(theta):
     )
 
 
-def plot():
-    # plot data
+def plot() -> Figure:
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
@@ -71,7 +79,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, "test_custom_collection_reference.tex")

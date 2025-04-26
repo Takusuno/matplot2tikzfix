@@ -1,8 +1,16 @@
+"""Test contourf plot."""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     nbins = 5
 
     fig = plt.figure()
@@ -14,7 +22,7 @@ def plot():
     y_min = 0
 
     xi, yi = np.mgrid[x_min : x_max : nbins * 1j, y_min : y_max : nbins * 1j]
-    pos = np.empty(xi.shape + (2,))
+    pos = np.empty((*xi.shape, 2))
     pos[:, :, 0] = xi
     pos[:, :, 1] = yi
     zi = 2 - (xi - 1) ** 2 - (yi - 1) ** 2
@@ -25,9 +33,7 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     try:
         assert_equality(plot, __file__[:-3] + "_reference.tex")
     except AssertionError:
