@@ -1,27 +1,28 @@
-import os
-import pathlib
-import subprocess
-import tempfile
+"""Helper functions for running the tests."""
 
-import matplotlib
+from pathlib import Path
+from typing import Callable
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 
 import matplot2tikz
 
 
-def print_tree(obj, indent=""):
+def print_tree(obj: Figure, indent: str="") -> None:
     """Recursively prints the tree structure of the matplotlib object."""
-    if isinstance(obj, matplotlib.text.Text):
-        print(indent, type(obj).__name__, f'("{obj.get_text()}")')
+    if isinstance(obj, mpl.text.Text):
+        print(indent, type(obj).__name__, f'("{obj.get_text()}")')  # noqa: T201
     else:
-        print(indent, type(obj).__name__)
+        print(indent, type(obj).__name__)  # noqa: T201
 
     for child in obj.get_children():
-        print_tree(child, indent + "   ")
+        print_tree(child, indent + "  ")
 
 
 # https://stackoverflow.com/a/845432/353337
-def _unidiff_output(expected, actual):
+def _unidiff_output(expected: str, actual: str) -> str:
     import difflib
 
     expected = expected.splitlines(1)
@@ -31,8 +32,8 @@ def _unidiff_output(expected, actual):
 
 
 def assert_equality(
-    plot, filename, assert_compilation=False, flavor="latex", **extra_get_tikz_code_args
-):
+    plot: Callable, filename: str, flavor: str="latex", **extra_get_tikz_code_args  # noqa: ANN003
+) -> None:
     plot()
     code = matplot2tikz.get_tikz_code(
         include_disclaimer=False,
@@ -42,67 +43,7 @@ def assert_equality(
     )
     plt.close("all")
 
-    this_dir = pathlib.Path(__file__).resolve().parent
-    with open(this_dir / filename, encoding="utf-8") as f:
+    this_dir = Path(__file__).resolve().parent
+    with (this_dir / filename).open(encoding="utf-8") as f:
         reference = f.read()
     assert reference == code, filename + "\n" + _unidiff_output(reference, code)
-
-    if assert_compilation:
-        plot()
-        code = matplot2tikz.get_tikz_code(
-            include_disclaimer=False,
-            standalone=True,
-            flavor=flavor,
-            **extra_get_tikz_code_args,
-        )
-        plt.close("all")
-        assert _compile(code, flavor) is not None, code
-
-
-def _compile(code, flavor):
-    _, tmp_base = tempfile.mkstemp()
-
-    tex_file = tmp_base + ".tex"
-    with open(tex_file, "w", encoding="utf-8") as f:
-        f.write(code)
-
-    # change into the directory of the TeX file
-    os.chdir(os.path.dirname(tex_file))
-
-    # compile the output to pdf
-    cmdline = dict(
-        latex=["pdflatex", "--interaction=nonstopmode"],
-        context=["context", "--nonstopmode"],
-    )[flavor]
-    try:
-        subprocess.check_output(cmdline + [tex_file], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print(f"{cmdline[0]} output:")
-        print("=" * 70)
-        print(e.output.decode("utf-8"))
-        print("=" * 70)
-        output_pdf = None
-    else:
-        output_pdf = tmp_base + ".pdf"
-
-    return output_pdf
-
-
-def compare_mpl_tex(plot, flavor="latex"):
-    plot()
-    code = matplot2tikz.get_tikz_code(standalone=True)
-    directory = os.getcwd()
-    filename = "test-0.png"
-    plt.savefig(filename)
-    plt.close("all")
-
-    pdf_file = _compile(code, flavor)
-    pdf_dirname = os.path.dirname(pdf_file)
-
-    # Convert PDF to PNG.
-    subprocess.check_output(
-        ["pdftoppm", "-r", "1000", "-png", pdf_file, "test"], stderr=subprocess.STDOUT
-    )
-    png_path = os.path.join(pdf_dirname, "test-1.png")
-
-    os.rename(png_path, os.path.join(directory, "test-1.png"))

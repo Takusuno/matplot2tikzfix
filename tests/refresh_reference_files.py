@@ -1,3 +1,8 @@
+"""Refresh the reference files.
+
+Use with caution.
+"""
+
 import argparse
 import importlib.util
 import pathlib
@@ -7,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplot2tikz as mp2t
 
 
-def _main():
+def _main() -> None:
     parser = argparse.ArgumentParser(description="Refresh all reference TeX files.")
     parser.parse_args()
 
@@ -34,7 +39,7 @@ def _main():
         plt.close("all")
 
         tex_filename = mod + "_reference.tex"
-        with open(this_dir / tex_filename, "w", encoding="utf8") as f:
+        with (this_dir / tex_filename).open("w", encoding="utf8") as f:
             f.write(code)
 
 

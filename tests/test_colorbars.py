@@ -78,4 +78,4 @@ def plot() -> Figure:
 
 
 def test() -> None:
-    assert_equality(plot, "test_colorbars_reference.tex", assert_compilation=False)
+    assert_equality(plot, "test_colorbars_reference.tex")

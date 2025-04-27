@@ -1,4 +1,5 @@
-"""Box Plot test
+"""Box Plot test.
+
 This test plots a box plot with three data series. The causes an empty Line2D
 to be plotted.  Without care, this can turn into an empty table in PGFPlot
 which crashes latex (due to it treating an empty table as a table with
@@ -6,11 +7,16 @@ external data in the file '' or '.tex')
 See: https://github.com/nschloe/tikzplotlib/pull/134
 """
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
-    # plot data
+def plot() -> Figure:
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
@@ -88,7 +94,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, "test_boxplot_reference.tex")
