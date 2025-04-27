@@ -336,6 +336,7 @@ class TestPlottypes:
 
 class TestLineplotMarkers:
     """Test plots with/without lines/markers."""
+
     def test_line_no_markers(self) -> None:
         """Test with plot with line but no markers."""
         line_difference = 18
@@ -439,6 +440,7 @@ class TestLineplotMarkers:
 
 class TestSubplots:
     """Test with subplot."""
+
     def test_subplot(self) -> None:
         """Test cleanfigure with a subplot.
 
@@ -493,6 +495,7 @@ class TestSubplots:
 
 class TestLogscale:
     """Different tests with at least one axis on log scale."""
+
     def test_ylog(self) -> None:
         """Test first semilogy plot."""
         line_difference = 98

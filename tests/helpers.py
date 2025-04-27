@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 import matplot2tikz
 
 
-def print_tree(obj: Figure, indent: str="") -> None:
+def print_tree(obj: Figure, indent: str = "") -> None:
     """Recursively prints the tree structure of the matplotlib object."""
     if isinstance(obj, mpl.text.Text):
         print(indent, type(obj).__name__, f'("{obj.get_text()}")')  # noqa: T201
@@ -32,7 +32,10 @@ def _unidiff_output(expected: str, actual: str) -> str:
 
 
 def assert_equality(
-    plot: Callable, filename: str, flavor: str="latex", **extra_get_tikz_code_args  # noqa: ANN003
+    plot: Callable,
+    filename: str,
+    flavor: str = "latex",
+    **extra_get_tikz_code_args,  # noqa: ANN003
 ) -> None:
     plot()
     code = matplot2tikz.get_tikz_code(

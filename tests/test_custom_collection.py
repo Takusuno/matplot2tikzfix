@@ -23,6 +23,7 @@ class TransformedEllipseCollection(Collection):
     This one lets us pass the transformation matrix directly.
     This is useful for plotting cholesky factors of covariance matrices.
     """
+
     def __init__(self, matrices: np.ndarray, **kwargs) -> None:  # noqa: ANN003
         """Initialize TransformedEllipseCollection."""
         super().__init__(**kwargs)
