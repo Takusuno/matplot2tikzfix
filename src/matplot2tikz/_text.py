@@ -1,39 +1,24 @@
+"""Process text objects."""
+
+from typing import Tuple
+
 import matplotlib as mpl
-from matplotlib.patches import ArrowStyle
+from matplotlib.patches import ArrowStyle, BoxStyle, FancyArrowPatch, FancyBboxPatch
+from matplotlib.text import Annotation, Text
 
 from . import _color
 
 
-def draw_text(data, obj):
-    """Paints text on the graph."""
+def draw_text(data: dict, obj: Text) -> Tuple[dict, list]:
+    """Paints text on the graph.
+
+    :return: Tuple with data and content.
+    """
     content = []
     properties = []
     style = []
     ff = data["float format"]
-    if isinstance(obj, mpl.text.Annotation):
-        pos = _annotation(obj, data, content)
-    else:
-        pos = obj.get_position()
-
-    if isinstance(pos, str):
-        tikz_pos = pos
-    # from .util import transform_to_data_coordinates
-    # pos = transform_to_data_coordinates(obj, *pos)
-
-    elif obj.axes:
-        # If the coordinates are relative to an axis, use `axis cs`.
-        tikz_pos = f"(axis cs:{pos[0]:{ff}},{pos[1]:{ff}})"
-    else:
-        # relative to the entire figure, it's a getting a littler harder. See
-        # <http://tex.stackexchange.com/a/274902/13262> for a solution to the
-        # problem:
-        tikz_pos = (
-            f"({{$(current bounding box.south west)!{pos[0]:{ff}}!"
-            "(current bounding box.south east)$}"
-            "|-"
-            f"{{$(current bounding box.south west)!{pos[1]:{ff}}!"
-            "(current bounding box.north west)$})"
-        )
+    tikz_pos = _get_tikz_pos(obj, data, content)
 
     text = obj.get_text()
 
@@ -46,7 +31,6 @@ def draw_text(data, obj):
     bbox = obj.get_bbox_patch()
     converter = mpl.colors.ColorConverter()
     # without the factor 0.5, the fonts are too big most of the time.
-    # TODO fix this
     scaling = 0.5 * size / data["font size"]
     if scaling != 1.0:
         properties.append(f"scale={scaling:{ff}}")
@@ -65,44 +49,21 @@ def draw_text(data, obj):
 
     if obj.get_style() == "italic":
         style.append("\\itshape")
-    else:
-        assert obj.get_style() == "normal"
+    elif obj.get_style() != "normal":
+        msg = f"Object style '{obj.get_style}' not implemented."
+        raise NotImplementedError(msg)
 
-    # From matplotlib/font_manager.py:
-    # weight_dict = {
-    #     'ultralight' : 100,
-    #     'light'      : 200,
-    #     'normal'     : 400,
-    #     'regular'    : 400,
-    #     'book'       : 400,
-    #     'medium'     : 500,
-    #     'roman'      : 500,
-    #     'semibold'   : 600,
-    #     'demibold'   : 600,
-    #     'demi'       : 600,
-    #     'bold'       : 700,
-    #     'heavy'      : 800,
-    #     'extra bold' : 800,
-    #     'black'      : 900}
-    #
-    # get_weights returns a numeric value in the range 0-1000 or one of
-    # ‘light’, ‘normal’, ‘regular’, ‘book’, ‘medium’, ‘roman’, ‘semibold’,
-    # ‘demibold’, ‘demi’, ‘bold’, ‘heavy’, ‘extra bold’, ‘black’
+    # get_weights returns a numeric value in the range 0-1000 or one of (value in parenthesis)
+    # `ultralight` (100) `light` (200), `normal` (400), `regular` (400), `book` (400),
+    # `medium` (500), `roman` (500), `semibold` (600), `demibold` (600), `demi` (600), `bold` (700),
+    # `heavy` (800), `extra bold` (800), `black` (900)
+    # (from matplotlib/font_manager.py)
     weight = obj.get_weight()
-    if weight in [
-        "semibold",
-        "demibold",
-        "demi",
-        "bold",
-        "heavy",
-        "extra bold",
-        "black",
-    ] or (isinstance(weight, int) and weight > 550):
+    min_weight_bold = 550
+    if weight in ["semibold", "demibold", "demi", "bold", "heavy", "extra bold", "black"] or (
+        isinstance(weight, int) and weight > min_weight_bold
+    ):
         style.append("\\bfseries")
-
-    # \lfseries isn't that common yet
-    # elif weight == 'light' or (isinstance(weight, int) and weight < 300):
-    #     style.append('\\lfseries')
 
     if "\n" in text:
         # http://tex.stackexchange.com/a/124114/13262
@@ -114,51 +75,69 @@ def draw_text(data, obj):
         text = text.replace("\n ", "\\\\")
 
     props = ",\n  ".join(properties)
-    text = " ".join(style + [text])
+    text = " ".join([*style, text])
     content.append(f"\\draw {tikz_pos} node[\n  {props}\n]{{{text}}};\n")
     return data, content
 
 
-def _transform_positioning(ha, va):
+def _get_tikz_pos(obj: Text, data: dict, content: list) -> str:
+    """Gets the position in tikz format."""
+    pos = _annotation(obj, data, content) if isinstance(obj, Annotation) else obj.get_position()
+
+    if isinstance(pos, str):
+        return pos
+    if obj.axes:
+        # If the coordinates are relative to an axis, use `axis cs`.
+        return f"(axis cs:{pos[0]:{data['float format']}},{pos[1]:{data['float format']}})"
+    # relative to the entire figure, it's a getting a littler harder. See
+    # <http://tex.stackexchange.com/a/274902/13262> for a solution to the
+    # problem:
+    return (
+        f"({{$(current bounding box.south west)!{pos[0]:{data['float format']}}!"
+        "(current bounding box.south east)$}"
+        "|-"
+        f"{{$(current bounding box.south west)!{pos[1]:{data['float format']}}!"
+        "(current bounding box.north west)$})"
+    )
+
+
+def _transform_positioning(horizontal_alignment: str, vertical_aligment: str) -> str:
     """Converts matplotlib positioning to pgf node positioning.
+
     Not quite accurate but the results are equivalent more or less.
     """
-    if ha == "center" and va == "center":
+    if horizontal_alignment == "center" and vertical_aligment == "center":
         return None
 
     ha_mpl_to_tikz = {"right": "east", "left": "west", "center": ""}
-    va_mpl_to_tikz = {
-        "top": "north",
-        "bottom": "south",
-        "center": "",
-        "baseline": "base",
-    }
-    anchor = " ".join([va_mpl_to_tikz[va], ha_mpl_to_tikz[ha]]).strip()
+    va_mpl_to_tikz = {"top": "north", "bottom": "south", "center": "", "baseline": "base"}
+    anchor = " ".join(
+        [va_mpl_to_tikz[vertical_aligment], ha_mpl_to_tikz[horizontal_alignment]]
+    ).strip()
     return f"anchor={anchor}"
 
 
-def _parse_annotation_coords(ff, coords, xy):
-    """Convert a coordinate name and xy into a tikz coordinate string"""
-    # TODO: add support for all the missing ones
+def _parse_annotation_coords(float_format: str, coords: str, xy: Tuple[float, float]) -> str:
+    """Convert a coordinate name and xy into a tikz coordinate string."""
     if coords == "data":
         x, y = xy
-        return f"(axis cs:{x:{ff}},{y:{ff}})"
-    if (
-        coords == "figure points"
-        or coords == "figure pixels"
-        or coords == "figure fraction"
-        or coords == "axes points"
-        or coords == "axes pixels"
-        or coords == "axes fraction"
-        or coords == "data"
-        or coords == "polar"
-    ):
+        return f"(axis cs:{x:{float_format}},{y:{float_format}})"
+    if coords in [
+        "figure points",
+        "figure pixels",
+        "figure fraction",
+        "axes points",
+        "axes pixels",
+        "axes fraction",
+        "data",
+        "polar",
+    ]:
         raise NotImplementedError
     # unknown
     raise NotImplementedError
 
 
-def _get_arrow_style(obj, data):
+def _get_arrow_style(obj: FancyArrowPatch, data: dict) -> list:
     # get a style string from a FancyArrowPatch
     arrow_translate = {
         "-": ["-"],
@@ -184,21 +163,22 @@ def _get_arrow_style(obj, data):
     # To support multiple mpl versions, check in a loop instead of a dictionary lookup.
     latex_style = None
     for key, value in arrow_translate.items():
-        if key not in ArrowStyle._style_list:
+        if key not in ArrowStyle._style_list:  # noqa: SLF001  (there is no other way; not all ArrowStyle contain the .arrow attribute)
             continue
 
-        if ArrowStyle._style_list[key] == style_cls:
+        if ArrowStyle._style_list[key] == style_cls:  # noqa: SLF001
             latex_style = value
             break
 
     if latex_style is None:
-        raise NotImplementedError(f"Unknown arrow style {style_cls}")
+        msg = f"Unknown arrow style {style_cls}"
+        raise NotImplementedError(msg)
 
     data, col, _ = _color.mpl_color2xcolor(data, obj.get_ec())
-    return latex_style + ["draw=" + col]
+    return [*latex_style, "draw=" + col]
 
 
-def _annotation(obj, data, content):
+def _annotation(obj: Text, data: dict, content: list) -> str:
     ann_xy = obj.xy
     ann_xycoords = obj.xycoords
     ann_xytext = obj.xyann
@@ -217,10 +197,6 @@ def _annotation(obj, data, content):
         x, y = ann_xytext
         unit = "pt"
         text_pos = f"{xy_pos} ++({x:{ff}}{unit},{y:{ff}}{unit})"
-    # elif ann_textcoords == "offset pixels":
-    #     x, y = ann_xytext
-    #     unit = "px"
-    #     text_pos = f"{xy_pos} ++({x:{ff}}{unit},{y:{ff}}{unit})"
     else:
         try:
             text_pos = _parse_annotation_coords(ff, ann_xycoords, ann_xytext)
@@ -235,16 +211,15 @@ def _annotation(obj, data, content):
     return text_pos
 
 
-def _bbox(bbox, data, properties, scaling):
+def _bbox(bbox: FancyBboxPatch, data: dict, properties: list, scaling: float) -> None:
     bbox_style = bbox.get_boxstyle()
     if bbox.get_fill():
-        data, fc, _ = _color.mpl_color2xcolor(data, bbox.get_facecolor())
-        if fc:
-            properties.append(f"fill={fc}")
-    data, ec, _ = _color.mpl_color2xcolor(data, bbox.get_edgecolor())
-    if ec:
-        properties.append(f"draw={ec}")
-    # XXX: This is ugly, too
+        data, facecolor, _ = _color.mpl_color2xcolor(data, bbox.get_facecolor())
+        if facecolor:
+            properties.append(f"fill={facecolor}")
+    data, edgecolor, _ = _color.mpl_color2xcolor(data, bbox.get_edgecolor())
+    if edgecolor:
+        properties.append(f"draw={edgecolor}")
     ff = data["float format"]
     line_width = bbox.get_lw() * 0.4
     properties.append(f"line width={line_width:{ff}}pt")
@@ -252,43 +227,49 @@ def _bbox(bbox, data, properties, scaling):
     properties.append(f"inner sep={inner_sep:{ff}}pt")
     if bbox.get_alpha():
         properties.append(f"fill opacity={bbox.get_alpha()}")
+
+    # Process the style and linestyle of the bounding box.
+    _bbox_style(bbox_style, data, properties)
+    _bbox_linestyle(bbox, properties, scaling)
+
+
+def _bbox_style(bbox_style: BoxStyle, data: dict, properties: list) -> None:
     # Rounded boxes
-    if isinstance(bbox_style, mpl.patches.BoxStyle.Round):
+    if isinstance(bbox_style, BoxStyle.Round):
         properties.append("rounded corners")
-    elif isinstance(bbox_style, mpl.patches.BoxStyle.RArrow):
+    elif isinstance(bbox_style, BoxStyle.RArrow):
         data["tikz libs"].add("shapes.arrows")
         properties.append("single arrow")
-    elif isinstance(bbox_style, mpl.patches.BoxStyle.LArrow):
+    elif isinstance(bbox_style, BoxStyle.LArrow):
         data["tikz libs"].add("shapes.arrows")
         properties.append("single arrow")
         properties.append("shape border rotate=180")
-    elif isinstance(bbox_style, mpl.patches.BoxStyle.DArrow):
+    elif isinstance(bbox_style, BoxStyle.DArrow):
         data["tikz libs"].add("shapes.arrows")
         properties.append("double arrow")
-    elif isinstance(bbox_style, mpl.patches.BoxStyle.Circle):
+    elif isinstance(bbox_style, BoxStyle.Circle):
         properties.append("circle")
-    elif isinstance(bbox_style, mpl.patches.BoxStyle.Roundtooth):
+    elif isinstance(bbox_style, BoxStyle.Roundtooth):
         properties.append("decorate")
         properties.append("decoration={snake,amplitude=0.5,segment length=3}")
-    elif isinstance(bbox_style, mpl.patches.BoxStyle.Sawtooth):
+    elif isinstance(bbox_style, BoxStyle.Sawtooth):
         properties.append("decorate")
         properties.append("decoration={zigzag,amplitude=0.5,segment length=3}")
-    else:
-        # TODO Round4
-        assert isinstance(bbox_style, mpl.patches.BoxStyle.Square)
+    elif not isinstance(bbox_style, BoxStyle.Square):
+        msg = f"bbox_style '{type(bbox_style)}' not implemented."
+        raise NotImplementedError(msg)
 
-    # Line style
+
+def _bbox_linestyle(bbox: FancyBboxPatch, properties: list, scaling: float) -> None:
     if bbox.get_ls() == "dotted":
         properties.append("dotted")
     elif bbox.get_ls() == "dashed":
         properties.append("dashed")
-    # TODO Check if there is there any way to extract the dashdot
-    # pattern from matplotlib instead of hardcoding
-    # an approximation?
     elif bbox.get_ls() == "dashdot":
         s1 = 1.0 / scaling
         s3 = 3.0 / scaling
         s6 = 6.0 / scaling
         properties.append(f"dash pattern=on {s1:.3g}pt off {s3:.3g}pt on {s6:.3g}pt off {s3:.3g}pt")
-    else:
-        assert bbox.get_ls() == "solid"
+    elif bbox.get_ls() != "solid":
+        msg = f"bbox line style '{bbox.get_ls()}' not implemented."
+        raise NotImplementedError(msg)
