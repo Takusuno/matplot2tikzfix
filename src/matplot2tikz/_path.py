@@ -365,6 +365,31 @@ def get_draw_options(  # noqa: PLR0913
         if ls_ is not None and ls_ != "solid":
             draw_options.append(ls_)
 
+    if hatch is not None:
+        # In matplotlib hatches are rendered with edge color and linewidth
+        # In PGFPlots patterns are rendered in 'pattern color' which defaults to
+        # black and according to opacity fill.
+        # No 'pattern line width' option exist.
+        # This can be achieved with custom patterns, see _hatches.py
+
+        # There exist an obj.get_hatch_color() method in the mpl API,
+        # but it seems to be unused
+        try:
+            hc = obj._hatch_color  # noqa: SLF001
+        except AttributeError:  # Fallback to edge color
+            if ec is None or ec_rgba[3] == 0.0:
+                # Assuming that a hatch marker indicates that hatches are wanted, also
+                # when the edge color is (0, 0, 0, 0), i.e., the edge is invisible
+                h_col, h_rgba = "black", np.array([0, 0, 0, 1])
+            else:
+                h_col, h_rgba = ec_col, ec_rgba
+        else:
+            data, h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
+        finally:
+            if h_rgba[3] > 0:
+                data, pattern = _mpl_hatch2pgfp_pattern(data, hatch, h_col, h_rgba)
+                draw_options += pattern
+
     return data, draw_options
 
 
