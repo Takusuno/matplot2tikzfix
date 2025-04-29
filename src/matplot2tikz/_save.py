@@ -171,6 +171,7 @@ def get_tikz_code(  # noqa: PLR0913
     # not as default value because gcf() would be evaluated at import time
     if figure == "gcf":
         figure = plt.gcf()
+
     data = {
         "axis width": axis_width,
         "axis height": axis_height,
@@ -191,6 +192,17 @@ def get_tikz_code(  # noqa: PLR0913
         "extra groupstyle options [base]": {}
         if extra_groupstyle_parameters is None
         else extra_groupstyle_parameters,
+        # rectangle_legends is used to keep track of which rectangles have already
+        # had \addlegendimage added. There should be only one \addlegendimage per
+        # bar chart data series.
+        "rectangle_legends": set(),
+        "float format": float_format,
+        "table_row_sep": table_row_sep,
+        "include_disclaimer": include_disclaimer,
+        "wrap": wrap,
+        "extra_tikzpicture_parameters": extra_tikzpicture_parameters,
+        "extra_lines_start": extra_lines_start,
+        "standalone": standalone,
     }
 
     if filepath:
@@ -201,10 +213,7 @@ def get_tikz_code(  # noqa: PLR0913
         directory = tempfile.mkdtemp()
         data["output dir"] = Path(directory)
         data["base name"] = "tmp"
-    # rectangle_legends is used to keep track of which rectangles have already
-    # had \addlegendimage added. There should be only one \addlegendimage per
-    # bar chart data series.
-    data["rectangle_legends"] = set()
+
     if extra_axis_parameters:
         data["extra axis options [base]"] = set(extra_axis_parameters).copy()
     else:
@@ -215,9 +224,6 @@ def get_tikz_code(  # noqa: PLR0913
     else:
         savefig_dpi = mpl.rcParams["savefig.dpi"]
         data["dpi"] = savefig_dpi if isinstance(savefig_dpi, int) else mpl.rcParams["figure.dpi"]
-
-    data["float format"] = float_format
-    data["table_row_sep"] = table_row_sep
 
     try:
         data["flavor"] = Flavors[flavor.lower()]
@@ -239,36 +245,7 @@ def get_tikz_code(  # noqa: PLR0913
     if data.get("is_in_groupplot_env"):
         content.extend(data["flavor"].end("groupplot") + "\n\n")
 
-    # write disclaimer to the file header
-    code = """"""
-
-    if include_disclaimer:
-        disclaimer = f"This file was created with matplot2tikz v{__version__}."
-        code += _tex_comment(disclaimer)
-
-    # write the contents
-    if wrap and add_axis_environment:
-        code += data["flavor"].start("tikzpicture")
-        if extra_tikzpicture_parameters:
-            code += "[\n" + ",\n".join(extra_tikzpicture_parameters) + "\n]"
-        code += "\n"
-        if extra_lines_start:
-            code += "\n".join(extra_lines_start) + "\n"
-        code += "\n"
-
-    coldefs = _get_color_definitions(data)
-    if coldefs:
-        code += "\n".join(coldefs) + "\n\n"
-
-    code += "".join(content)
-
-    if wrap and add_axis_environment:
-        code += data["flavor"].end("tikzpicture") + "\n"
-
-    if standalone:
-        # When using pdflatex, \\DeclareUnicodeCharacter is necessary.
-        code = data["flavor"].standalone(code)
-    return code
+    return _generate_code(data, content)
 
 
 def save(
@@ -290,6 +267,39 @@ def save(
         filepath = Path(filepath)
     with filepath.open("w", encoding=encoding) as f:
         f.write(code)
+
+
+def _generate_code(data: dict, content: list) -> str:
+    # write disclaimer to the file header
+    code = """"""
+
+    if data["include_disclaimer"]:
+        disclaimer = f"This file was created with matplot2tikz v{__version__}."
+        code += _tex_comment(disclaimer)
+
+    # write the contents
+    if data["wrap"] and data["add axis environment"]:
+        code += data["flavor"].start("tikzpicture")
+        if data["extra_tikzpicture_parameters"]:
+            code += "[\n" + ",\n".join(data["extra_tikzpicture_parameters"]) + "\n]"
+        code += "\n"
+        if data["extra_lines_start"]:
+            code += "\n".join(data["extra_lines_start"]) + "\n"
+        code += "\n"
+
+    coldefs = _get_color_definitions(data)
+    if coldefs:
+        code += "\n".join(coldefs) + "\n\n"
+
+    code += "".join(content)
+
+    if data["wrap"] and data["add axis environment"]:
+        code += data["flavor"].end("tikzpicture") + "\n"
+
+    if data["standalone"]:
+        # When using pdflatex, \\DeclareUnicodeCharacter is necessary.
+        code = data["flavor"].standalone(code)
+    return code
 
 
 def _tex_comment(comment: str) -> str:
