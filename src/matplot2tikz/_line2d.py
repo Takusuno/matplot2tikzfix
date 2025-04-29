@@ -179,7 +179,7 @@ def _marker(
     addplot_options.append(f"mark options={{{opts}}}")
 
 
-def _table(obj, data):  # noqa: C901
+def _table(obj, data):
     # get_xydata() always gives float data, no matter what
     xdata, ydata = obj.get_xydata().T
 
