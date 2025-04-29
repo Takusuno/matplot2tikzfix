@@ -333,14 +333,14 @@ def get_draw_options(  # noqa: PLR0913
     draw_options = []
 
     if ec is not None:
-        data, ec_col, ec_rgba = _color.mpl_color2xcolor(data, ec)
+        ec_col, ec_rgba = _color.mpl_color2xcolor(data, ec)
         if ec_rgba[3] > 0:
             draw_options.append(f"draw={ec_col}")
         else:
             draw_options.append("draw=none")
 
     if fc is not None:
-        data, fc_col, fc_rgba = _color.mpl_color2xcolor(data, fc)
+        fc_col, fc_rgba = _color.mpl_color2xcolor(data, fc)
         if fc_rgba[3] > 0.0:
             # Don't draw if it's invisible anyways.
             draw_options.append(f"fill={fc_col}")

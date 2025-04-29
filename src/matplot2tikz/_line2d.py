@@ -33,7 +33,7 @@ def draw_line2d(data, obj):
 
     # get line color
     color = obj.get_color()
-    data, line_xcolor, _ = mycol.mpl_color2xcolor(data, color)
+    line_xcolor, _ = mycol.mpl_color2xcolor(data, color)
     addplot_options.append(line_xcolor)
 
     # get draw style
@@ -159,7 +159,7 @@ def _marker(
     ):
         mark_options.append("fill opacity=0")
     else:
-        data, face_xcolor, _ = mycol.mpl_color2xcolor(data, marker_face_color)
+        face_xcolor, _ = mycol.mpl_color2xcolor(data, marker_face_color)
         if face_xcolor != line_xcolor:
             mark_options.append("fill=" + face_xcolor)
 
@@ -172,7 +172,7 @@ def _marker(
         pass
 
     if not face_and_edge_have_equal_color:
-        data, draw_xcolor, _ = mycol.mpl_color2xcolor(data, marker_edge_color)
+        draw_xcolor, _ = mycol.mpl_color2xcolor(data, marker_edge_color)
         if draw_xcolor != line_xcolor:
             mark_options.append("draw=" + draw_xcolor)
     opts = ",".join(mark_options)

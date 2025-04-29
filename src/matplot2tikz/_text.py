@@ -43,7 +43,7 @@ def draw_text(data: dict, obj: Text) -> Tuple[dict, list]:
     anchor = _transform_positioning(ha, va)
     if anchor is not None:
         properties.append(anchor)
-    data, col, _ = _color.mpl_color2xcolor(data, converter.to_rgb(obj.get_color()))
+    col, _ = _color.mpl_color2xcolor(data, converter.to_rgb(obj.get_color()))
     properties.append(f"text={col}")
     properties.append(f"rotate={obj.get_rotation():.1f}")
 
@@ -174,7 +174,7 @@ def _get_arrow_style(obj: FancyArrowPatch, data: dict) -> list:
         msg = f"Unknown arrow style {style_cls}"
         raise NotImplementedError(msg)
 
-    data, col, _ = _color.mpl_color2xcolor(data, obj.get_ec())
+    col, _ = _color.mpl_color2xcolor(data, obj.get_ec())
     return [*latex_style, "draw=" + col]
 
 
@@ -214,10 +214,10 @@ def _annotation(obj: Text, data: dict, content: list) -> str:
 def _bbox(bbox: FancyBboxPatch, data: dict, properties: list, scaling: float) -> None:
     bbox_style = bbox.get_boxstyle()
     if bbox.get_fill():
-        data, facecolor, _ = _color.mpl_color2xcolor(data, bbox.get_facecolor())
+        facecolor, _ = _color.mpl_color2xcolor(data, bbox.get_facecolor())
         if facecolor:
             properties.append(f"fill={facecolor}")
-    data, edgecolor, _ = _color.mpl_color2xcolor(data, bbox.get_edgecolor())
+    edgecolor, _ = _color.mpl_color2xcolor(data, bbox.get_edgecolor())
     if edgecolor:
         properties.append(f"draw={edgecolor}")
     ff = data["float format"]

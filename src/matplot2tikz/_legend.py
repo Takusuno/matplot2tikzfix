@@ -51,7 +51,7 @@ def draw_legend(data, obj):
     # Get the edgecolor of the box
     if obj.get_frame_on():
         edgecolor = obj.get_frame().get_edgecolor()
-        data, frame_xcolor, _ = mycol.mpl_color2xcolor(data, edgecolor)
+        frame_xcolor, _ = mycol.mpl_color2xcolor(data, edgecolor)
         if frame_xcolor != "black":  # black is default
             legend_style.append(f"draw={frame_xcolor}")
     else:
@@ -59,7 +59,7 @@ def draw_legend(data, obj):
 
     # Get the facecolor of the box
     facecolor = obj.get_frame().get_facecolor()
-    data, fill_xcolor, _ = mycol.mpl_color2xcolor(data, facecolor)
+    fill_xcolor, _ = mycol.mpl_color2xcolor(data, facecolor)
     if fill_xcolor != "white":  # white is default
         legend_style.append(f"fill={fill_xcolor}")
 

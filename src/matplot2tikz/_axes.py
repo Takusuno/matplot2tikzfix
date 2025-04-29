@@ -48,7 +48,7 @@ class Axes:
             labelcolor = obj.xaxis.label.get_c()
 
             if labelcolor != "black":
-                data, col, _ = _color.mpl_color2xcolor(data, labelcolor)
+                col, _ = _color.mpl_color2xcolor(data, labelcolor)
                 self.axis_options.append(f"xlabel=\\textcolor{{{col}}}{{{xlabel}}}")
             else:
                 self.axis_options.append(f"xlabel={{{xlabel}}}")
@@ -63,7 +63,7 @@ class Axes:
 
             labelcolor = obj.yaxis.label.get_c()
             if labelcolor != "black":
-                data, col, _ = _color.mpl_color2xcolor(data, labelcolor)
+                col, _ = _color.mpl_color2xcolor(data, labelcolor)
                 self.axis_options.append(f"ylabel=\\textcolor{{{col}}}{{{ylabel}}}")
             else:
                 self.axis_options.append(f"ylabel={{{ylabel}}}")
@@ -133,14 +133,14 @@ class Axes:
         # axis line styles
         # Assume that the bottom edge color is the color of the entire box.
         axcol = obj.spines["bottom"].get_edgecolor()
-        data, col, _ = _color.mpl_color2xcolor(data, axcol)
+        col, _ = _color.mpl_color2xcolor(data, axcol)
         if col != "black":
             self.axis_options.append(f"axis line style={{{col}}}")
 
         # background color
         bgcolor = obj.get_facecolor()
 
-        data, col, _ = _color.mpl_color2xcolor(data, bgcolor)
+        col, _ = _color.mpl_color2xcolor(data, bgcolor)
         if col != "white":
             self.axis_options.append(f"axis background/.style={{fill={col}}}")
 
@@ -231,7 +231,7 @@ class Axes:
             pass
         else:
             c0 = l0.get_color()
-            data, xtickcolor, _ = _color.mpl_color2xcolor(data, c0)
+            xtickcolor, _ = _color.mpl_color2xcolor(data, c0)
             self.axis_options.append(f"xtick style={{color={xtickcolor}}}")
 
         try:
@@ -240,7 +240,7 @@ class Axes:
             pass
         else:
             c0 = l0.get_color()
-            data, ytickcolor, _ = _color.mpl_color2xcolor(data, c0)
+            ytickcolor, _ = _color.mpl_color2xcolor(data, c0)
             self.axis_options.append(f"ytick style={{color={ytickcolor}}}")
 
         # Find tick direction
@@ -320,7 +320,7 @@ class Axes:
         xlines = obj.get_xgridlines()
         if xlines:
             xgridcolor = xlines[0].get_color()
-            data, col, _ = _color.mpl_color2xcolor(data, xgridcolor)
+            col, _ = _color.mpl_color2xcolor(data, xgridcolor)
             if col != "black":
                 self.axis_options.append(f"x grid style={{{col}}}")
 
@@ -332,7 +332,7 @@ class Axes:
         ylines = obj.get_ygridlines()
         if ylines:
             ygridcolor = ylines[0].get_color()
-            data, col, _ = _color.mpl_color2xcolor(data, ygridcolor)
+            col, _ = _color.mpl_color2xcolor(data, ygridcolor)
             if col != "black":
                 self.axis_options.append(f"y grid style={{{col}}}")
 
