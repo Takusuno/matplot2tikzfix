@@ -384,7 +384,7 @@ def get_draw_options(  # noqa: PLR0913
             else:
                 h_col, h_rgba = ec_col, ec_rgba
         else:
-            data, h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
+            h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
         finally:
             if h_rgba[3] > 0:
                 data, pattern = _mpl_hatch2pgfp_pattern(data, hatch, h_col, h_rgba)
