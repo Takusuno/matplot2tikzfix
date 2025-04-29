@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+from typing import Optional
+
 import matplotlib as mpl
 import numpy as np
+from matplotlib.collections import Collection
 from matplotlib.dates import DateConverter, num2date
+from matplotlib.lines import Line2D, _get_dash_pattern
 from matplotlib.markers import MarkerStyle
+from matplotlib.patches import Patch
 
 from . import _color, _files
 from ._axes import _mpl_cmap2pgf_cmap
@@ -313,20 +320,16 @@ def draw_pathcollection(data, obj):
     return data, content
 
 
-def get_draw_options(data, obj, ec, fc, ls, lw, hatch=None):
-    """Get the draw options for a given (patch) object.
-    Get the draw options for a given (patch) object.
-    Input:
-        data -
-        obj -
-        ec - edge color
-        fc - face color
-        ls - linestyle
-        lw - linewidth
-        hatch=None - hatch, i.e., pattern within closed path
-    Output:
-        draw_options - list
-    """
+def get_draw_options(  # noqa: PLR0913
+    data: dict,
+    obj: Collection | Patch,
+    ec: str | tuple | None,
+    fc: str | tuple | None,
+    ls: str | tuple | None,
+    lw: float | None,
+    hatch: Optional[str] = None,
+) -> tuple[dict, list]:
+    """Get the draw options for a given (patch) object."""
     draw_options = []
 
     if ec is not None:
@@ -362,41 +365,16 @@ def get_draw_options(data, obj, ec, fc, ls, lw, hatch=None):
         if ls_ is not None and ls_ != "solid":
             draw_options.append(ls_)
 
-    if hatch is not None:
-        # In matplotlib hatches are rendered with edge color and linewidth
-        # In PGFPlots patterns are rendered in 'pattern color' which defaults to
-        # black and according to opacity fill.
-        # No 'pattern line width' option exist.
-        # This can be achieved with custom patterns, see _hatches.py
-
-        # There exist an obj.get_hatch_color() method in the mpl API,
-        # but it seems to be unused
-        try:
-            hc = obj._hatch_color
-        except AttributeError:  # Fallback to edge color
-            if ec is None or ec_rgba[3] == 0.0:
-                # Assuming that a hatch marker indicates that hatches are wanted, also
-                # when the edge color is (0, 0, 0, 0), i.e., the edge is invisible
-                h_col, h_rgba = "black", np.array([0, 0, 0, 1])
-            else:
-                h_col, h_rgba = ec_col, ec_rgba
-        else:
-            data, h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
-        finally:
-            if h_rgba[3] > 0:
-                data, pattern = _mpl_hatch2pgfp_pattern(data, hatch, h_col, h_rgba)
-                draw_options += pattern
-
     return data, draw_options
 
 
-def mpl_linewidth2pgfp_linewidth(data, line_width):
+def mpl_linewidth2pgfp_linewidth(data: dict, line_width: float) -> str:
     # PGFplots gives line widths in pt, matplotlib in axes space. Translate.
     # Scale such that the default mpl line width (1.5) is mapped to the PGFplots
     # line with semithick, 0.6. From a visual comparison, semithick or even thick
     # matches best with the default mpl style.
-    # Keep the line with in units of decipoint to make sure we stay in integers.
-    line_width_decipoint = line_width * 4  # 4 = 10 * 0.6 / 1.5
+    # Keep the line width in units of decipoint to make sure we stay in integers.
+    line_width_decipoint = line_width * 4
     try:
         # https://github.com/pgf-tikz/pgf/blob/e9c22dc9fe48f975b7fdb32181f03090b3747499/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex#L1574
         return {
@@ -414,56 +392,53 @@ def mpl_linewidth2pgfp_linewidth(data, line_width):
         return f"line width={line_width_decipoint / 10:{ff}}pt"
 
 
-def mpl_linestyle2pgfplots_linestyle(data, line_style, line=None):
-    """Translates a line style of matplotlib to the corresponding style
-    in PGFPlots.
-    """
+def mpl_linestyle2pgfplots_linestyle(
+    data: dict, line_style: str | tuple, line: Optional[Line2D] = None
+) -> str | None:
+    """Translates a line style of matplotlib to the corresponding style in PGFPlots."""
     # linestyle is a string or dash tuple. Legal string values are
     # solid|dashed|dashdot|dotted.  The dash tuple is (offset, onoffseq) where onoffseq
     # is an even length tuple of on and off ink in points.
     #
-    # solid: [(None, None), (None, None), ..., (None, None)]
-    # dashed: (0, (6.0, 6.0))
-    # dotted: (0, (1.0, 3.0))
-    # dashdot: (0, (3.0, 5.0, 1.0, 5.0))
+    # solid: [(None, None), (None, None), ..., (None, None)]  # noqa: ERA001
+    # dashed: (0, (6.0, 6.0))                                 # noqa: ERA001
+    # dotted: (0, (1.0, 3.0))                                 # noqa: ERA001
+    # dashdot: (0, (3.0, 5.0, 1.0, 5.0))                      # noqa: ERA001
     ff = data["float format"]
     if isinstance(line_style, tuple):
         if line_style[0] is None or line_style[1] is None:
             return None
 
-        if len(line_style[1]) == 2:
-            return f"dash pattern=on {line_style[1][0]:{ff}}pt off {line_style[1][1]:{ff}}pt"
-
-        assert len(line_style[1]) == 4
-        return (
-            "dash pattern="
-            f"on {line_style[1][0]:{ff}}pt "
-            f"off {line_style[1][1]:{ff}}pt "
-            f"on {line_style[1][2]:{ff}}pt "
-            f"off {line_style[1][3]:{ff}}pt"
+        pgf_line_style = "dash pattern="
+        pgf_line_style += " ".join(
+            [
+                f"on {ls_on:{ff}}pt off {ls_off:{ff}}pt"
+                for ls_on, ls_off in zip(line_style[1][::2], line_style[1][1::2])
+            ]
         )
+        return pgf_line_style
 
-    if isinstance(line, mpl.lines.Line2D) and line.is_dashed():
+    if isinstance(line, Line2D) and line.is_dashed():
         # see matplotlib.lines.Line2D.set_dashes
 
         # get defaults
-        default_dashOffset, default_dashSeq = mpl.lines._get_dash_pattern(line_style)
+        default_dash_offset, default_dash_seq = _get_dash_pattern(line_style)
 
         # get dash format of line under test
-        dashOffset, dashSeq = line._unscaled_dash_pattern
+        dash_offset, dash_seq = line._unscaled_dash_pattern  # noqa: SLF001
 
-        lst = list()
-        if dashSeq != default_dashSeq:
+        lst = []
+        if dash_seq != default_dash_seq:
             # generate own dash sequence
             lst.append(
                 "dash pattern="
                 + " ".join(
-                    f"on {a:{ff}}pt off {b:{ff}}pt" for a, b in zip(dashSeq[0::2], dashSeq[1::2])
+                    f"on {a:{ff}}pt off {b:{ff}}pt" for a, b in zip(dash_seq[0::2], dash_seq[1::2])
                 )
             )
 
-        if dashOffset != default_dashOffset:
-            lst.append(f"dash phase={dashOffset}pt")
+        if dash_offset != default_dash_offset:
+            lst.append(f"dash phase={dash_offset}pt")
 
         if len(lst) > 0:
             return ", ".join(lst)
