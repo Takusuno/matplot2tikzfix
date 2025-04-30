@@ -1,4 +1,3 @@
-from typing import Tuple
 
 from matplotlib.backends.backend_agg import RendererAgg
 from matplotlib.collections import QuadMesh
