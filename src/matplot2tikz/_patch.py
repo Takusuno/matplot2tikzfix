@@ -9,25 +9,28 @@ def draw_patch(data, obj):
     if isinstance(obj, mpl.patches.FancyArrowPatch):
         data, draw_options = mypath.get_draw_options(
             data,
-            obj,
-            obj.get_edgecolor(),
-            # get_fillcolor for the arrow refers to the head, not the path
-            None,
-            obj.get_linestyle(),
-            obj.get_linewidth(),
-            obj.get_hatch(),
+            mypath.LineData(
+                obj=obj,
+                ec=obj.get_edgecolor(),
+                fc=None,  # get_fillcolor for the arrow refers to the head, not the path
+                ls=obj.get_linestyle(),
+                lw=obj.get_linewidth(),
+                hatch=obj.get_hatch(),
+            ),
         )
         return _draw_fancy_arrow(data, obj, draw_options)
 
     # Gather the draw options.
     data, draw_options = mypath.get_draw_options(
         data,
-        obj,
-        obj.get_edgecolor(),
-        obj.get_facecolor(),
-        obj.get_linestyle(),
-        obj.get_linewidth(),
-        obj.get_hatch(),
+        mypath.LineData(
+            obj=obj,
+            ec=obj.get_edgecolor(),
+            fc=obj.get_facecolor(),
+            ls=obj.get_linestyle(),
+            lw=obj.get_linewidth(),
+            hatch=obj.get_hatch(),
+        ),
     )
 
     if isinstance(obj, mpl.patches.Rectangle):
@@ -88,7 +91,9 @@ def draw_patchcollection(data, obj):
         if t is not None:
             path = path.transformed(mpl.transforms.Affine2D(t).translate(*off))
 
-        data, draw_options = mypath.get_draw_options(data, obj, ec, fc, ls, w)
+        data, draw_options = mypath.get_draw_options(
+            data, mypath.LineData(obj=obj, ec=ec, fc=fc, ls=ls, lw=w)
+        )
         data, cont, draw_options, is_area = mypath.draw_path(data, path, draw_options=draw_options)
         content.append(cont)
 
