@@ -9,7 +9,7 @@ from matplotlib.text import Annotation, Text
 from . import _color
 
 
-def draw_text(data: dict, obj: Text) -> Tuple[dict, list]:
+def draw_text(data: dict, obj: Text) -> list:
     """Paints text on the graph.
 
     :return: Tuple with data and content.
@@ -25,7 +25,7 @@ def draw_text(data: dict, obj: Text) -> Tuple[dict, list]:
     if text in ["", data["current axis title"]]:
         # Text nodes which are direct children of Axes are typically titles.  They are
         # already captured by the `title` property of pgfplots axes, so skip them here.
-        return data, content
+        return content
 
     size = obj.get_size()
     bbox = obj.get_bbox_patch()
@@ -77,7 +77,7 @@ def draw_text(data: dict, obj: Text) -> Tuple[dict, list]:
     props = ",\n  ".join(properties)
     text = " ".join([*style, text])
     content.append(f"\\draw {tikz_pos} node[\n  {props}\n]{{{text}}};\n")
-    return data, content
+    return content
 
 
 def _get_tikz_pos(obj: Text, data: dict, content: list) -> str:

@@ -143,7 +143,7 @@ def draw_path(
     return path_command, draw_options, is_area
 
 
-def draw_pathcollection(data: dict, obj: PathCollection) -> tuple[dict, list]:
+def draw_pathcollection(data: dict, obj: PathCollection) -> list:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
     # gather data
@@ -214,7 +214,7 @@ def draw_pathcollection(data: dict, obj: PathCollection) -> tuple[dict, list]:
     if path_collection_data.legend_text is not None:
         content.append(f"\\addlegendentry{{{path_collection_data.legend_text}}}\n")
 
-    return data, content
+    return content
 
 
 def _draw_pathcollection_scatter_colormap(data: dict, pcd: PathCollectionData) -> None:

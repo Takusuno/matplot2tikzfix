@@ -101,7 +101,7 @@ def draw_patchcollection(data, obj):
     legend = _patch_legend(obj, draw_options, legend_type) or "\n"
     content.append(legend)
 
-    return data, content
+    return content
 
 
 def _draw_polygon(data, obj, draw_options):
@@ -109,7 +109,7 @@ def _draw_polygon(data, obj, draw_options):
     legend_type = "area legend" if is_area else "line legend"
     content += _patch_legend(obj, draw_options, legend_type)
 
-    return data, content
+    return content
 
 
 def _draw_rectangle(data, obj, draw_options):
@@ -120,7 +120,7 @@ def _draw_rectangle(data, obj, draw_options):
     # PGFPlots
     label = obj.get_label()
     if label == "":
-        return data, []
+        return []
 
     # Get actual label, bar charts by default only give rectangles labels of
     # "_nolegend_". See <https://stackoverflow.com/q/35881290/353337>.
@@ -145,7 +145,7 @@ def _draw_rectangle(data, obj, draw_options):
         draw_opts = ",".join(draw_options)
         cont += f"\\addlegendimage{{ybar,ybar legend,{draw_opts}}}\n"
         cont += f"\\addlegendentry{{{label}}}\n\n"
-    return data, cont
+    return cont
 
 
 def _draw_ellipse(data, obj, draw_options):
@@ -166,7 +166,7 @@ def _draw_ellipse(data, obj, draw_options):
     )
     content += _patch_legend(obj, draw_options, "area legend")
 
-    return data, content
+    return content
 
 
 def _draw_circle(data, obj, draw_options):
@@ -176,7 +176,7 @@ def _draw_circle(data, obj, draw_options):
     do = ",".join(draw_options)
     content = f"\\draw[{do}] (axis cs:{x:{ff}},{y:{ff}}) circle ({obj.get_radius():{ff}});\n"
     content += _patch_legend(obj, draw_options, "area legend")
-    return data, content
+    return content
 
 
 def _draw_fancy_arrow(data, obj, draw_options):
@@ -194,4 +194,4 @@ def _draw_fancy_arrow(data, obj, draw_options):
             data, obj._path_original, draw_options=draw_options + style
         )
     content += _patch_legend(obj, draw_options, "line legend")
-    return data, content
+    return content

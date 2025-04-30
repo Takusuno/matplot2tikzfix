@@ -24,7 +24,7 @@ def draw_line2d(data, obj):
         xdata = [xdata]
 
     if len(xdata) == 0:
-        return data, []
+        return []
 
     # get the linewidth (in pt)
     line_width = mypath.mpl_linewidth2pgfp_linewidth(data, obj.get_linewidth())
@@ -98,7 +98,7 @@ def draw_line2d(data, obj):
     if legend_text is not None:
         content.append(f"\\addlegendentry{{{legend_text}}}\n")
 
-    return data, content
+    return content
 
 
 def draw_linecollection(data, obj):
@@ -123,7 +123,7 @@ def draw_linecollection(data, obj):
         cont, _, _ = mypath.draw_path(data, path, draw_options=options, simplify=False)
         content.append(cont + "\n")
 
-    return data, content
+    return content
 
 
 def _marker(

@@ -7,7 +7,7 @@ from PIL import Image
 from . import _files
 
 
-def draw_quadmesh(data: dict, obj: QuadMesh) -> Tuple[dict, list]:
+def draw_quadmesh(data: dict, obj: QuadMesh) -> list:
     """Returns the PGFPlots code for a graphics environment holding a rendering of the object."""
     content = []
 
@@ -60,4 +60,4 @@ def draw_quadmesh(data: dict, obj: QuadMesh) -> Tuple[dict, list]:
         f"ymin={extent[2]:{ff}}, ymax={extent[3]:{ff}}] {{{posix_filepath}}};\n"
     )
 
-    return data, content
+    return content

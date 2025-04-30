@@ -61,4 +61,4 @@ def draw_image(data, obj):
         f"xmin={extent[0]:{ff}}, xmax={extent[1]:{ff}}, "
         f"ymin={extent[2]:{ff}}, ymax={extent[3]:{ff}}] {{{posix_filepath}}};\n"
     )
-    return data, content
+    return content

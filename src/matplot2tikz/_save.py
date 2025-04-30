@@ -345,7 +345,7 @@ class _ContentManager:
         return content_out
 
 
-def _draw_collection(data: dict, child: Collection) -> Tuple[dict, list]:
+def _draw_collection(data: dict, child: Collection) -> list:
     if isinstance(child, PathCollection):
         return _path.draw_pathcollection(data, child)
     if isinstance(child, LineCollection):
@@ -382,8 +382,7 @@ def _recurse(data: dict, obj: Artist) -> Tuple[dict, list]:
                 (Text, _text.draw_text),
             ):
                 if isinstance(child, child_type):
-                    data, cont = process_func(data, child)
-                    content.extend(cont, child.get_zorder())
+                    content.extend(process_func(data, child), child.get_zorder())
                     break
             else:
                 warnings.warn(
