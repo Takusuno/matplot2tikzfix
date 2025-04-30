@@ -94,7 +94,7 @@ def draw_patchcollection(data, obj):
         draw_options = mypath.get_draw_options(
             data, mypath.LineData(obj=obj, ec=ec, fc=fc, ls=ls, lw=w)
         )
-        data, cont, draw_options, is_area = mypath.draw_path(data, path, draw_options=draw_options)
+        cont, draw_options, is_area = mypath.draw_path(data, path, draw_options=draw_options)
         content.append(cont)
 
     legend_type = "area legend" if is_area else "line legend"
@@ -105,7 +105,7 @@ def draw_patchcollection(data, obj):
 
 
 def _draw_polygon(data, obj, draw_options):
-    data, content, _, is_area = mypath.draw_path(data, obj.get_path(), draw_options=draw_options)
+    content, _, is_area = mypath.draw_path(data, obj.get_path(), draw_options=draw_options)
     legend_type = "area legend" if is_area else "line legend"
     content += _patch_legend(obj, draw_options, legend_type)
 
@@ -190,7 +190,7 @@ def _draw_fancy_arrow(data, obj, draw_options):
             f"(axis cs:{posB[0]:{ff}},{posB[1]:{ff}});\n"
         )
     else:
-        data, content, _, _ = mypath.draw_path(
+        content, _, _ = mypath.draw_path(
             data, obj._path_original, draw_options=draw_options + style
         )
     content += _patch_legend(obj, draw_options, "line legend")

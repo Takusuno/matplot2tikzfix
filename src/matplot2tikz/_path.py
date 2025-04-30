@@ -52,7 +52,7 @@ class PathCollectionData:
 
 def draw_path(
     data: dict, path: Path, draw_options: Optional[list] = None, simplify: Optional[bool] = None
-) -> tuple[dict, str, list, bool]:
+) -> tuple[str, list, bool]:
     """Adds code for drawing an ordinary path in PGFPlots (TikZ)."""
     # For some reasons, matplotlib sometimes adds void paths which consist of
     # only one point and have 0 fill opacity. To not let those clutter the
@@ -140,7 +140,7 @@ def draw_path(
     do = "[{}]".format(", ".join(draw_options)) if draw_options else ""
     path_command = "\\path {}\n{};\n".format(do, "\n".join(nodes))
 
-    return data, path_command, draw_options, is_area
+    return path_command, draw_options, is_area
 
 
 def draw_pathcollection(data: dict, obj: PathCollection) -> tuple[dict, list]:
