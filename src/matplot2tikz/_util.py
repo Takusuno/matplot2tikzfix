@@ -1,20 +1,25 @@
 """Several utility functions used at various parts of matplot2tikz library."""
 
+from __future__ import annotations
+
 import functools
 import re
-from typing import Tuple
+from typing import TYPE_CHECKING, Tuple
 
 import matplotlib.transforms
 import numpy as np
-from matplotlib.axes import Axes
-from matplotlib.lines import Line2D
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.collections import PathCollection
+    from matplotlib.lines import Line2D
 
 
 def has_legend(axes: Axes) -> bool:
     return axes.get_legend() is not None
 
 
-def get_legend_text(obj: Line2D) -> [None, str]:
+def get_legend_text(obj: Line2D | PathCollection) -> [None, str]:
     """Check if line is in legend."""
     leg = obj.axes.get_legend()
     if leg is None:
