@@ -27,4 +27,4 @@ def plot() -> Figure:
 
 
 def test() -> None:
-    assert_equality(plot, "test_externalize_tables_reference.tex")
+    assert_equality(plot, "test_externalize_tables_reference.tex", externalize_tables=True)
