@@ -338,21 +338,35 @@ class LineData:
 def get_draw_options(data: dict, line_data: LineData) -> tuple[dict, list]:
     """Get the draw options for a given (patch) object."""
     draw_options = []
+    draw_options.extend(_get_draw_options_ec(data, line_data))
+    draw_options.extend(_get_draw_options_fc(data, line_data))
+    draw_options.extend(_get_draw_options_transparency(data, line_data))
+    draw_options.extend(_get_draw_options_linewidth(data, line_data))
+    draw_options.extend(_get_draw_options_linestyle(data, line_data))
+    draw_options.extend(_get_draw_options_hatch(data, line_data))
+    return data, draw_options
 
-    if line_data.ec is not None:
-        line_data.ec_col, line_data.ec_rgba = _color.mpl_color2xcolor(data, line_data.ec)
-        if line_data.ec_rgba[3] > 0:
-            draw_options.append(f"draw={line_data.ec_col}")
-        else:
-            draw_options.append("draw=none")
 
-    if line_data.fc is not None:
-        line_data.fc_col, line_data.fc_rgba = _color.mpl_color2xcolor(data, line_data.fc)
-        if line_data.fc_rgba[3] > 0.0:
-            # Don't draw if it's invisible anyways.
-            draw_options.append(f"fill={line_data.fc_col}")
+def _get_draw_options_ec(data: dict, line_data: LineData) -> list:
+    if line_data.ec is None:
+        return []
+    line_data.ec_col, line_data.ec_rgba = _color.mpl_color2xcolor(data, line_data.ec)
+    if line_data.ec_rgba[3] > 0:
+        return [f"draw={line_data.ec_col}"]
+    return ["draw=none"]
 
-    # handle transparency
+
+def _get_draw_options_fc(data: dict, line_data: LineData) -> list:
+    if line_data.fc is None:
+        return []
+    line_data.fc_col, line_data.fc_rgba = _color.mpl_color2xcolor(data, line_data.fc)
+    if line_data.fc_rgba[3] > 0.0:
+        return [f"fill={line_data.fc_col}"]
+    # Don't draw if it's invisible anyways.
+    return []
+
+
+def _get_draw_options_transparency(data: dict, line_data: LineData) -> list:
     ff = data["float format"]
     if (
         line_data.ec is not None
@@ -360,49 +374,62 @@ def get_draw_options(data: dict, line_data: LineData) -> tuple[dict, list]:
         and line_data.ec_rgba[3] != 1.0
         and line_data.ec_rgba[3] == line_data.fc_rgba[3]
     ):
-        draw_options.append(f"opacity={line_data.ec[3]:{ff}}")
-    else:
-        if line_data.ec is not None and 0 < line_data.ec_rgba[3] < 1.0:
-            draw_options.append(f"draw opacity={line_data.ec_rgba[3]:{ff}}")
-        if line_data.fc is not None and 0 < line_data.fc_rgba[3] < 1.0:
-            draw_options.append(f"fill opacity={line_data.fc_rgba[3]:{ff}}")
+        return [f"opacity={line_data.ec[3]:{ff}}"]
+    draw_options = []
+    if line_data.ec is not None and 0 < line_data.ec_rgba[3] < 1.0:
+        draw_options.append(f"draw opacity={line_data.ec_rgba[3]:{ff}}")
+    if line_data.fc is not None and 0 < line_data.fc_rgba[3] < 1.0:
+        draw_options.append(f"fill opacity={line_data.fc_rgba[3]:{ff}}")
+    return draw_options
 
-    if line_data.lw is not None:
-        lw_ = mpl_linewidth2pgfp_linewidth(data, line_data.lw)
-        if lw_:
-            draw_options.append(lw_)
 
-    if line_data.ls is not None:
-        ls_ = mpl_linestyle2pgfplots_linestyle(data, line_data.ls)
-        if ls_ is not None and ls_ != "solid":
-            draw_options.append(ls_)
+def _get_draw_options_linewidth(data: dict, line_data: LineData) -> list:
+    if line_data.lw is None:
+        return []
+    lw_ = mpl_linewidth2pgfp_linewidth(data, line_data.lw)
+    if lw_:
+        return [lw_]
+    return []
 
-    if line_data.hatch is not None:
-        # In matplotlib hatches are rendered with edge color and linewidth
-        # In PGFPlots patterns are rendered in 'pattern color' which defaults to
-        # black and according to opacity fill.
-        # No 'pattern line width' option exist.
-        # This can be achieved with custom patterns, see _hatches.py
 
-        # There exist an obj.get_hatch_color() method in the mpl API,
-        # but it seems to be unused
-        try:
-            hc = line_data.obj._hatch_color  # noqa: SLF001
-        except AttributeError:  # Fallback to edge color
-            if line_data.ec is None or line_data.line_data.ec_rgba[3] == 0.0:
-                # Assuming that a hatch marker indicates that hatches are wanted, also
-                # when the edge color is (0, 0, 0, 0), i.e., the edge is invisible
-                h_col, h_rgba = "black", np.array([0, 0, 0, 1])
-            else:
-                h_col, h_rgba = line_data.ec_col, line_data.ec_rgba
+def _get_draw_options_linestyle(data: dict, line_data: LineData) -> list:
+    if line_data.ls is None:
+        return []
+    ls_ = mpl_linestyle2pgfplots_linestyle(data, line_data.ls)
+    if ls_ is not None and ls_ != "solid":
+        return [ls_]
+    return []
+
+
+def _get_draw_options_hatch(data: dict, line_data: LineData) -> list:
+    if line_data.hatch is None:
+        return []
+
+    # In matplotlib hatches are rendered with edge color and linewidth
+    # In PGFPlots patterns are rendered in 'pattern color' which defaults to
+    # black and according to opacity fill.
+    # No 'pattern line width' option exist.
+    # This can be achieved with custom patterns, see _hatches.py
+
+    # There exist an obj.get_hatch_color() method in the mpl API,
+    # but it seems to be unused
+    try:
+        hc = line_data.obj._hatch_color  # noqa: SLF001
+    except AttributeError:  # Fallback to edge color
+        if line_data.ec is None or line_data.line_data.ec_rgba[3] == 0.0:
+            # Assuming that a hatch marker indicates that hatches are wanted, also
+            # when the edge color is (0, 0, 0, 0), i.e., the edge is invisible
+            h_col, h_rgba = "black", np.array([0, 0, 0, 1])
         else:
-            h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
-        finally:
-            if h_rgba[3] > 0:
-                data, pattern = _mpl_hatch2pgfp_pattern(data, line_data.hatch, h_col, h_rgba)
-                draw_options += pattern
-
-    return data, draw_options
+            h_col, h_rgba = line_data.ec_col, line_data.ec_rgba
+    else:
+        h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
+    finally:
+        if h_rgba[3] > 0:
+            _, pattern = _mpl_hatch2pgfp_pattern(data, line_data.hatch, h_col, h_rgba)
+        else:
+            pattern = []
+    return pattern
 
 
 def mpl_linewidth2pgfp_linewidth(data: dict, line_width: float) -> str:
