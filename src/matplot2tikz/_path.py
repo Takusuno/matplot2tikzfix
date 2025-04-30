@@ -244,7 +244,7 @@ def draw_pathcollection(data, obj):
             draw_options += ["mark options={{{}}}".format(",".join(marker_options))]
 
     # `only mark` plots don't need linewidth
-    data, extra_draw_options = get_draw_options(data, LineData(obj=obj, ec=ec, fc=fc, ls=ls))
+    extra_draw_options = get_draw_options(data, LineData(obj=obj, ec=ec, fc=fc, ls=ls))
     draw_options += extra_draw_options
 
     legend_text = get_legend_text(obj)
@@ -344,7 +344,7 @@ def get_draw_options(data: dict, line_data: LineData) -> tuple[dict, list]:
     draw_options.extend(_get_draw_options_linewidth(data, line_data))
     draw_options.extend(_get_draw_options_linestyle(data, line_data))
     draw_options.extend(_get_draw_options_hatch(data, line_data))
-    return data, draw_options
+    return draw_options
 
 
 def _get_draw_options_ec(data: dict, line_data: LineData) -> list:

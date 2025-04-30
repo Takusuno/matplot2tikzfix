@@ -115,7 +115,7 @@ def draw_linecollection(data, obj):
         style = linestyles[i] if i < len(linestyles) else linestyles[0]
         width = linewidths[i] if i < len(linewidths) else linewidths[0]
 
-        data, options = mypath.get_draw_options(
+        options = mypath.get_draw_options(
             data, mypath.LineData(obj=obj, ec=color, ls=style, lw=width)
         )
 

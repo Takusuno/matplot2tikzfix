@@ -7,7 +7,7 @@ from ._text import _get_arrow_style
 def draw_patch(data, obj):
     """Return the PGFPlots code for patches."""
     if isinstance(obj, mpl.patches.FancyArrowPatch):
-        data, draw_options = mypath.get_draw_options(
+        draw_options = mypath.get_draw_options(
             data,
             mypath.LineData(
                 obj=obj,
@@ -21,7 +21,7 @@ def draw_patch(data, obj):
         return _draw_fancy_arrow(data, obj, draw_options)
 
     # Gather the draw options.
-    data, draw_options = mypath.get_draw_options(
+    draw_options = mypath.get_draw_options(
         data,
         mypath.LineData(
             obj=obj,
@@ -91,7 +91,7 @@ def draw_patchcollection(data, obj):
         if t is not None:
             path = path.transformed(mpl.transforms.Affine2D(t).translate(*off))
 
-        data, draw_options = mypath.get_draw_options(
+        draw_options = mypath.get_draw_options(
             data, mypath.LineData(obj=obj, ec=ec, fc=fc, ls=ls, lw=w)
         )
         data, cont, draw_options, is_area = mypath.draw_path(data, path, draw_options=draw_options)
