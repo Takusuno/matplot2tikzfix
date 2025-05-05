@@ -64,7 +64,9 @@ def draw_line2d(data, obj):
     is_filled = marker_face_color is not None and not (
         isinstance(marker_face_color, str) and marker_face_color.lower() == "none"
     )
-    data, marker, extra_mark_options = _mpl_marker2pgfp_marker(data, obj.get_marker(), is_filled)
+    marker, extra_mark_options = _mpl_marker2pgfp_marker(
+        data, obj.get_marker(), is_filled=is_filled
+    )
     if marker:
         _marker(
             obj,

@@ -318,8 +318,8 @@ def _draw_pathcollection_drawoptions(
         pcd.draw_options = ["draw=none"]
 
     if pcd.marker is not None:
-        data, pgfplots_marker, marker_options = _mpl_marker2pgfp_marker(
-            data, pcd.marker, pcd.is_filled
+        pgfplots_marker, marker_options = _mpl_marker2pgfp_marker(
+            data, pcd.marker, is_filled=pcd.is_filled
         )
         pcd.draw_options.append(f"mark={pgfplots_marker}")
         if marker_options:
