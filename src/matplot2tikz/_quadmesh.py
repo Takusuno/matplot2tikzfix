@@ -1,4 +1,3 @@
-
 from matplotlib.backends.backend_agg import RendererAgg
 from matplotlib.collections import QuadMesh
 from PIL import Image
