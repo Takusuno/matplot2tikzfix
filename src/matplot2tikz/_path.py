@@ -4,16 +4,15 @@ import contextlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
-import matplotlib as mpl
 import numpy as np
 from matplotlib.dates import DateConverter, num2date
 from matplotlib.lines import Line2D, _get_dash_pattern
 from matplotlib.markers import MarkerStyle
+from matplotlib.path import Path
 
 if TYPE_CHECKING:
     from matplotlib.collections import Collection, PathCollection
     from matplotlib.patches import Patch
-    from matplotlib.path import Path
 
 from . import _color, _files
 from ._axes import _mpl_cmap2pgf_cmap
@@ -77,17 +76,17 @@ def draw_path(
     for vert, code in path.iter_segments(simplify=simplify):
         # For path codes see: http://matplotlib.org/api/path_api.html
         is_area = False
-        if code == mpl.path.Path.MOVETO:
+        if code == Path.MOVETO:
             nodes.append(
                 f"(axis cs:{vert[0] if not x_is_date else num2date(vert[0]):{xformat}},"
                 f"{vert[1]:{ff}})"
             )
-        elif code == mpl.path.Path.LINETO:
+        elif code == Path.LINETO:
             nodes.append(
                 f"--(axis cs:{vert[0] if not x_is_date else num2date(vert[0]):{xformat}},"
                 f"{vert[1]:{ff}})"
             )
-        elif code == mpl.path.Path.CURVE3:
+        elif code == Path.CURVE3:
             # Quadratic Bezier curves aren't natively supported in TikZ, but
             # can be emulated as cubic Beziers.
             # From
@@ -119,7 +118,7 @@ def draw_path(
                 f"(axis cs:{q2[0]:{xformat}},{q2[1]:{ff}}) .. "
                 f"(axis cs:{q3[0]:{xformat}},{q3[1]:{ff}})"
             )
-        elif code == mpl.path.Path.CURVE4:
+        elif code == Path.CURVE4:
             # Cubic Bezier curves.
             nodes.append(
                 ".. controls "
