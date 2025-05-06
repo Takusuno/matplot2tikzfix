@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+import contextlib
 import datetime
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 import numpy as np
 from matplotlib.dates import num2date
@@ -9,51 +14,69 @@ from . import _path as mypath
 from ._markers import _mpl_marker2pgfp_marker
 from ._util import get_legend_text, has_legend, transform_to_data_coordinates
 
+if TYPE_CHECKING:
+    from matplotlib.collections import LineCollection
+    from matplotlib.lines import Line2D
 
-def draw_line2d(data, obj):
+
+@dataclass
+class MarkerData:
+    marker: str | None
+    mark_options: List
+    fc: Optional[str | Tuple] = None  # facecolor
+    ec: Optional[str | Tuple] = None  # edgecolor
+    lc: Optional[str | Tuple] = None  # linecolor
+
+
+def draw_line2d(data: Dict, obj: Line2D) -> List[str]:
     """Returns the PGFPlots code for an Line2D environment."""
-    content = []
-    addplot_options = []
-
     # If line is of length 0, do nothing.  Otherwise, an empty \addplot table will be
     # created, which will be interpreted as an external data source in either the file
     # '' or '.tex'.  Instead, render nothing.
     xdata = obj.get_xdata()
-    if isinstance(xdata, int) or isinstance(xdata, float):
+    if isinstance(xdata, (int, float)):
         # https://github.com/nschloe/tikzplotlib/issues/339
         xdata = [xdata]
 
     if len(xdata) == 0:
         return []
 
-    # get the linewidth (in pt)
+    # Get several plot options
+    addplot_options = _get_line2d_options(data, obj)
+    # Check if a line is in a legend and forget it if not.
+    # Fixes <https://github.com/nschloe/tikzplotlib/issues/167>.
+    legend_text = get_legend_text(obj)
+    if legend_text is None and has_legend(obj.axes):
+        addplot_options.append("forget plot")
+
+    # process options
+    content = ["\\addplot "]
+    if addplot_options:
+        opts = ", ".join(addplot_options)
+        content.append(f"[{opts}]\n")
+
+    content += _table(data, obj)
+
+    if legend_text is not None:
+        content.append(f"\\addlegendentry{{{legend_text}}}\n")
+
+    return content
+
+
+def _get_line2d_options(data: Dict, obj: Line2D) -> List[str]:
+    addplot_options = []
+
     line_width = mypath.mpl_linewidth2pgfp_linewidth(data, obj.get_linewidth())
     if line_width:
         addplot_options.append(line_width)
-
-    # get line color
-    color = obj.get_color()
-    line_xcolor, _ = mycol.mpl_color2xcolor(data, color)
+    line_xcolor = _get_linecolor_line2d(data, obj)
     addplot_options.append(line_xcolor)
-
-    # get draw style
-    drawstyle = obj.get_drawstyle()
-    if drawstyle in [None, "default"]:
-        pass
-    else:
-        if drawstyle == "steps-mid":
-            style = "const plot mark mid"
-        elif drawstyle in ["steps-pre", "steps"]:
-            style = "const plot mark right"
-        else:
-            assert drawstyle == "steps-post"
-            style = "const plot mark left"
-        addplot_options.append(style)
-
+    drawstyle = _get_drawstyle_line2d(obj)
+    if drawstyle is not None:
+        addplot_options.append(drawstyle)
     alpha = obj.get_alpha()
     if alpha is not None:
         addplot_options.append(f"opacity={alpha}")
-
     linestyle = mypath.mpl_linestyle2pgfplots_linestyle(data, obj.get_linestyle(), line=obj)
     if linestyle is not None and linestyle != "solid":
         addplot_options.append(linestyle)
@@ -62,48 +85,51 @@ def draw_line2d(data, obj):
     marker_edge_color = obj.get_markeredgecolor()
 
     is_filled = marker_face_color is not None and not (
-        isinstance(marker_face_color, str) and marker_face_color.lower() == "none"
+            isinstance(marker_face_color, str) and marker_face_color.lower() == "none"
     )
     marker, extra_mark_options = _mpl_marker2pgfp_marker(
         data, obj.get_marker(), is_filled=is_filled
     )
     if marker:
         _marker(
-            obj,
             data,
-            marker,
+            obj,
+            MarkerData(
+                marker=marker,
+                mark_options=extra_mark_options,
+                fc=marker_face_color,
+                ec=marker_edge_color,
+                lc=line_xcolor,
+            ),
             addplot_options,
-            extra_mark_options,
-            marker_face_color,
-            marker_edge_color,
-            line_xcolor,
         )
 
     if marker and linestyle is None:
         addplot_options.append("only marks")
 
-    # Check if a line is in a legend and forget it if not.
-    # Fixes <https://github.com/nschloe/tikzplotlib/issues/167>.
-    legend_text = get_legend_text(obj)
-    if legend_text is None and has_legend(obj.axes):
-        addplot_options.append("forget plot")
-
-    # process options
-    content.append("\\addplot ")
-    if addplot_options:
-        opts = ", ".join(addplot_options)
-        content.append(f"[{opts}]\n")
-
-    c, axis_options = _table(obj, data)
-    content += c
-
-    if legend_text is not None:
-        content.append(f"\\addlegendentry{{{legend_text}}}\n")
-
-    return content
+    return addplot_options
 
 
-def draw_linecollection(data, obj):
+def _get_linecolor_line2d(data: Dict, obj: Line2D) -> str:
+    color = obj.get_color()
+    return mycol.mpl_color2xcolor(data, color)[0]
+
+
+def _get_drawstyle_line2d(obj: Line2D) -> [str, None]:
+    drawstyle = obj.get_drawstyle()
+    if drawstyle in [None, "default"]:
+        return None
+    if drawstyle == "steps-mid":
+        return "const plot mark mid"
+    if drawstyle in ["steps-pre", "steps"]:
+        return "const plot mark right"
+    if drawstyle == "steps-post":
+        return "const plot mark left"
+    msg = f"Unknown drawstyle '{drawstyle}'."
+    raise NotImplementedError(msg)
+
+
+def draw_linecollection(data: Dict, obj: LineCollection) -> List[str]:
     """Returns Pgfplots code for a number of patch objects."""
     content = []
 
@@ -121,24 +147,14 @@ def draw_linecollection(data, obj):
             data, mypath.LineData(obj=obj, ec=color, ls=style, lw=width)
         )
 
-        # TODO what about masks?
         cont, _, _ = mypath.draw_path(data, path, draw_options=options, simplify=False)
         content.append(cont + "\n")
 
     return content
 
 
-def _marker(
-    obj,
-    data,
-    marker,
-    addplot_options,
-    extra_mark_options,
-    marker_face_color,
-    marker_edge_color,
-    line_xcolor,
-):
-    addplot_options.append("mark=" + marker)
+def _marker(data: Dict, obj: Line2D, marker_data: MarkerData, addplot_options: List) -> None:
+    addplot_options.append("mark=" + marker_data.marker)
 
     mark_size = obj.get_markersize()
     if mark_size:
@@ -157,87 +173,31 @@ def _marker(
             addplot_options.append("mark indices = {" + ", ".join(map(str, pgf_marker)) + "}")
 
     mark_options = ["solid"]
-    mark_options += extra_mark_options
-    if marker_face_color is None or (
-        isinstance(marker_face_color, str) and marker_face_color == "none"
-    ):
+    mark_options += marker_data.mark_options
+    if marker_data.fc is None or (isinstance(marker_data.fc, str) and marker_data.fc == "none"):
         mark_options.append("fill opacity=0")
     else:
-        face_xcolor, _ = mycol.mpl_color2xcolor(data, marker_face_color)
-        if face_xcolor != line_xcolor:
+        face_xcolor, _ = mycol.mpl_color2xcolor(data, marker_data.fc)
+        if face_xcolor != marker_data.lc:
             mark_options.append("fill=" + face_xcolor)
 
-    face_and_edge_have_equal_color = marker_edge_color == marker_face_color
+    face_and_edge_have_equal_color = marker_data.ec == marker_data.fc
     # Sometimes, the colors are given as arrays. Collapse them into a
     # single boolean.
-    try:
+    with contextlib.suppress(TypeError):
         face_and_edge_have_equal_color = all(face_and_edge_have_equal_color)
-    except TypeError:
-        pass
 
     if not face_and_edge_have_equal_color:
-        draw_xcolor, _ = mycol.mpl_color2xcolor(data, marker_edge_color)
-        if draw_xcolor != line_xcolor:
+        draw_xcolor, _ = mycol.mpl_color2xcolor(data, marker_data.ec)
+        if draw_xcolor != marker_data.lc:
             mark_options.append("draw=" + draw_xcolor)
     opts = ",".join(mark_options)
     addplot_options.append(f"mark options={{{opts}}}")
 
 
-def _table(obj, data):
-    # get_xydata() always gives float data, no matter what
-    xdata, ydata = obj.get_xydata().T
-
-    # get_{x,y}data gives datetime or string objects if so specified in the plotter
-    xdata_alt = obj.get_xdata()
-    if isinstance(xdata_alt, int) or isinstance(xdata, float):
-        # https://github.com/nschloe/tikzplotlib/issues/339
-        xdata_alt = [xdata_alt]
-
-    ff = data["float format"]
-
-    if isinstance(xdata_alt[0], datetime.datetime):
-        xdata = xdata_alt
-    else:
-        if isinstance(xdata_alt[0], str):
-            # Remove old xtick,xticklabels (if any).
-            data["current axes"].axis_options = [
-                option
-                for option in data["current axes"].axis_options
-                if not (option.startswith("xtick=") or option.startswith("xticklabels="))
-            ]
-            data["current axes"].axis_options += [
-                "xtick={{{}}}".format(",".join([f"{x:{ff}}" for x in xdata])),
-                "xticklabels={{{}}}".format(",".join(xdata_alt)),
-            ]
-        xdata, ydata = transform_to_data_coordinates(obj, xdata, ydata)
-
-    # matplotlib allows plotting of data containing `astropy.units`, but they will break
-    # the formatted string here. Try to strip the units from the data.
-    try:
-        xdata = xdata.value
-    except AttributeError:
-        pass
-    try:
-        ydata = ydata.value
-    except AttributeError:
-        pass
-
-    try:
-        _, ydata_alt = obj.get_data()
-        ydata_mask = ydata_alt.mask
-    except AttributeError:
-        ydata_mask = []
-    else:
-        if isinstance(ydata_mask, np.bool_) and not ydata_mask:
-            ydata_mask = []
-        elif callable(ydata_mask):
-            # pandas.Series have the method mask
-            # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.mask.html
-            ydata_mask = []
-
-    axis_options = []
-
-    content = []
+def _table(data: Dict, obj: Line2D) -> List[str]:
+    xdata, ydata = _get_xy_data(data, obj)
+    ydata_mask = _get_ydata_mask(obj)
 
     if isinstance(xdata[0], datetime.datetime):
         xdata = [date.strftime("%Y-%m-%d %H:%M") for date in xdata]
@@ -259,11 +219,11 @@ def _table(obj, data):
         data["current axes"].axis_options = [
             option
             for option in data["current axes"].axis_options
-            if not (option.startswith("xtick=") or option.startswith("xticklabels="))
+            if not option.startswith(("xtick=", "xticklabels="))
         ]
     else:
         opts = []
-        xformat = ff
+        xformat = data["float format"]
         col_sep = " "
 
     if data["table_row_sep"] != "\n":
@@ -272,20 +232,23 @@ def _table(obj, data):
 
     table_row_sep = data["table_row_sep"]
     ydata[ydata_mask] = np.nan
-    if np.any(ydata_mask) or ~np.all(np.isfinite(ydata)):
-        # matplotlib jumps at masked or nan values, while PGFPlots by default
-        # interpolates. Hence, if we have a masked plot, make sure that PGFPlots jumps
-        # as well.
-        if "unbounded coords=jump" not in data["current axes"].axis_options:
-            data["current axes"].axis_options.append("unbounded coords=jump")
+    # matplotlib jumps at masked or nan values, while PGFPlots by default
+    # interpolates. Hence, if we have a masked plot, make sure that PGFPlots jumps
+    # as well.
+    if (np.any(ydata_mask) or ~np.all(np.isfinite(ydata))) and "unbounded coords=jump" not in data[
+        "current axes"
+    ].axis_options:
+        data["current axes"].axis_options.append("unbounded coords=jump")
 
+    ff = data["float format"]
     plot_table = [f"{x:{xformat}}{col_sep}{y:{ff}}{table_row_sep}" for x, y in zip(xdata, ydata)]
 
     min_extern_length = 3
 
+    content = []
     if data["externalize tables"] and len(xdata) >= min_extern_length:
         filepath, rel_filepath = _files.new_filepath(data, "table", ".dat")
-        with open(filepath, "w") as f:
+        with filepath.open("w") as f:
             # No encoding handling required: plot_table is only ASCII
             f.write("".join(plot_table))
 
@@ -305,4 +268,57 @@ def _table(obj, data):
         content.extend(plot_table)
         content.append("};\n")
 
-    return content, axis_options
+    return content
+
+
+def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
+    # get_xydata() always gives float data, no matter what
+    xdata, ydata = obj.get_xydata().T
+
+    # get_{x,y}data gives datetime or string objects if so specified in the plotter
+    xdata_alt = obj.get_xdata()
+    if isinstance(xdata_alt, int) or isinstance(xdata, float):
+        # https://github.com/nschloe/tikzplotlib/issues/339
+        xdata_alt = [xdata_alt]
+
+    ff = data["float format"]
+
+    if isinstance(xdata_alt[0], datetime.datetime):
+        xdata = xdata_alt
+    else:
+        if isinstance(xdata_alt[0], str):
+            # Remove old xtick,xticklabels (if any).
+            data["current axes"].axis_options = [
+                option
+                for option in data["current axes"].axis_options
+                if not option.startswith(("xtick=", "xticklabels="))
+            ]
+            data["current axes"].axis_options += [
+                "xtick={{{}}}".format(",".join([f"{x:{ff}}" for x in xdata])),
+                "xticklabels={{{}}}".format(",".join(xdata_alt)),
+            ]
+        xdata, ydata = transform_to_data_coordinates(obj, xdata, ydata)
+
+    # matplotlib allows plotting of data containing `astropy.units`, but they will break
+    # the formatted string here. Try to strip the units from the data.
+    with contextlib.suppress(AttributeError):
+        xdata = xdata.value
+    with contextlib.suppress(AttributeError):
+        ydata = ydata.value
+
+    return xdata, ydata
+
+
+def _get_ydata_mask(obj: Line2D) -> List:
+    try:
+        _, ydata_alt = obj.get_data()
+        ydata_mask = ydata_alt.mask
+    except AttributeError:
+        return []
+    if isinstance(ydata_mask, np.bool_) and not ydata_mask:
+        return []
+    if callable(ydata_mask):
+        # pandas.Series have the method mask
+        # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.mask.html
+        return []
+    return ydata_mask
