@@ -85,7 +85,7 @@ def _get_line2d_options(data: Dict, obj: Line2D) -> List[str]:
     marker_edge_color = obj.get_markeredgecolor()
 
     is_filled = marker_face_color is not None and not (
-            isinstance(marker_face_color, str) and marker_face_color.lower() == "none"
+        isinstance(marker_face_color, str) and marker_face_color.lower() == "none"
     )
     marker, extra_mark_options = _mpl_marker2pgfp_marker(
         data, obj.get_marker(), is_filled=is_filled

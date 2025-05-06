@@ -370,7 +370,7 @@ def _recurse(data: dict, obj: Artist) -> Tuple[dict, list]:
         if isinstance(child, Axes):
             _process_axes(data, child, content)
         elif isinstance(child, Legend):
-            data = _legend.draw_legend(data, child)
+            _legend.draw_legend(data, child)
             if data["legend colors"]:
                 content.extend(data["legend colors"], 0)
         else:
