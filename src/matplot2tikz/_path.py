@@ -452,7 +452,7 @@ def _get_draw_options_hatch(data: dict, line_data: LineData) -> list:
         h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
     finally:
         if h_rgba[3] > 0:
-            _, pattern = _mpl_hatch2pgfp_pattern(data, line_data.hatch, h_col, h_rgba)
+            pattern = _mpl_hatch2pgfp_pattern(data, line_data.hatch, h_col, h_rgba)
         else:
             pattern = []
     return pattern

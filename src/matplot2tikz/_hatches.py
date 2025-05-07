@@ -1,4 +1,4 @@
-r"""Map matplotlib hatches to tikz patterns
+r"""Map matplotlib hatches to tikz patterns.
 
 For matplotlib hatches, see:
 https://matplotlib.org/3.1.1/gallery/shapes_and_collections/hatch_demo.html
@@ -14,6 +14,9 @@ Requires \usetikzlibrary{patterns}
 # hatch_density is mentioned in mpl API Changes in 2.0.1
 
 import warnings
+from typing import Dict, List
+
+import numpy as np
 
 BAD_MP_HATCH = ["o", "O"]  # Bad hatch/pattern correspondence
 UNUSED_PGF_PATTERN = ["dots"]
@@ -31,50 +34,29 @@ _MP_HATCH2PGF_PATTERN = {
 }
 
 
-def add_custom_pattern(mpl_hatch, pattern_name, pattern_definition=None):
-    """The patterns of tikzpgf are quite simple, and cannot be customized but for the
-    color. A solution is to expose a function like this one to allow the user to
-    populate _MP_HATCH2PGF_PATTERN with custom (hatch, pattern) pairs. mpl does no
-    validation of the hatch string, it just ignores it if it does not recognize it, so
-    it is possible to have <any> string be a mpl_hatch.
-
-    If the pattern definition is passed, it could be added at the start of the code in a
-    similar fashion to
-    > data["custom colors"] = {}
-    in get_tikz_code(). matplot2tikz pattern definitions would mend the bad
-    correspondence between the mpl hatches and tikz patterns, with custom patterns for
-    the mpl hatches 'o' and 'O'.
-
-    Want some opinions on this before I implement it..
-
-    From https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.Patch.html:
-    > Letters can be combined, in which case all the specified hatchings are done.
-    > If same letter repeats, it increases the density of hatching of that pattern.
-    To achieve something like this, custom patterns must be created
-    https://tex.stackexchange.com/questions/29359/pgfplots-how-to-fill-the-area-
-    under-a-curve-with-oblique-lines-hatching-as-a/29367#29367
-    """
-
-
-def __validate_hatch(hatch):
-    """Warn about the shortcomings of patterns"""
+def __validate_hatch(hatch: str) -> str:
+    """Warn about the shortcomings of patterns."""
     if len(hatch) > 1:
         warnings.warn(
             f"matplot2tikz: Hatch '{hatch}' cannot be rendered. "
-            + "Only single character hatches are supported, e.g., "
-            + r"{'/', '\', '|', '-', '+', 'x', 'o', 'O', '.', '*'}. "
-            + f"Hatch '{hatch[0]}' will be used."
+            "Only single character hatches are supported, e.g., "
+            r"{'/', '\', '|', '-', '+', 'x', 'o', 'O', '.', '*'}. "
+            f"Hatch '{hatch[0]}' will be used.",
+            stacklevel=2,
         )
         hatch = hatch[0]
 
     if hatch in BAD_MP_HATCH:
         warnings.warn(
-            f"matplot2tikz: The hatches {BAD_MP_HATCH} do not have good PGF" + " counterparts."
+            f"matplot2tikz: The hatches {BAD_MP_HATCH} do not have good PGF counterparts.",
+            stacklevel=2,
         )
     return hatch
 
 
-def _mpl_hatch2pgfp_pattern(data, hatch, color_name, color_rgba):
+def _mpl_hatch2pgfp_pattern(
+    data: Dict, hatch: str, color_name: str, color_rgba: np.ndarray
+) -> List[str]:
     r"""Translates a hatch from matplotlib to the corresponding pattern in PGFPlots.
 
     Input:
@@ -88,8 +70,8 @@ def _mpl_hatch2pgfp_pattern(data, hatch, color_name, color_rgba):
     try:
         pgfplots_pattern = _MP_HATCH2PGF_PATTERN[hatch]
     except KeyError:
-        warnings.warn(f"matplot2tikz: The hatch {hatch} is ignored.")
-        return data, []
+        warnings.warn(f"matplot2tikz: The hatch {hatch} is ignored.", stacklevel=2)
+        return []
 
     data["tikz libs"].add("patterns")
 
@@ -108,4 +90,4 @@ def _mpl_hatch2pgfp_pattern(data, hatch, color_name, color_rgba):
     # how-to-combine-fill-and-pattern-in-a-pgfplot-bar-plot
     postaction = f"postaction={{{', '.join(pattern_options)}}}"
 
-    return data, [postaction]
+    return [postaction]
