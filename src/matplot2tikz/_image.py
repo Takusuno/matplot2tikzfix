@@ -1,11 +1,14 @@
+from typing import Dict, List
+
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
+from matplotlib.image import AxesImage
 
 from . import _files
 
 
-def draw_image(data, obj):
+def draw_image(data: Dict, obj: AxesImage) -> List[str]:
     """Returns the PGFPlots code for an image environment."""
     content = []
 
@@ -15,7 +18,8 @@ def draw_image(data, obj):
     img_array = obj.get_array()
 
     dims = img_array.shape
-    if len(dims) == 2:  # the values are given as one real number: look at cmap
+    if len(dims) == 2:  # noqa: PLR2004
+        # the values are given as one real number: look at cmap
         clims = obj.get_clim()
         plt.imsave(
             fname=filepath,
@@ -27,7 +31,12 @@ def draw_image(data, obj):
         )
     else:
         # RGB (+alpha) information at each point
-        assert len(dims) == 3 and dims[2] in [3, 4]
+        if not (len(dims) == 3 and dims[2] in [3, 4]):  # noqa: PLR2004
+            msg = (
+                "Image array should be three dimensional, with third dimension 3 (RGB) or "
+                "4 (RGB+alpha) entries."
+            )
+            raise ValueError(msg)
         # convert to PIL image
         if obj.origin == "lower":
             img_array = np.flipud(img_array)
@@ -36,9 +45,6 @@ def draw_image(data, obj):
         if img_array.dtype != np.uint8:
             img_array = np.uint8(img_array * 255)
         image = PIL.Image.fromarray(img_array)
-
-        # If the input image is PIL:
-        # image = PIL.Image.fromarray(img_array)
 
         image.save(filepath, origin=obj.origin)
 
