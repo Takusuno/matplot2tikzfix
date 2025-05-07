@@ -1,7 +1,8 @@
-from pathlib import Path
+from pathlib import Path, Tuple
+from typing import Dict
 
 
-def _gen_filepath(data, nb_key, ext):
+def _gen_filepath(data: Dict, nb_key: int, ext: str) -> Tuple[Path, Path]:
     rel_filepath = Path(f"{data['base name']}-{data[nb_key]:03d}{ext}")
 
     if data["rel data path"]:
@@ -10,22 +11,19 @@ def _gen_filepath(data, nb_key, ext):
     return data["output dir"] / rel_filepath, rel_filepath
 
 
-def new_filepath(data, file_kind, ext):
+def new_filepath(data: Dict, file_kind: str, ext: str) -> Tuple[Path, Path]:
     """Returns an available filepath.
 
-    :param file_kind: Name under which numbering is recorded, such as 'img' or
-                      'table'.
-    :type file_kind: str
-
+    :param data: Dictionary with various config options.
+    :param file_kind: Name under which numbering is recorded, such as 'img' or 'table'.
     :param ext: Filename extension.
-    :type ext: str
 
     :returns: (filepath, rel_filepath) where filepath is a path in the
               filesystem and rel_filepath is the path to be used in the tex
               code.
     """
     nb_key = file_kind + "number"
-    if nb_key not in data.keys():
+    if nb_key not in data:
         data[nb_key] = -1
 
     data[nb_key] += 1
