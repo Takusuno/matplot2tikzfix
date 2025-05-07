@@ -1,5 +1,5 @@
-from pathlib import Path, Tuple
-from typing import Dict
+from pathlib import Path
+from typing import Dict, Tuple
 
 
 def _gen_filepath(data: Dict, nb_key: int, ext: str) -> Tuple[Path, Path]:
