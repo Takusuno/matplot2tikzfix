@@ -1,3 +1,5 @@
+from typing import Dict, Tuple
+
 import matplotlib as mpl
 import numpy as np
 import webcolors
@@ -25,7 +27,7 @@ builtin_colors = {
 }
 
 
-def _get_closest_colour_name(rgb):
+def _get_closest_colour_name(rgb: np.ndarray) -> Tuple[str, int]:
     match = None
     mindiff = 1.0e15
     for name in webcolors.names("css3"):
@@ -44,7 +46,7 @@ def _get_closest_colour_name(rgb):
     return match, mindiff
 
 
-def mpl_color2xcolor(data, matplotlib_color):
+def mpl_color2xcolor(data: Dict, matplotlib_color: Tuple) -> Tuple[str]:
     """Translates a matplotlib color specification into a proper LaTeX xcolor."""
     # Convert it to RGBA.
     my_col = np.array(mpl.colors.ColorConverter().to_rgba(matplotlib_color))
