@@ -393,7 +393,7 @@ def _recurse(data: dict, obj: Artist) -> Tuple[dict, list]:
 
 
 def _process_axes(data: dict, obj: Axes, content: _ContentManager) -> None:
-    ax = _axes.Axes(data, obj)
+    ax = _axes.MyAxes(data, obj)
 
     if ax.is_colorbar:
         return
@@ -410,7 +410,7 @@ def _process_axes(data: dict, obj: Axes, content: _ContentManager) -> None:
 
     # populate content and add axis environment if desired
     if data["add axis environment"]:
-        content.extend(ax.get_begin_code() + children_content + [ax.get_end_code(data)], 0)
+        content.extend(ax.get_begin_code() + children_content + [ax.get_end_code()], 0)
     else:
         content.extend(children_content, 0)
         # print axis environment options, if told to show infos

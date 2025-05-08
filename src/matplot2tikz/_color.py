@@ -46,7 +46,7 @@ def _get_closest_colour_name(rgb: np.ndarray) -> Tuple[str, int]:
     return match, mindiff
 
 
-def mpl_color2xcolor(data: Dict, matplotlib_color: Tuple) -> Tuple[str]:
+def mpl_color2xcolor(data: Dict, matplotlib_color: Tuple) -> Tuple[str, str]:
     """Translates a matplotlib color specification into a proper LaTeX xcolor."""
     # Convert it to RGBA.
     my_col = np.array(mpl.colors.ColorConverter().to_rgba(matplotlib_color))
