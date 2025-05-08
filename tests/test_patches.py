@@ -1,11 +1,13 @@
 """Test all kind of patches."""
 
+from typing import List
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import PatchCollection
 from matplotlib.figure import Figure
-from matplotlib.patches import Circle, Ellipse, FancyArrowPatch, Polygon, Rectangle, Wedge
+from matplotlib.patches import Circle, Ellipse, FancyArrowPatch, Patch, Polygon, Rectangle, Wedge
 from matplotlib.path import Path
 
 from .helpers import assert_equality
@@ -23,7 +25,7 @@ def plot() -> Figure:
     x = rng.random(size=n_points)
     y = rng.random(size=n_points)
     radii = 0.1 * rng.random(size=n_points)
-    patches = []
+    patches: List[Patch] = []
     for x1, y1, r in zip(x, y, radii):
         circle = Circle((x1, y1), r)
         patches.append(circle)
@@ -53,7 +55,7 @@ def plot() -> Figure:
         patches.append(polygon)
 
     colors = 100 * rng.random(size=len(patches))
-    p = PatchCollection(patches, cmap=mpl.cm.viridis, alpha=0.4)
+    p = PatchCollection(patches, cmap=plt.get_cmap("viridis"), alpha=0.4)
     p.set_array(np.array(colors))
     ax.add_collection(p)
 

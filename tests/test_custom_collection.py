@@ -10,6 +10,7 @@ import numpy as np
 from matplotlib.backend_bases import RendererBase
 from matplotlib.collections import Collection
 from matplotlib.figure import Figure
+from matplotlib.path import Path
 from matplotlib.transforms import Affine2D, IdentityTransform
 
 from .helpers import assert_equality
@@ -24,17 +25,20 @@ class TransformedEllipseCollection(Collection):
     This is useful for plotting cholesky factors of covariance matrices.
     """
 
-    def __init__(self, matrices: np.ndarray, **kwargs) -> None:  # noqa: ANN003
+    def __init__(self, matrices: np.ndarray, **kwargs) -> None:  # type: ignore[no-untyped-def]  # noqa: ANN003
         """Initialize TransformedEllipseCollection."""
         super().__init__(**kwargs)
         self.set_transform(IdentityTransform())
         self._transforms = np.zeros(matrices.shape[:-2] + (3, 3))
         self._transforms[..., :2, :2] = matrices
         self._transforms[..., 2, 2] = 1
-        self._paths = [mpl.path.Path.unit_circle()]
+        self._paths = [Path.unit_circle()]
 
     def _set_transforms(self) -> None:
         """Calculate transforms immediately before drawing."""
+        if self.axes is None:
+            msg = "Axes not set."
+            raise ValueError(msg)
         m = self.axes.transData.get_affine().get_matrix().copy()
         m[:2, 2:] = 0
         self.set_transform(Affine2D(m))

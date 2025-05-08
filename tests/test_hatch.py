@@ -5,6 +5,7 @@ Slightly modified to test more aspects of the hatch implementation.
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 import pytest
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse, Polygon
@@ -40,14 +41,14 @@ def plot() -> Figure:
     ax3.fill([1, 3, 3, 1], [1, 1, 2, 2], fill=False, hatch="\\", zorder=1, label="Square")
     ax3.add_patch(Ellipse((4, 1.5), 4, 0.5, fill="green", hatch="*", zorder=3, label="Ellipse"))
     p = Polygon(
-        [[0, 0], [4, 1.1], [6, 2.5], [2, 1.4]],
+        np.array([[0, 0], [4, 1.1], [6, 2.5], [2, 1.4]]),
         closed=True,
         fill=False,
         hatch="/",
         zorder=2,
         label="Polygon",
     )
-    p._hatch_color = (0.5, 0.3, 0.8, 0.7)  # noqa: SLF001  # Only way is via private member access
+    p._hatch_color = (0.5, 0.3, 0.8, 0.7)  # type: ignore[attr-defined]  # noqa: SLF001
     ax3.add_patch(p)
     ax3.set_xlim((0, 6))
     ax3.set_ylim((0, 2.5))

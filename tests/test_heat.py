@@ -12,7 +12,8 @@ mpl.use("Agg")
 
 def plot() -> Figure:
     fig = plt.figure()
-    x, y = np.ogrid[-10:10:100j, -10:10:100j]
+    x = np.array([np.linspace(-10, 10, 100)]).T
+    y = np.array([np.linspace(-10, 10, 100)])
     extent = (x.min(), x.max(), y.min(), y.max())
     cmap = mpl.colormaps.get_cmap("gray")
     plt.imshow(x * y, extent=extent, cmap=cmap)

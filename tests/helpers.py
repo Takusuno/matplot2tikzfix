@@ -1,18 +1,19 @@
 """Helper functions for running the tests."""
 
+import difflib
 from pathlib import Path
 from typing import Callable
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+from matplotlib.artist import Artist
+from matplotlib.text import Text
 
 import matplot2tikz
 
 
-def print_tree(obj: Figure, indent: str = "") -> None:
+def print_tree(obj: Artist, indent: str = "") -> None:
     """Recursively prints the tree structure of the matplotlib object."""
-    if isinstance(obj, mpl.text.Text):
+    if isinstance(obj, Text):
         print(indent, type(obj).__name__, f'("{obj.get_text()}")')  # noqa: T201
     else:
         print(indent, type(obj).__name__)  # noqa: T201
@@ -23,15 +24,13 @@ def print_tree(obj: Figure, indent: str = "") -> None:
 
 # https://stackoverflow.com/a/845432/353337
 def _unidiff_output(expected: str, actual: str) -> str:
-    import difflib
-
-    expected = expected.splitlines(1)
-    actual = actual.splitlines(1)
-    diff = difflib.unified_diff(expected, actual)
+    expected_lines = expected.splitlines(keepends=True)
+    actual_lines = actual.splitlines(keepends=True)
+    diff = difflib.unified_diff(expected_lines, actual_lines)
     return "".join(diff)
 
 
-def assert_equality(
+def assert_equality(  # type: ignore[no-untyped-def]
     plot: Callable,
     filename: str,
     flavor: str = "latex",

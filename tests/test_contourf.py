@@ -21,7 +21,7 @@ def plot() -> Figure:
     y_max = 2
     y_min = 0
 
-    xi, yi = np.mgrid[x_min : x_max : nbins * 1j, y_min : y_max : nbins * 1j]
+    yi, xi = np.meshgrid(np.linspace(y_min, y_max, nbins), np.linspace(x_min, x_max, nbins))
     pos = np.empty((*xi.shape, 2))
     pos[:, :, 0] = xi
     pos[:, :, 1] = yi

@@ -16,7 +16,7 @@ def plot() -> Figure:
         t = np.arange(0.0, 2.0, 0.1)
         s = np.sin(2 * np.pi * t)
         s2 = np.cos(2 * np.pi * t)
-        cmjet = plt.cm.jet(np.linspace(0, 1, 10))
+        cmjet = plt.get_cmap("jet")(np.linspace(0, 1, 10))
         plt.plot(t, s, "o-", lw=1.5, color=cmjet[5], label="sin")
         plt.plot(t, s2, "o-", lw=3, alpha=0.3, label="cos")
         plt.xlabel("time (s)")

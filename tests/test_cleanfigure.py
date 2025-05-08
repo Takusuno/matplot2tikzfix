@@ -5,7 +5,6 @@ from typing import Tuple
 import matplotlib as mpl
 import numpy as np
 import pytest
-from matplotlib import cm
 from matplotlib import colors as mcolors
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
@@ -34,8 +33,8 @@ class TestPlottypes:
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -58,8 +57,8 @@ class TestPlottypes:
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.step(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             with pytest.warns(Warning):
                 clean_figure(fig)
         plt.close("all")
@@ -72,8 +71,8 @@ class TestPlottypes:
         with plt.rc_context(rc=RC_PARAMS):
             _, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.scatter(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure()
@@ -95,8 +94,8 @@ class TestPlottypes:
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.bar(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             with pytest.warns(Warning):
                 clean_figure(fig)
         plt.close("all")
@@ -104,12 +103,11 @@ class TestPlottypes:
     def test_hist(self) -> None:
         """Test if clean_figure runs (with warning)."""
         x = np.linspace(1, 100, 20)
-        y = np.linspace(1, 100, 20)
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-            ax.hist(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.hist(x)
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             with pytest.warns(Warning):
                 clean_figure(fig)
         plt.close("all")
@@ -125,11 +123,11 @@ class TestPlottypes:
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
+            ax: axes3d.Axes3D = fig.add_subplot(111, projection="3d")
             ax.plot(x, y, z)
-            ax.set_xlim([-2, 2])
-            ax.set_ylim([-2, 2])
-            ax.set_zlim([-2, 2])
+            ax.set_xlim(-2, 2)
+            ax.set_ylim(-2, 2)
+            ax.set_zlim(-2, 2)
             ax.view_init(30, 30)
             raw = get_tikz_code(fig)
 
@@ -153,11 +151,11 @@ class TestPlottypes:
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
+            ax: axes3d.Axes3D = fig.add_subplot(111, projection="3d")
             ax.scatter(x, y, z)
-            ax.set_xlim([-2, 2])
-            ax.set_ylim([-2, 2])
-            ax.set_zlim([-2, 2])
+            ax.set_xlim(-2, 2)
+            ax.set_ylim(-2, 2)
+            ax.set_zlim(-2, 2)
             ax.view_init(30, 30)
             raw = get_tikz_code(fig)
 
@@ -178,7 +176,7 @@ class TestPlottypes:
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
+            ax: axes3d.Axes3D = fig.add_subplot(111, projection="3d")
 
             # Plot a basic wireframe.
             ax.plot_wireframe(x, y, z, rstride=10, cstride=10)
@@ -197,10 +195,12 @@ class TestPlottypes:
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = plt.axes(projection="3d")
+            ax: axes3d.Axes3D = plt.axes(projection="3d")
 
             # Plot the surface.
-            surf = ax.plot_surface(xx, yy, z, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+            surf = ax.plot_surface(
+                xx, yy, z, cmap=plt.get_cmap("coolwarm"), linewidth=0, antialiased=False
+            )
 
             # Customize the z axis.
             ax.set_zlim(-1.01, 1.01)
@@ -236,7 +236,7 @@ class TestPlottypes:
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = plt.axes(projection="3d")
+            ax: axes3d.Axes3D = plt.axes(projection="3d")
 
             ax.plot_trisurf(x, y, z, linewidth=0.2, antialiased=True)
             with pytest.warns(Warning):
@@ -249,7 +249,7 @@ class TestPlottypes:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
             x, y, z = axes3d.get_test_data(0.05)
-            cset = ax.contour(x, y, z, cmap=cm.coolwarm)
+            cset = ax.contour(x, y, z, cmap=plt.get_cmap("coolwarm"))
             ax.clabel(cset, fontsize=9, inline=1)
             with pytest.warns(Warning):
                 clean_figure(fig)
@@ -259,7 +259,7 @@ class TestPlottypes:
         """Test if clean_figure runs (with warning)."""
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = plt.axes(projection="3d")
+            ax: axes3d.Axes3D = plt.axes(projection="3d")
             rng = np.random.default_rng(42)
 
             def cc(arg: str) -> Tuple[float, float, float, float]:
@@ -291,7 +291,8 @@ class TestPlottypes:
         """Test if clean_figure runs (with warning)."""
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
+            ax: axes3d.Axes3D = fig.add_subplot(111, projection="3d")
+
             rng = np.random.default_rng(42)
             for c, z in zip(["r", "g", "b", "y"], [30, 20, 10, 0]):
                 xs = np.arange(20)
@@ -346,8 +347,8 @@ class TestLineplotMarkers:
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y, linestyle="-", marker="None")
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -371,8 +372,8 @@ class TestLineplotMarkers:
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y, linestyle="None", marker="*")
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -396,8 +397,8 @@ class TestLineplotMarkers:
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y, linestyle="-", marker="*")
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -421,8 +422,8 @@ class TestLineplotMarkers:
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y, linestyle="-", marker="*")
-            ax.set_xlim([0.5 * np.pi, 1.5 * np.pi])
-            ax.set_ylim([-1, 1])
+            ax.set_xlim(0.5 * np.pi, 1.5 * np.pi)
+            ax.set_ylim(-1, 1)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -620,8 +621,8 @@ class TestLogscale:
             ax.plot(x, y)
             ax.set_xscale("log")
             ax.set_yscale("log")
-            ax.set_ylim([10 ** (-2), 10 ** (2)])
-            ax.set_xlim([10 ** (-2), 10 ** (2)])
+            ax.set_ylim(10**-2, 10**2)
+            ax.set_xlim(10**-2, 10**2)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -641,8 +642,8 @@ class TestLogscale:
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y)
             ax.set_xscale("log")
-            ax.set_xlim([10 ** (-2), 10 ** (2)])
-            ax.set_ylim([20, 80])
+            ax.set_xlim(10**-2, 10**2)
+            ax.set_ylim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)

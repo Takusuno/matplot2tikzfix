@@ -15,7 +15,7 @@ def plot() -> Figure:
 
     # Set the colormap and norm to correspond to the data for which the colorbar will be
     # used.
-    cmap = mpl.cm.cool
+    cmap = plt.get_cmap("cool")
     norm = mpl.colors.Normalize(vmin=-5, vmax=10)
 
     # ColorbarBase derives from ScalarMappable and puts a colorbar in a specified axes,
@@ -32,7 +32,7 @@ def plot() -> Figure:
 
     # If a ListedColormap is used, the length of the bounds array must be one greater
     # than the length of the color list.  The bounds must be monotonically increasing.
-    bounds = [1, 2, 4, 7, 8]
+    bounds = [1.0, 2, 4, 7, 8]
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
     cb2 = mpl.colorbar.ColorbarBase(
         ax[1],

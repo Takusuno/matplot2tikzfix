@@ -3,7 +3,6 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import cm
 from matplotlib.figure import Figure
 
 from .helpers import assert_equality
@@ -16,7 +15,7 @@ def plot() -> Figure:
     z = x**2 - y**2
 
     fig = plt.figure()
-    plt.pcolormesh(x, y, z, cmap=cm.viridis, shading="gouraud")
+    plt.pcolormesh(x, y, z, cmap=plt.get_cmap("viridis"), shading="gouraud")
 
     return fig
 

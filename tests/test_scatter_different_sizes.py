@@ -2,7 +2,6 @@
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 
 from .helpers import assert_equality
 
@@ -10,7 +9,7 @@ mpl.use("Agg")
 
 
 # https://github.com/nschloe/tikzplotlib/issues/414
-def plot() -> Figure:
+def plot() -> None:
     _, ax = plt.subplots()
     ax.scatter(
         [1, 2, 3],

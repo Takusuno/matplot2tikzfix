@@ -4,6 +4,7 @@ import datetime as date
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import dates
 from matplotlib.figure import Figure
 
@@ -15,10 +16,12 @@ mpl.use("Agg")
 def plot() -> Figure:
     fig = plt.figure()
 
-    times = [
-        date.datetime(2020, 1, 1, 12, 0, 0, tzinfo=date.timezone.utc),
-        date.datetime(2020, 1, 2, 12, 0, 0, tzinfo=date.timezone.utc),
-    ]
+    times = np.array(
+        [
+            date.datetime(2020, 1, 1, 12, 0, 0, tzinfo=date.timezone.utc),
+            date.datetime(2020, 1, 2, 12, 0, 0, tzinfo=date.timezone.utc),
+        ]
+    )
     line = [2, 2]
     upper = [3, 4]
     lower = [1, 0]
