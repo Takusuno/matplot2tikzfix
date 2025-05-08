@@ -213,7 +213,7 @@ For contributing, follow these steps:
    1. `ruff format . --check` (remove the `--check` flag to let `ruff` do the formatting)
    2. `ruff check .`
    3. `mypy .`
-   4. NOTE: Currently, all three steps result in many errors. Ideally, we come to a state where
+   4. NOTE: Currently, the last step results in many errors. Ideally, we come to a state where
       all checks pass succesfully and that only commits without errors are merged into the main
       branch. For now, however, commits that do not make performance worse, should be allowed to be
       merged on the main branch.
