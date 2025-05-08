@@ -269,21 +269,19 @@ class MyAxes:
             # however, they are mixed together.  Hence, scale the tick positions just
             # like {x,y}lim are scaled to clim.
             colorbar_ticks = (colorbar_ticks - axis_limits[0]) / (
-                    axis_limits[1] - axis_limits[0]
+                axis_limits[1] - axis_limits[0]
             ) * (limits[1] - limits[0]) + limits[0]
             colorbar_ticks_minor = (colorbar_ticks_minor - axis_limits[0]) / (
-                    axis_limits[1] - axis_limits[0]
+                axis_limits[1] - axis_limits[0]
             ) * (limits[1] - limits[0]) + limits[0]
             # Getting the labels via get_* might not actually be suitable:
             # they might not reflect the current state.
             colorbar_ticklabels = colorbar.ax.get_xticklabels()
             colorbar_ticklabels_minor = colorbar.ax.get_xticklabels(minor=True)
 
+            colorbar_styles.extend(_get_ticks(self.data, "x", colorbar_ticks, colorbar_ticklabels))
             colorbar_styles.extend(
-                _get_ticks(self.data, "x", colorbar_ticks, colorbar_ticklabels))
-            colorbar_styles.extend(
-                _get_ticks(self.data, "minor x", colorbar_ticks_minor,
-                           colorbar_ticklabels_minor)
+                _get_ticks(self.data, "minor x", colorbar_ticks_minor, colorbar_ticklabels_minor)
             )
 
         elif orientation == "vertical":
@@ -297,10 +295,10 @@ class MyAxes:
             # however, they are mixed together.  Hence, scale the tick positions just
             # like {x,y}lim are scaled to clim.
             colorbar_ticks = (colorbar_ticks - axis_limits[0]) / (
-                    axis_limits[1] - axis_limits[0]
+                axis_limits[1] - axis_limits[0]
             ) * (limits[1] - limits[0]) + limits[0]
             colorbar_ticks_minor = (colorbar_ticks_minor - axis_limits[0]) / (
-                    axis_limits[1] - axis_limits[0]
+                axis_limits[1] - axis_limits[0]
             ) * (limits[1] - limits[0]) + limits[0]
 
             # Getting the labels via get_* might not actually be suitable:
@@ -308,19 +306,16 @@ class MyAxes:
             colorbar_ticklabels = colorbar.ax.get_yticklabels()
             colorbar_ylabel = colorbar.ax.get_ylabel()
             colorbar_ticklabels_minor = colorbar.ax.get_yticklabels(minor=True)
+            colorbar_styles.extend(_get_ticks(self.data, "y", colorbar_ticks, colorbar_ticklabels))
             colorbar_styles.extend(
-                _get_ticks(self.data, "y", colorbar_ticks, colorbar_ticklabels))
-            colorbar_styles.extend(
-                _get_ticks(self.data, "minor y", colorbar_ticks_minor,
-                           colorbar_ticklabels_minor)
+                _get_ticks(self.data, "minor y", colorbar_ticks_minor, colorbar_ticklabels_minor)
             )
             colorbar_styles.append("ylabel={" + colorbar_ylabel + "}")
         else:
             msg = f"Orientation must be either 'horizontal' or 'vertical', but is '{orientation}'."
             raise ValueError(msg)
 
-        mycolormap, is_custom_cmap = _mpl_cmap2pgf_cmap(colorbar.mappable.get_cmap(),
-                                                        self.data)
+        mycolormap, is_custom_cmap = _mpl_cmap2pgf_cmap(colorbar.mappable.get_cmap(), self.data)
         if is_custom_cmap:
             self.axis_options.append("colormap=" + mycolormap)
         else:
@@ -331,8 +326,7 @@ class MyAxes:
         self.axis_options.append(f"point meta max={limits[1]:{ff}}")
 
         if colorbar_styles:
-            self.axis_options.append(
-                "colorbar style={{{}}}".format(",".join(colorbar_styles)))
+            self.axis_options.append("colorbar style={{{}}}".format(",".join(colorbar_styles)))
 
     def _content_end(self) -> None:
         if self.is_subplot:
