@@ -6,13 +6,15 @@ import sys
 import tempfile
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING, TypedDict
+from typing_extensions import NotRequired, Unpack
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.axis import XAxis, YAxis
 from matplotlib.collections import Collection, LineCollection, PathCollection, QuadMesh
+from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
@@ -22,7 +24,6 @@ from matplotlib.text import Text
 
 if TYPE_CHECKING:
     from matplotlib.artist import Artist
-    from matplotlib.figure import Figure
 
 from . import _axes, _legend, _line2d, _patch, _path, _text
 from . import _image as img
@@ -39,6 +40,31 @@ if not LOGGER.handlers:
     LOGGER.addHandler(HANDLER)
 
 
+class TikzArgs(TypedDict):
+    figure: NotRequired[str | Figure]
+    axis_width: NotRequired[str | None]
+    axis_height: NotRequired[str | None]
+    textsize: NotRequired[float]
+    tex_relative_path_to_data: NotRequired[str | None]
+    externalize_tables: NotRequired[bool]
+    override_externals: NotRequired[bool]
+    externals_search_path: NotRequired[str | None]
+    strict: NotRequired[bool]
+    wrap: NotRequired[bool]
+    add_axis_environment: NotRequired[bool]
+    extra_axis_parameters: NotRequired[List | Set | None]
+    extra_groupstyle_parameters: NotRequired[dict]
+    extra_tikzpicture_parameters: NotRequired[list | Set | None]
+    extra_lines_start: NotRequired[List | Set | None]
+    dpi: NotRequired[int | None]
+    show_info: NotRequired[bool]
+    include_disclaimer: NotRequired[bool]
+    standalone: NotRequired[bool]
+    float_format: NotRequired[str]
+    table_row_sep: NotRequired[str]
+    flavor: NotRequired[str]
+
+
 def get_tikz_code(  # noqa: PLR0913
     figure: str | Figure = "gcf",
     filepath: str | Path | None = None,
@@ -52,10 +78,10 @@ def get_tikz_code(  # noqa: PLR0913
     strict: bool = False,  # noqa: FBT001, FBT002
     wrap: bool = True,  # noqa: FBT001, FBT002
     add_axis_environment: bool = True,  # noqa: FBT001, FBT002
-    extra_axis_parameters: list | set | None = None,
+    extra_axis_parameters: List | Set | None = None,
     extra_groupstyle_parameters: Optional[dict] = None,
-    extra_tikzpicture_parameters: list | set | None = None,
-    extra_lines_start: list | set | None = None,
+    extra_tikzpicture_parameters: List | Set | None = None,
+    extra_lines_start: List | Set | None = None,
     dpi: int | None = None,
     show_info: bool = False,  # noqa: FBT001, FBT002
     include_disclaimer: bool = True,  # noqa: FBT001, FBT002
@@ -171,6 +197,9 @@ def get_tikz_code(  # noqa: PLR0913
     # not as default value because gcf() would be evaluated at import time
     if figure == "gcf":
         figure = plt.gcf()
+    elif not isinstance(figure, Figure):
+        msg = "Argument 'figure' must be a Figure or string 'gcf'."
+        raise ValueError(msg)
 
     data = {
         "axis width": axis_width,
@@ -226,7 +255,7 @@ def get_tikz_code(  # noqa: PLR0913
         data["dpi"] = savefig_dpi if isinstance(savefig_dpi, int) else mpl.rcParams["figure.dpi"]
 
     try:
-        data["flavor"] = Flavors[flavor.lower()]
+        data["flavor"] = Flavors[flavor.lower()]  # type: ignore[assignment]
     except KeyError:
         msg = (
             f"Unsupported TeX flavor {flavor!r}. Please choose from {', '.join(map(repr, Flavors))}"
@@ -243,7 +272,7 @@ def get_tikz_code(  # noqa: PLR0913
     # Check if there is still an open groupplot environment. This occurs if not
     # all of the group plot slots are used.
     if data.get("is_in_groupplot_env"):
-        content.extend(data["flavor"].end("groupplot") + "\n\n")
+        content.extend(data["flavor"].end("groupplot") + "\n\n")  # type: ignore[union-attr]
 
     return _generate_code(data, content)
 
@@ -251,7 +280,7 @@ def get_tikz_code(  # noqa: PLR0913
 def save(
     filepath: str | Path,
     encoding: str | None = None,
-    **kwargs: Figure | str | float | bool | dict | list | set | None,
+    **kwargs: Unpack[TikzArgs],
 ) -> None:
     """Same as `get_tikz_code()`, but actually saves the code to a file.
 
@@ -329,9 +358,9 @@ class _ContentManager:
     """
 
     def __init__(self) -> None:
-        self._content = {}
+        self._content: Dict[float, List[str]] = {}
 
-    def extend(self, content: list, zorder: int) -> None:
+    def extend(self, content: list, zorder: float) -> None:
         """Extends with a list and a z-order."""
         if zorder not in self._content:
             self._content[zorder] = []
@@ -345,7 +374,7 @@ class _ContentManager:
         return content_out
 
 
-def _draw_collection(data: dict, child: Collection) -> list:
+def _draw_collection(data: Dict, child: Collection) -> List[str]:
     if isinstance(child, PathCollection):
         return _path.draw_pathcollection(data, child)
     if isinstance(child, LineCollection):
@@ -355,7 +384,7 @@ def _draw_collection(data: dict, child: Collection) -> list:
     return _patch.draw_patchcollection(data, child)
 
 
-def _recurse(data: dict, obj: Artist) -> Tuple[dict, list]:
+def _recurse(data: Dict, obj: Artist) -> Tuple[Dict, List]:
     """Iterates over all children of the current object and gathers the contents.
 
     Data and content are returned.
@@ -382,7 +411,7 @@ def _recurse(data: dict, obj: Artist) -> Tuple[dict, list]:
                 (Text, _text.draw_text),
             ):
                 if isinstance(child, child_type):
-                    content.extend(process_func(data, child), child.get_zorder())
+                    content.extend(process_func(data, child), child.get_zorder())  # type: ignore[arg-type]
                     break
             else:
                 warnings.warn(

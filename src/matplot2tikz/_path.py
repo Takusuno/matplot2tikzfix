@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 import numpy as np
 from matplotlib.dates import DateConverter, num2date
@@ -142,7 +142,7 @@ def draw_path(
     return path_command, draw_options, is_area
 
 
-def draw_pathcollection(data: dict, obj: PathCollection) -> list:
+def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
     # gather data

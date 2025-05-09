@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Dict, List, Sequence, Tuple
 
 from matplotlib.collections import Collection
 from matplotlib.patches import Circle, Ellipse, FancyArrowPatch, Patch, Rectangle
@@ -8,7 +8,7 @@ from . import _path as mypath
 from ._text import _get_arrow_style
 
 
-def draw_patch(data: dict, obj: Patch) -> str:
+def draw_patch(data: Dict, obj: Patch) -> str:
     """Return the PGFPlots code for patches."""
     if isinstance(obj, FancyArrowPatch):
         draw_options = mypath.get_draw_options(
@@ -55,7 +55,7 @@ def _is_in_legend(obj: Collection) -> bool:
     return label in [txt.get_text() for txt in leg.get_texts()]
 
 
-def _patch_legend(obj: Collection, draw_options: list, legend_type: str) -> str:
+def _patch_legend(obj: Collection, draw_options: List, legend_type: str) -> str:
     """Decorator for handling legend of mpl.Patch."""
     legend = ""
     if _is_in_legend(obj):
@@ -67,13 +67,13 @@ def _patch_legend(obj: Collection, draw_options: list, legend_type: str) -> str:
     return legend
 
 
-def zip_modulo(*seqs: Sequence) -> tuple:
+def zip_modulo(*seqs: Sequence) -> Tuple:
     n = max(len(seq) for seq in seqs)
     for i in range(n):
         yield tuple((seq[i % len(seq)] if len(seq) != 0 else None) for seq in seqs)
 
 
-def draw_patchcollection(data: dict, obj: Collection) -> str:
+def draw_patchcollection(data: Dict, obj: Collection) -> List[str]:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
 
