@@ -61,7 +61,7 @@ def draw_path(
         and all(path.vertices[0] == path.vertices[1])
         and "fill opacity=0" in draw_options
     ):
-        return data, "", None, False
+        return "", None, False
 
     try:
         converter = data["current mpl axes obj"].xaxis.get_converter()
