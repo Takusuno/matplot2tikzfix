@@ -64,12 +64,11 @@ def test_rotated_labels_parameters(
     _, tmp_base = tempfile.mkstemp()
     tikz_file = Path(tmp_base + "_tikz.tex")
 
-    extra_dict = {}
-
+    extra_dict = []
     if x_tick_label_width:
-        extra_dict["x tick label text width"] = x_tick_label_width
+        extra_dict.append(f"x tick label text width={x_tick_label_width}")
     if y_tick_label_width:
-        extra_dict["y tick label text width"] = y_tick_label_width
+        extra_dict.append(f"y tick label text width={y_tick_label_width}")
 
     matplot2tikz.save(tikz_file, axis_width="7.5cm", extra_axis_parameters=extra_dict)
 
@@ -98,12 +97,11 @@ def test_rotated_labels_parameters_different_values(
     _, tmp_base = tempfile.mkstemp()
     tikz_file = Path(tmp_base + "_tikz.tex")
 
-    extra_dict = {}
-
+    extra_dict = []
     if x_tick_label_width:
-        extra_dict["x tick label text width"] = x_tick_label_width
+        extra_dict.append(f"x tick label text width={x_tick_label_width}")
     if y_tick_label_width:
-        extra_dict["y tick label text width"] = y_tick_label_width
+        extra_dict.append(f"y tick label text width={y_tick_label_width}")
 
     matplot2tikz.save(tikz_file, axis_width="7.5cm", extra_axis_parameters=extra_dict)
 
