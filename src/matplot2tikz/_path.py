@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from dataclasses import dataclass
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import numpy as np
 from matplotlib.dates import DateConverter, num2date

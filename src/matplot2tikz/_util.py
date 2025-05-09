@@ -13,9 +13,10 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.collections import PathCollection
     from matplotlib.lines import Line2D
+    from mpl_toolkits.mplot3d import Axes3D
 
 
-def has_legend(axes: Axes) -> bool:
+def has_legend(axes: Axes | Axes3D) -> bool:
     return axes.get_legend() is not None
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import datetime
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from matplotlib.dates import num2date
@@ -23,20 +23,35 @@ if TYPE_CHECKING:
 class MarkerData:
     marker: str | None
     mark_options: List
-    fc: Optional[str | Tuple] = None  # facecolor
-    ec: Optional[str | Tuple] = None  # edgecolor
-    lc: Optional[str | Tuple] = None  # linecolor
+    fc: Optional[
+        str
+        | Tuple[float, float, float]
+        | Tuple[float, float, float, float]
+        | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float]
+    ] = None  # facecolor
+    ec: Optional[
+        str
+        | Tuple[float, float, float]
+        | Tuple[float, float, float, float]
+        | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float]
+    ] = None  # edgecolor
+    lc: Optional[
+        str
+        | Tuple[float, float, float]
+        | Tuple[float, float, float, float]
+        | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float]
+    ] = None  # linecolor
 
 
 def draw_line2d(data: Dict, obj: Line2D) -> List[str]:
-    """Returns the PGFPlots code for an Line2D environment."""
-    # If line is of length 0, do nothing.  Otherwise, an empty \addplot table will be
-    # created, which will be interpreted as an external data source in either the file
-    # '' or '.tex'.  Instead, render nothing.
-    xdata = obj.get_xdata()
-    if isinstance(xdata, (int, float)):
-        # https://github.com/nschloe/tikzplotlib/issues/339
-        xdata = [xdata]
+    r"""Returns the PGFPlots code for an Line2D environment.
+
+    If line is of length 0, do nothing.  Otherwise, an empty \addplot table will be
+    created, which will be interpreted as an external data source in either the file
+    '' or '.tex'.  Instead, render nothing.
+    """
+    obj_xdata = obj.get_xdata()
+    xdata = obj_xdata if isinstance(obj_xdata, Iterable) else [obj_xdata]
 
     if len(xdata) == 0:
         return []
@@ -46,7 +61,7 @@ def draw_line2d(data: Dict, obj: Line2D) -> List[str]:
     # Check if a line is in a legend and forget it if not.
     # Fixes <https://github.com/nschloe/tikzplotlib/issues/167>.
     legend_text = get_legend_text(obj)
-    if legend_text is None and has_legend(obj.axes):
+    if legend_text is None and obj.axes is not None and has_legend(obj.axes):
         addplot_options.append("forget plot")
 
     # process options
@@ -87,9 +102,10 @@ def _get_line2d_options(data: Dict, obj: Line2D) -> List[str]:
     is_filled = marker_face_color is not None and not (
         isinstance(marker_face_color, str) and marker_face_color.lower() == "none"
     )
-    marker, extra_mark_options = _mpl_marker2pgfp_marker(
-        data, obj.get_marker(), is_filled=is_filled
-    )
+    mpl_marker = obj.get_marker()
+    if not isinstance(mpl_marker, str):
+        raise NotImplementedError
+    marker, extra_mark_options = _mpl_marker2pgfp_marker(data, mpl_marker, is_filled=is_filled)
     if marker:
         _marker(
             data,
@@ -115,7 +131,7 @@ def _get_linecolor_line2d(data: Dict, obj: Line2D) -> str:
     return mycol.mpl_color2xcolor(data, color)[0]
 
 
-def _get_drawstyle_line2d(obj: Line2D) -> [str, None]:
+def _get_drawstyle_line2d(obj: Line2D) -> str | None:
     drawstyle = obj.get_drawstyle()
     if drawstyle in [None, "default"]:
         return None
@@ -133,9 +149,9 @@ def draw_linecollection(data: Dict, obj: LineCollection) -> List[str]:
     """Returns Pgfplots code for a number of patch objects."""
     content = []
 
-    edgecolors = obj.get_edgecolors()
-    linestyles = obj.get_linestyles()
-    linewidths = obj.get_linewidths()
+    edgecolors = obj.get_edgecolors()  # type: ignore[attr-defined]
+    linestyles = obj.get_linestyles()  # type: ignore[attr-defined]
+    linewidths = obj.get_linewidths()  # type: ignore[attr-defined]
     paths = obj.get_paths()
 
     for i, path in enumerate(paths):
@@ -153,9 +169,18 @@ def draw_linecollection(data: Dict, obj: LineCollection) -> List[str]:
     return content
 
 
-def _marker(data: Dict, obj: Line2D, marker_data: MarkerData, addplot_options: List) -> None:
+def _marker(data: Dict, obj: Line2D, marker_data: MarkerData, addplot_options: List[str]) -> None:
+    if marker_data.marker is None:
+        msg = "Marker must be set."
+        raise ValueError(msg)
     addplot_options.append("mark=" + marker_data.marker)
 
+    _marker_size(data, obj, addplot_options)
+    _marker_every(obj, addplot_options)
+    _marker_options(data, marker_data, addplot_options)
+
+
+def _marker_size(data: Dict, obj: Line2D, addplot_options: List[str]) -> None:
     mark_size = obj.get_markersize()
     if mark_size:
         ff = data["float format"]
@@ -163,15 +188,21 @@ def _marker(data: Dict, obj: Line2D, marker_data: MarkerData, addplot_options: L
         pgf_size = 0.5 * mark_size
         addplot_options.append(f"mark size={pgf_size:{ff}}")
 
+
+def _marker_every(obj: Line2D, addplot_options: List[str]) -> None:
     mark_every = obj.get_markevery()
     if mark_every:
-        if type(mark_every) is int:
+        if isinstance(mark_every, (int, float)):
             addplot_options.append(f"mark repeat={mark_every:d}")
+        elif isinstance(mark_every, slice):
+            raise NotImplementedError
         else:
             # python starts at index 0, pgfplots at index 1
             pgf_marker = [1 + m for m in mark_every]
             addplot_options.append("mark indices = {" + ", ".join(map(str, pgf_marker)) + "}")
 
+
+def _marker_options(data: Dict, marker_data: MarkerData, addplot_options: List[str]) -> None:
     mark_options = ["solid"]
     mark_options += marker_data.mark_options
     if marker_data.fc is None or (isinstance(marker_data.fc, str) and marker_data.fc == "none"):
@@ -184,10 +215,10 @@ def _marker(data: Dict, obj: Line2D, marker_data: MarkerData, addplot_options: L
     face_and_edge_have_equal_color = marker_data.ec == marker_data.fc
     # Sometimes, the colors are given as arrays. Collapse them into a
     # single boolean.
-    with contextlib.suppress(TypeError):
+    if isinstance(face_and_edge_have_equal_color, Iterable):
         face_and_edge_have_equal_color = all(face_and_edge_have_equal_color)
 
-    if not face_and_edge_have_equal_color:
+    if not face_and_edge_have_equal_color and marker_data.ec is not None:
         draw_xcolor, _ = mycol.mpl_color2xcolor(data, marker_data.ec)
         if draw_xcolor != marker_data.lc:
             mark_options.append("draw=" + draw_xcolor)
@@ -200,7 +231,7 @@ def _table(data: Dict, obj: Line2D) -> List[str]:
     ydata_mask = _get_ydata_mask(obj)
 
     if isinstance(xdata[0], datetime.datetime):
-        xdata = [date.strftime("%Y-%m-%d %H:%M") for date in xdata]
+        xdata = np.array([date.strftime("%Y-%m-%d %H:%M") for date in xdata])
         xformat = ""
         col_sep = ","
         opts = ["header=false", "col sep=comma"]
@@ -273,20 +304,23 @@ def _table(data: Dict, obj: Line2D) -> List[str]:
 
 def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
     # get_xydata() always gives float data, no matter what
-    xdata, ydata = obj.get_xydata().T
+    xy = obj.get_xydata()
+    if isinstance(xy, np.ndarray):
+        xdata, ydata = xy.T
+    else:
+        msg = "xy data must be a numpy array."
+        raise TypeError(msg)
 
     # get_{x,y}data gives datetime or string objects if so specified in the plotter
     xdata_alt = obj.get_xdata()
-    if isinstance(xdata_alt, int) or isinstance(xdata, float):
-        # https://github.com/nschloe/tikzplotlib/issues/339
-        xdata_alt = [xdata_alt]
+    xdata_iterable = xdata_alt if isinstance(xdata_alt, Iterable) else [xdata_alt]
 
     ff = data["float format"]
 
-    if isinstance(xdata_alt[0], datetime.datetime):
-        xdata = xdata_alt
+    if isinstance(xdata_iterable[0], datetime.datetime):
+        xdata = xdata_iterable
     else:
-        if isinstance(xdata_alt[0], str):
+        if isinstance(xdata_iterable[0], str):
             # Remove old xtick,xticklabels (if any).
             data["current axes"].axis_options = [
                 option
@@ -295,7 +329,7 @@ def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
             ]
             data["current axes"].axis_options += [
                 "xtick={{{}}}".format(",".join([f"{x:{ff}}" for x in xdata])),
-                "xticklabels={{{}}}".format(",".join(xdata_alt)),
+                "xticklabels={{{}}}".format(",".join([str(x) for x in xdata_iterable])),
             ]
         xdata, ydata = transform_to_data_coordinates(obj, xdata, ydata)
 
@@ -310,11 +344,10 @@ def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def _get_ydata_mask(obj: Line2D) -> List:
-    try:
-        _, ydata_alt = obj.get_data()
-        ydata_mask = ydata_alt.mask
-    except AttributeError:
+    ydata = obj.get_ydata()
+    if not hasattr(ydata, "mask"):
         return []
+    ydata_mask = ydata.mask
     if isinstance(ydata_mask, np.bool_) and not ydata_mask:
         return []
     if callable(ydata_mask):

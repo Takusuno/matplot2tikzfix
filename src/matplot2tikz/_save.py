@@ -6,8 +6,7 @@ import sys
 import tempfile
 import warnings
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING, TypedDict
-from typing_extensions import NotRequired, Unpack
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, TypedDict
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -21,6 +20,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from matplotlib.spines import Spine
 from matplotlib.text import Text
+from typing_extensions import NotRequired, Unpack
 
 if TYPE_CHECKING:
     from matplotlib.artist import Artist
