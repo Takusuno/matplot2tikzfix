@@ -1,8 +1,16 @@
+"""Test plot with annotations."""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     fig = plt.figure(1, figsize=(8, 5))
     ax = fig.add_subplot(111, autoscale_on=False, xlim=(-1, 5), ylim=(-4, 3))
     t = np.arange(0.0, 5.0, 0.2)
@@ -14,7 +22,7 @@ def plot():
         xycoords="data",
         xytext=(4.5, 1.5),
         textcoords="data",
-        arrowprops=dict(arrowstyle="->", ec="r"),
+        arrowprops={"arrowstyle": "->", "ec": "r"},
     )
     ax.annotate(
         "arrowstyle",
@@ -22,7 +30,7 @@ def plot():
         xycoords="data",
         xytext=(-50, 30),
         textcoords="offset points",
-        arrowprops=dict(arrowstyle="->"),
+        arrowprops={"arrowstyle": "->"},
     )
     ax.annotate(
         "no arrow",
@@ -34,12 +42,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")
-
-
-if __name__ == "__main__":
-    plot()
-    plt.show()

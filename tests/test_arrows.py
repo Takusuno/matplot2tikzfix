@@ -1,9 +1,17 @@
+"""Test plot with fancy arrow."""
+
+import matplotlib as mpl
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
 # https://matplotlib.org/examples/pylab_examples/fancyarrow_demo.html
-def plot():
+def plot() -> Figure:
     styles = mpatches.ArrowStyle.get_styles()
 
     ncol = 2
@@ -12,18 +20,17 @@ def plot():
     fig1 = plt.figure(1, (4.0 * ncol / 1.5, figheight / 1.5))
     fontsize = 0.2 * 70
 
-    ax = fig1.add_axes([0, 0, 1, 1], frameon=False, aspect=1.0)
+    ax = fig1.add_axes((0, 0, 1, 1), frameon=False, aspect=1.0)
 
     ax.set_xlim(0, 4 * ncol)
     ax.set_ylim(0, figheight)
 
-    def to_texstring(s):
+    def to_texstring(s: str) -> str:
         s = s.replace("<", r"$<$")
         s = s.replace(">", r"$>$")
-        s = s.replace("|", r"$|$")
-        return s
+        return s.replace("|", r"$|$")
 
-    for i, (stylename, styleclass) in enumerate(sorted(styles.items())):
+    for i, stylename in enumerate(sorted(styles)):
         x = 3.2 + (i // nrow) * 4
         y = figheight - 0.7 - i % nrow  # /figheight
         p = mpatches.Circle((x, y), 0.2)
@@ -33,20 +40,19 @@ def plot():
             to_texstring(stylename),
             (x, y),
             (x - 1.2, y),
-            # xycoords="figure fraction", textcoords="figure fraction",
             ha="right",
             va="center",
             size=fontsize,
-            arrowprops=dict(
-                arrowstyle=stylename,
-                patchB=p,
-                shrinkA=5,
-                shrinkB=5,
-                fc="k",
-                ec="k",
-                connectionstyle="arc3,rad=-0.05",
-            ),
-            bbox=dict(boxstyle="square", fc="w"),
+            arrowprops={
+                "arrowstyle": stylename,
+                "patchB": p,
+                "shrinkA": 5,
+                "shrinkB": 5,
+                "fc": "k",
+                "ec": "k",
+                "connectionstyle": "arc3,rad=-0.05",
+            },
+            bbox={"boxstyle": "square", "fc": "w"},
         )
 
     ax.xaxis.set_visible(False)
@@ -54,15 +60,5 @@ def plot():
     return plt.gcf()
 
 
-# if __name__ == "__main__":
-#     import helpers
-#
-#     # fig = plot()
-#     # helpers.print_tree(fig)
-#     # plt.show()
-#
-#     plot()
-#     import matplot2tikz
-#     code = matplot2tikz.get_tikz_code(include_disclaimer=False, standalone=True)
-#     plt.close()
-#     helpers._does_compile(code)
+def test() -> None:
+    assert_equality(plot, "test_arrows_reference.tex")

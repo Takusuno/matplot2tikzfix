@@ -15,6 +15,7 @@ dependencies = [
   "numpy",
   "Pillow",
   "webcolors",
+  "typing_extensions >= 4.5",
 ]
 authors = [
     {name="Erwin de Gelder", email="erwindegelder@gmail.com"},

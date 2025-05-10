@@ -1,7 +1,16 @@
+"""Multiple tests for testing _cleanfigure's functionality."""
+
+from typing import Tuple
+
+import matplotlib as mpl
 import numpy as np
 import pytest
-import matplotlib as mpl
+from matplotlib import colors as mcolors
 from matplotlib import pyplot as plt
+from matplotlib.collections import PolyCollection
+from matplotlib.ticker import FormatStrFormatter, LinearLocator
+from mpl_toolkits.mplot3d import axes3d
+
 from matplot2tikz import clean_figure, get_tikz_code
 
 mpl.use("Agg")
@@ -10,17 +19,22 @@ RC_PARAMS = {"figure.figsize": [5, 5], "figure.dpi": 220, "pgf.rcfonts": False}
 
 
 class TestPlottypes:
-    """Testing plot types found here https://matplotlib.org/3.1.1/tutorials/introductory/sample_plots.html"""
+    """Testing plot types found at matplotlib's manual.
 
-    def test_plot(self):
+    Link: https://matplotlib.org/3.1.1/tutorials/introductory/sample_plots.html
+    """
+
+    def test_plot(self) -> None:
+        """Tets cleanfigure with a plot."""
+        line_difference = 18
         x = np.linspace(1, 100, 20)
         y = np.linspace(1, 100, 20)
 
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -32,30 +46,33 @@ class TestPlottypes:
             # the difference in line numbers should therefore be 2
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 18
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_step(self):
+    def test_step(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         x = np.linspace(1, 100, 20)
         y = np.linspace(1, 100, 20)
 
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.step(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             with pytest.warns(Warning):
                 clean_figure(fig)
         plt.close("all")
 
-    def test_scatter(self):
+    def test_scatter(self) -> None:
+        """Test cleanfigure with a simple scatter plot."""
+        line_difference = 6
         x = np.linspace(1, 100, 20)
         y = np.linspace(1, 100, 20)
         with plt.rc_context(rc=RC_PARAMS):
             _, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.scatter(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure()
@@ -67,34 +84,37 @@ class TestPlottypes:
             # the difference in line numbers should therefore be 2
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 6
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_bar(self):
+    def test_bar(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         x = np.linspace(1, 100, 20)
         y = np.linspace(1, 100, 20)
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.bar(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             with pytest.warns(Warning):
                 clean_figure(fig)
         plt.close("all")
 
-    def test_hist(self):
+    def test_hist(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         x = np.linspace(1, 100, 20)
-        y = np.linspace(1, 100, 20)
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-            ax.hist(x, y)
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.hist(x)
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             with pytest.warns(Warning):
                 clean_figure(fig)
         plt.close("all")
 
-    def test_plot3d(self):
+    def test_plot3d(self) -> None:
+        """Test cleanfigure with a 3d plot."""
+        line_difference = 13
         theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
         z = np.linspace(-2, 2, 100)
         r = z**2 + 1
@@ -103,11 +123,11 @@ class TestPlottypes:
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
+            ax: axes3d.Axes3D = fig.add_subplot(111, projection="3d")
             ax.plot(x, y, z)
-            ax.set_xlim([-2, 2])
-            ax.set_ylim([-2, 2])
-            ax.set_zlim([-2, 2])
+            ax.set_xlim(-2, 2)
+            ax.set_ylim(-2, 2)
+            ax.set_zlim(-2, 2)
             ax.view_init(30, 30)
             raw = get_tikz_code(fig)
 
@@ -117,10 +137,12 @@ class TestPlottypes:
             # Use number of lines to test if it worked.
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 13
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_scatter3d(self):
+    def test_scatter3d(self) -> None:
+        """Test cleanfigure with scatter plot."""
+        line_difference = 14
         theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
         z = np.linspace(-2, 2, 100)
         r = z**2 + 1
@@ -129,11 +151,11 @@ class TestPlottypes:
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
+            ax: axes3d.Axes3D = fig.add_subplot(111, projection="3d")
             ax.scatter(x, y, z)
-            ax.set_xlim([-2, 2])
-            ax.set_ylim([-2, 2])
-            ax.set_zlim([-2, 2])
+            ax.set_xlim(-2, 2)
+            ax.set_ylim(-2, 2)
+            ax.set_zlim(-2, 2)
             ax.view_init(30, 30)
             raw = get_tikz_code(fig)
 
@@ -144,42 +166,41 @@ class TestPlottypes:
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
 
-            assert num_lines_raw - num_lines_clean == 14
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_wireframe3D(self):
-        from mpl_toolkits.mplot3d import axes3d
-
+    def test_wireframe3d(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         # Grab some test data.
-        X, Y, Z = axes3d.get_test_data(0.05)
+        x, y, z = axes3d.get_test_data(0.05)
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
+            ax: axes3d.Axes3D = fig.add_subplot(111, projection="3d")
 
             # Plot a basic wireframe.
-            ax.plot_wireframe(X, Y, Z, rstride=10, cstride=10)
+            ax.plot_wireframe(x, y, z, rstride=10, cstride=10)
             with pytest.warns(Warning):
                 clean_figure(fig)
         plt.close("all")
 
-    def test_surface3D(self):
-        from matplotlib import cm
-        from matplotlib.ticker import FormatStrFormatter, LinearLocator
-
+    def test_surface3d(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         # Make data.
-        X = np.arange(-5, 5, 0.25)
-        Y = np.arange(-5, 5, 0.25)
-        X, Y = np.meshgrid(X, Y)
-        R = np.sqrt(X**2 + Y**2)
-        Z = np.sin(R)
+        x = np.arange(-5, 5, 0.25)
+        y = np.arange(-5, 5, 0.25)
+        xx, yy = np.meshgrid(x, y)
+        r = np.sqrt(xx**2 + yy**2)
+        z = np.sin(r)
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = plt.axes(projection="3d")
+            ax: axes3d.Axes3D = plt.axes(projection="3d")
 
             # Plot the surface.
-            surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+            surf = ax.plot_surface(
+                xx, yy, z, cmap=plt.get_cmap("coolwarm"), linewidth=0, antialiased=False
+            )
 
             # Customize the z axis.
             ax.set_zlim(-1.01, 1.01)
@@ -193,10 +214,8 @@ class TestPlottypes:
                 clean_figure(fig)
         plt.close("all")
 
-    def test_trisurface3D(self):
-        import matplotlib.pyplot as plt
-        import numpy as np
-
+    def test_trisurface3d(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         n_radii = 8
         n_angles = 36
         # Make radii and angles spaces (radius r=0 omitted to eliminate duplication).
@@ -217,43 +236,40 @@ class TestPlottypes:
 
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = plt.axes(projection="3d")
+            ax: axes3d.Axes3D = plt.axes(projection="3d")
 
             ax.plot_trisurf(x, y, z, linewidth=0.2, antialiased=True)
             with pytest.warns(Warning):
                 clean_figure(fig)
         plt.close("all")
 
-    def test_contour3D(self):
-        from matplotlib import cm
-        from mpl_toolkits.mplot3d import axes3d
-
+    def test_contour3d(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
-            X, Y, Z = axes3d.get_test_data(0.05)
-            cset = ax.contour(X, Y, Z, cmap=cm.coolwarm)
+            x, y, z = axes3d.get_test_data(0.05)
+            cset = ax.contour(x, y, z, cmap=plt.get_cmap("coolwarm"))
             ax.clabel(cset, fontsize=9, inline=1)
             with pytest.warns(Warning):
                 clean_figure(fig)
         plt.close("all")
 
-    def test_polygon3D(self):
-        from matplotlib import colors as mcolors
-        from matplotlib.collections import PolyCollection
-
+    def test_polygon3d(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = plt.axes(projection="3d")
+            ax: axes3d.Axes3D = plt.axes(projection="3d")
+            rng = np.random.default_rng(42)
 
-            def cc(arg):
+            def cc(arg: str) -> Tuple[float, float, float, float]:
                 return mcolors.to_rgba(arg, alpha=0.6)
 
             xs = np.arange(0, 10, 0.4)
             verts = []
             zs = [0.0, 1.0, 2.0, 3.0]
             for _ in zs:
-                ys = np.random.rand(len(xs))
+                ys = rng.random(size=len(xs))
                 ys[0], ys[-1] = 0, 0
                 verts.append(list(zip(xs, ys)))
 
@@ -271,13 +287,16 @@ class TestPlottypes:
                 clean_figure(fig)
         plt.close("all")
 
-    def test_bar3D(self):
+    def test_bar3d(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
+            ax: axes3d.Axes3D = fig.add_subplot(111, projection="3d")
+
+            rng = np.random.default_rng(42)
             for c, z in zip(["r", "g", "b", "y"], [30, 20, 10, 0]):
                 xs = np.arange(20)
-                ys = np.random.rand(20)
+                ys = rng.random(size=20)
 
                 # You can provide either a single color or an array. To demonstrate this,
                 # the first bar of each set will be colored cyan.
@@ -292,7 +311,8 @@ class TestPlottypes:
                 clean_figure(fig)
         plt.close("all")
 
-    def test_quiver3D(self):
+    def test_quiver3d(self) -> None:
+        """Test if clean_figure runs (with warning)."""
         with plt.rc_context(rc=RC_PARAMS):
             fig = plt.figure()
             ax = plt.axes(projection="3d")
@@ -314,54 +334,21 @@ class TestPlottypes:
                 clean_figure(fig)
         plt.close("all")
 
-    def test_2D_in_3D(self):
-        with plt.rc_context(rc=RC_PARAMS):
-            ax = plt.axes(projection="3d")
-
-            # Plot a sin curve using the x and y axes.
-            x = np.linspace(0, 1, 100)
-            y = np.sin(x * 2 * np.pi) / 2 + 0.5
-            ax.plot(x, y, zs=0, zdir="z", label="curve in (x,y)")
-
-            # Plot scatterplot data (20 2D points per colour) on the x and z axes.
-            colors = ("r", "g", "b", "k")
-            x = np.random.sample(20 * len(colors))
-            y = np.random.sample(20 * len(colors))
-            c_list = []
-            for c in colors:
-                c_list += [c] * 20
-            # By using zdir='y', the y value of these points is fixed to the zs value 0
-            # and the (x,y) points are plotted on the x and z axes.
-            ax.scatter(x, y, zs=0, zdir="y", c=c_list, label="points in (x,z)")
-
-            # Make legend, set axes limits and labels
-            ax.legend()
-            ax.set_xlim(0, 1)
-            ax.set_ylim(0, 1)
-            ax.set_zlim(0, 1)
-            ax.set_xlabel("X")
-            ax.set_ylabel("Y")
-            ax.set_zlabel("Z")
-
-            # Customize the view angle so it's easier to see that the scatter points lie
-            # on the plane y=0
-            ax.view_init(elev=20.0, azim=-35)
-        plt.close("all")
-
 
 class TestLineplotMarkers:
-    def test_line_no_markers(self):
-        """Test high-level usage for simple example.
-        Test is successful if generated tikz code saves correct amount of lines
-        """
+    """Test plots with/without lines/markers."""
+
+    def test_line_no_markers(self) -> None:
+        """Test with plot with line but no markers."""
+        line_difference = 18
         x = np.linspace(1, 100, 20)
         y = np.linspace(1, 100, 20)
 
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y, linestyle="-", marker="None")
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -373,21 +360,20 @@ class TestLineplotMarkers:
             # the difference in line numbers should therefore be 2
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 18
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_no_line_markers(self):
-        """Test high-level usage for simple example.
-        Test is successful if generated tikz code saves correct amount of lines
-        """
+    def test_no_line_markers(self) -> None:
+        """Test with plot with markers but without line."""
+        line_difference = 6
         x = np.linspace(1, 100, 20)
         y = np.linspace(1, 100, 20)
 
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y, linestyle="None", marker="*")
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -399,21 +385,20 @@ class TestLineplotMarkers:
             # the difference in line numbers should therefore be 2
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 6
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_line_markers(self):
-        """Test high-level usage for simple example.
-        Test is successful if generated tikz code saves correct amount of lines
-        """
+    def test_line_markers(self) -> None:
+        """Test with plot with line and markers."""
+        line_difference = 6
         x = np.linspace(1, 100, 20)
         y = np.linspace(1, 100, 20)
 
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y, linestyle="-", marker="*")
-            ax.set_ylim([20, 80])
-            ax.set_xlim([20, 80])
+            ax.set_ylim(20, 80)
+            ax.set_xlim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -425,18 +410,20 @@ class TestLineplotMarkers:
             # the difference in line numbers should therefore be 2
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 6
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_sine(self):
+    def test_sine(self) -> None:
+        """Test plot with sinus function."""
+        line_difference = 39
         x = np.linspace(1, 2 * np.pi, 100)
         y = np.sin(8 * x)
 
         with plt.rc_context(rc=RC_PARAMS):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y, linestyle="-", marker="*")
-            ax.set_xlim([0.5 * np.pi, 1.5 * np.pi])
-            ax.set_ylim([-1, 1])
+            ax.set_xlim(0.5 * np.pi, 1.5 * np.pi)
+            ax.set_ylim(-1, 1)
             raw = get_tikz_code()
 
             clean_figure(fig)
@@ -448,13 +435,17 @@ class TestLineplotMarkers:
             # the difference in line numbers should therefore be 2
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 39
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
 
 class TestSubplots:
-    def test_subplot(self):
-        """Octave code
+    """Test with subplot."""
+
+    def test_subplot(self) -> None:
+        """Test cleanfigure with a subplot.
+
+        Octave code
         ```octave
             addpath ("../matlab2tikz/src")
 
@@ -477,6 +468,7 @@ class TestSubplots:
             cleanfigure;
         ```
         """
+        line_difference = 36
         x = np.linspace(1, 100, 20)
         y = np.linspace(1, 100, 20)
 
@@ -498,12 +490,16 @@ class TestSubplots:
             # the difference in line numbers should therefore be 2
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 36
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
 
 class TestLogscale:
-    def test_ylog(self):
+    """Different tests with at least one axis on log scale."""
+
+    def test_ylog(self) -> None:
+        """Test first semilogy plot."""
+        line_difference = 98
         x = np.linspace(0, 3, 100)
         y = np.exp(x)
 
@@ -517,10 +513,12 @@ class TestLogscale:
             clean = get_tikz_code()
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 98
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_xlog(self):
+    def test_xlog(self) -> None:
+        """Test first semilogx plot."""
+        line_difference = 98
         y = np.linspace(0, 3, 100)
         x = np.exp(y)
 
@@ -534,10 +532,12 @@ class TestLogscale:
             clean = get_tikz_code()
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 98
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_loglog(self):
+    def test_loglog(self) -> None:
+        """Test first loglog plot."""
+        line_difference = 98
         x = np.exp(np.logspace(0.0, 1.5, 100))
         y = np.exp(np.logspace(0.0, 1.5, 100))
 
@@ -552,10 +552,12 @@ class TestLogscale:
             clean = get_tikz_code()
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 98
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_ylog_2(self):
+    def test_ylog_2(self) -> None:
+        """Test second semilogy plot."""
+        line_difference = 51
         x = np.arange(1, 100)
         y = np.arange(1, 100)
         with plt.rc_context(rc=RC_PARAMS):
@@ -568,10 +570,12 @@ class TestLogscale:
             clean = get_tikz_code()
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 51
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_xlog_2(self):
+    def test_xlog_2(self) -> None:
+        """Test second semilogx plot."""
+        line_difference = 51
         x = np.arange(1, 100)
         y = np.arange(1, 100)
         with plt.rc_context(rc=RC_PARAMS):
@@ -584,10 +588,12 @@ class TestLogscale:
             clean = get_tikz_code()
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 51
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_loglog_2(self):
+    def test_loglog_2(self) -> None:
+        """Test second loglog plot."""
+        line_difference = 97
         x = np.arange(1, 100)
         y = np.arange(1, 100)
         with plt.rc_context(rc=RC_PARAMS):
@@ -601,10 +607,12 @@ class TestLogscale:
             clean = get_tikz_code()
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 97
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_loglog_3(self):
+    def test_loglog_3(self) -> None:
+        """Test third loglog plot."""
+        line_difference = 18
         x = np.logspace(-3, 3, 20)
         y = np.logspace(-3, 3, 20)
 
@@ -613,18 +621,20 @@ class TestLogscale:
             ax.plot(x, y)
             ax.set_xscale("log")
             ax.set_yscale("log")
-            ax.set_ylim([10 ** (-2), 10 ** (2)])
-            ax.set_xlim([10 ** (-2), 10 ** (2)])
+            ax.set_ylim(10**-2, 10**2)
+            ax.set_xlim(10**-2, 10**2)
             raw = get_tikz_code()
 
             clean_figure(fig)
             clean = get_tikz_code()
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 18
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
-    def test_xlog_3(self):
+    def test_xlog_3(self) -> None:
+        """Test third semilogx plot."""
+        line_difference = 18
         x = np.logspace(-3, 3, 20)
         y = np.linspace(1, 100, 20)
 
@@ -632,19 +642,19 @@ class TestLogscale:
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.plot(x, y)
             ax.set_xscale("log")
-            ax.set_xlim([10 ** (-2), 10 ** (2)])
-            ax.set_ylim([20, 80])
+            ax.set_xlim(10**-2, 10**2)
+            ax.set_ylim(20, 80)
             raw = get_tikz_code()
 
             clean_figure(fig)
             clean = get_tikz_code()
             num_lines_raw = raw.count("\n")
             num_lines_clean = clean.count("\n")
-            assert num_lines_raw - num_lines_clean == 18
+            assert num_lines_raw - num_lines_clean == line_difference
         plt.close("all")
 
 
-def test_memory():
+def test_memory() -> None:
     plt.plot(np.arange(100000))
     clean_figure()
     plt.close("all")

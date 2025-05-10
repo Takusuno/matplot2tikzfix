@@ -1,7 +1,18 @@
-import matplotlib as mpl
+from __future__ import annotations
+
+import contextlib
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Dict, List, Optional
+
 import numpy as np
 from matplotlib.dates import DateConverter, num2date
+from matplotlib.lines import Line2D, _get_dash_pattern
 from matplotlib.markers import MarkerStyle
+from matplotlib.path import Path
+
+if TYPE_CHECKING:
+    from matplotlib.collections import Collection, PathCollection
+    from matplotlib.patches import Patch
 
 from . import _color, _files
 from ._axes import _mpl_cmap2pgf_cmap
@@ -10,13 +21,43 @@ from ._markers import _mpl_marker2pgfp_marker
 from ._util import get_legend_text, has_legend
 
 
-def draw_path(data, path, draw_options=None, simplify=None):
+@dataclass
+class LineData:
+    obj: Collection | Patch
+    ec: Optional[str | tuple] = None  # edgecolor
+    ec_name: Optional[str] = None
+    ec_rgba: Optional[np.ndarray] = None
+    fc: Optional[str | tuple] = None  # facecolor
+    fc_name: Optional[str] = None
+    fc_rgba: Optional[np.ndarray] = None
+    ls: Optional[str | tuple] = None  # linestyle
+    lw: Optional[float] = None  # linewidth
+    hatch: Optional[str] = None
+
+
+@dataclass
+class PathCollectionData:
+    obj: PathCollection
+    dd_strings: np.ndarray
+    draw_options: list
+    labels: list
+    table_options: list
+    is_contour: bool
+    marker: Optional[str] = None
+    is_filled: Optional[bool] = False
+    add_individual_color_code: Optional[bool] = False
+    legend_text: Optional[str] = None
+
+
+def draw_path(
+    data: dict, path: Path, draw_options: Optional[list] = None, simplify: Optional[bool] = None
+) -> tuple[str, list, bool]:
     """Adds code for drawing an ordinary path in PGFPlots (TikZ)."""
     # For some reasons, matplotlib sometimes adds void paths which consist of
     # only one point and have 0 fill opacity. To not let those clutter the
     # output TeX file, bail out here.
     if (
-        len(path.vertices) == 2
+        len(path.vertices) == 2  # noqa: PLR2004
         and all(path.vertices[0] == path.vertices[1])
         and "fill opacity=0" in draw_options
     ):
@@ -33,26 +74,19 @@ def draw_path(data, path, draw_options=None, simplify=None):
     prev = None
     is_area = None
     for vert, code in path.iter_segments(simplify=simplify):
-        # nschloe, Oct 2, 2015:
-        #   The transform call yields warnings and it is unclear why. Perhaps
-        #   the input data is not suitable? Anyhow, this should not happen.
-        #   Comment out for now.
-        # vert = np.asarray(
-        #         _transform_to_data_coordinates(obj, [vert[0]], [vert[1]])
-        #         )
         # For path codes see: http://matplotlib.org/api/path_api.html
-        #
-        # if code == mpl.path.Path.STOP: pass
         is_area = False
-        if code == mpl.path.Path.MOVETO:
-            if x_is_date:
-                vert = [num2date(vert[0]), vert[1]]
-            nodes.append(f"(axis cs:{vert[0]:{xformat}},{vert[1]:{ff}})")
-        elif code == mpl.path.Path.LINETO:
-            if x_is_date:
-                vert = [num2date(vert[0]), vert[1]]
-            nodes.append(f"--(axis cs:{vert[0]:{xformat}},{vert[1]:{ff}})")
-        elif code == mpl.path.Path.CURVE3:
+        if code == Path.MOVETO:
+            nodes.append(
+                f"(axis cs:{vert[0] if not x_is_date else num2date(vert[0]):{xformat}},"
+                f"{vert[1]:{ff}})"
+            )
+        elif code == Path.LINETO:
+            nodes.append(
+                f"--(axis cs:{vert[0] if not x_is_date else num2date(vert[0]):{xformat}},"
+                f"{vert[1]:{ff}})"
+            )
+        elif code == Path.CURVE3:
             # Quadratic Bezier curves aren't natively supported in TikZ, but
             # can be emulated as cubic Beziers.
             # From
@@ -61,48 +95,41 @@ def draw_path(data, path, draw_options=None, simplify=None):
             # and P2, then a process called 'degree elevation' yields the cubic
             # control points (Q0, Q1, Q2 and Q3) as follows:
             #   CODE: SELECT ALL
-            #   Q0 = P0
+            #   Q0 = P0                         # noqa: ERA001
             #   Q1 = 1/3 P0 + 2/3 P1
             #   Q2 = 2/3 P1 + 1/3 P2
-            #   Q3 = P2
+            #   Q3 = P2                         # noqa: ERA001
             #
             # P0 is the point of the previous step which is needed to compute
             # Q1.
-            #
-            # Cannot draw quadratic Bezier curves as the beginning of a path
-            assert prev is not None
-            Q1 = 1.0 / 3.0 * prev + 2.0 / 3.0 * vert[0:2]
-            Q2 = 2.0 / 3.0 * vert[0:2] + 1.0 / 3.0 * vert[2:4]
-            Q3 = vert[2:4]
+            if prev is None:
+                msg = "Cannot draw quadratic Bezier curves as the beginning of a path"
+                raise ValueError(msg)
+            q1 = 1.0 / 3.0 * prev + 2.0 / 3.0 * vert[0:2]
+            q2 = 2.0 / 3.0 * vert[0:2] + 1.0 / 3.0 * vert[2:4]
+            q3 = vert[2:4]
             if x_is_date:
-                Q1 = [num2date(Q1[0]), Q1[1]]
-                Q2 = [num2date(Q2[0]), Q2[1]]
-                Q3 = [num2date(Q3[0]), Q3[1]]
+                q1 = [num2date(q1[0]), q1[1]]
+                q2 = [num2date(q2[0]), q2[1]]
+                q3 = [num2date(q3[0]), q3[1]]
             nodes.append(
                 ".. controls "
-                f"(axis cs:{Q1[0]:{xformat}},{Q1[1]:{ff}}) and "
-                f"(axis cs:{Q2[0]:{xformat}},{Q2[1]:{ff}}) .. "
-                f"(axis cs:{Q3[0]:{xformat}},{Q3[1]:{ff}})"
+                f"(axis cs:{q1[0]:{xformat}},{q1[1]:{ff}}) and "
+                f"(axis cs:{q2[0]:{xformat}},{q2[1]:{ff}}) .. "
+                f"(axis cs:{q3[0]:{xformat}},{q3[1]:{ff}})"
             )
-        elif code == mpl.path.Path.CURVE4:
+        elif code == Path.CURVE4:
             # Cubic Bezier curves.
-            if x_is_date:
-                vert = [
-                    num2date(vert[0]),
-                    vert[1],
-                    num2date(vert[2]),
-                    vert[3],
-                    num2date(vert[4]),
-                    vert[5],
-                ]
             nodes.append(
                 ".. controls "
-                f"(axis cs:{vert[0]:{xformat}},{vert[1]:{ff}}) and "
-                f"(axis cs:{vert[2]:{xformat}},{vert[3]:{ff}}) .. "
-                f"(axis cs:{vert[4]:{xformat}},{vert[5]:{ff}})"
+                f"(axis cs:{vert[0] if not x_is_date else num2date(vert[0]):{xformat}},"
+                f"{vert[1]:{ff}}) and "
+                f"(axis cs:{vert[2] if not x_is_date else num2date(vert[2]):{xformat}},"
+                f"{vert[3]:{ff}}) .. "
+                f"(axis cs:{vert[4] if not x_is_date else num2date(vert[4]):{xformat}},"
+                f"{vert[5]:{ff}})"
             )
         else:
-            assert code == mpl.path.Path.CLOSEPOLY
             nodes.append("--cycle")
             is_area = True
 
@@ -112,192 +139,68 @@ def draw_path(data, path, draw_options=None, simplify=None):
     do = "[{}]".format(", ".join(draw_options)) if draw_options else ""
     path_command = "\\path {}\n{};\n".format(do, "\n".join(nodes))
 
-    return data, path_command, draw_options, is_area
+    return path_command, draw_options, is_area
 
 
-def draw_pathcollection(data, obj):
+def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
     # gather data
-    assert obj.get_offsets() is not None
-    labels = ["x", "y"]
     dd = obj.get_offsets()
 
-    fmt = "{:" + data["float format"] + "}"
-    dd_strings = np.array([[fmt.format(val) for val in row] for row in dd])
-
-    draw_options = ["only marks"]
-    table_options = []
-
-    is_filled = False
+    path_collection_data = PathCollectionData(
+        obj=obj,
+        dd_strings=np.array([[f"{val:{data['float format']}}" for val in row] for row in dd]),
+        draw_options=["only marks"],
+        labels=["x", "y"],
+        table_options=[],
+        is_contour=len(dd) == 1,
+    )
+    line_data = LineData(obj=obj)
 
     if obj.get_array() is not None:
-        dd_strings = np.column_stack([dd_strings, obj.get_array()])
-        labels.append("colordata")
-        draw_options.append("scatter src=explicit")
-        table_options.extend(["x=x", "y=y", "meta=colordata"])
-        ec = None
-        fc = None
-        ls = None
-        marker0 = None
-        if obj.get_cmap():
-            mycolormap, is_custom_cmap = _mpl_cmap2pgf_cmap(obj.get_cmap(), data)
-            draw_options.append("scatter")
-            draw_options.append("colormap" + ("=" if is_custom_cmap else "/") + mycolormap)
+        _draw_pathcollection_scatter_colormap(data, path_collection_data)
     else:
         # gather the draw options
-        add_individual_color_code = False
+        _draw_pathcollection_get_edgecolors(data, path_collection_data, line_data)
+        _draw_pathcollection_get_facecolors(data, path_collection_data, line_data)
+        with contextlib.suppress(TypeError, IndexError):
+            line_data.ls = obj.get_linestyle()[0]
+        _draw_pathcollection_add_individual_color(path_collection_data)
+        _draw_pathcollection_get_marker(path_collection_data)
 
-        try:
-            ec = obj.get_edgecolors()
-        except TypeError:
-            ec = None
-        else:
-            if len(ec) == 0:
-                ec = None
-            elif len(ec) == 1:
-                ec = ec[0]
-            else:
-                assert len(ec) == len(dd)
-                labels.append("draw")
-                ec_strings = [",".join(fmt.format(item) for item in row) for row in ec[:, :3] * 255]
-                dd_strings = np.column_stack([dd_strings, ec_strings])
-                add_individual_color_code = True
-                ec = None
-
-        try:
-            fc = obj.get_facecolors()
-        except TypeError:
-            fc = None
-        else:
-            if len(fc) == 0:
-                fc = None
-            elif len(fc) == 1:
-                fc = fc[0]
-                is_filled = True
-            else:
-                assert len(fc) == len(dd)
-                labels.append("fill")
-                fc_strings = [",".join(fmt.format(item) for item in row) for row in fc[:, :3] * 255]
-                dd_strings = np.column_stack([dd_strings, fc_strings])
-                add_individual_color_code = True
-                fc = None
-                is_filled = True
-
-        try:
-            ls = obj.get_linestyle()[0]
-        except (TypeError, IndexError):
-            ls = None
-
-        if add_individual_color_code:
-            draw_options.extend(
-                [
-                    "scatter",
-                    "visualization depends on={value \\thisrow{draw} \\as \\drawcolor}",
-                    "visualization depends on={value \\thisrow{fill} \\as \\fillcolor}",
-                    "scatter/@pre marker code/.code={%\n"
-                    + "  \\expanded{%\n"
-                    + "  \\noexpand\\definecolor{thispointdrawcolor}{RGB}{\\drawcolor}%\n"
-                    + "  \\noexpand\\definecolor{thispointfillcolor}{RGB}{\\fillcolor}%\n"
-                    + "  }%\n"
-                    + "  \\scope[draw=thispointdrawcolor, fill=thispointfillcolor]%\n"
-                    + "}",
-                    "scatter/@post marker code/.code={%\n  \\endscope\n}",
-                ]
-            )
-
-        # "solution" from
-        # <https://github.com/matplotlib/matplotlib/issues/4672#issuecomment-378702670>
-        marker0 = None
-        if obj.get_paths():
-            p = obj.get_paths()[0]
-            ms = {style: MarkerStyle(style) for style in MarkerStyle.markers}
-            paths = {
-                style: marker.get_path().transformed(marker.get_transform())
-                for style, marker in ms.items()
-            }
-            for marker, path in paths.items():
-                if (
-                    np.array_equal(path.codes, p.codes)
-                    and (path.vertices.shape == p.vertices.shape)
-                    and np.max(np.abs(path.vertices - p.vertices)) < 1.0e-10
-                ):
-                    marker0 = marker
-                    break
-
-    is_contour = len(dd) == 1
-    if is_contour:
-        draw_options = ["draw=none"]
-
-    if marker0 is not None:
-        data, pgfplots_marker, marker_options = _mpl_marker2pgfp_marker(data, marker0, is_filled)
-        draw_options += [f"mark={pgfplots_marker}"]
-        if marker_options:
-            draw_options += ["mark options={{{}}}".format(",".join(marker_options))]
-
-    # `only mark` plots don't need linewidth
-    data, extra_draw_options = get_draw_options(data, obj, ec, fc, ls, None)
-    draw_options += extra_draw_options
-
-    legend_text = get_legend_text(obj)
-    if legend_text is None and has_legend(obj.axes):
-        draw_options.append("forget plot")
+    _draw_pathcollection_drawoptions(data, path_collection_data, line_data)
 
     for path in obj.get_paths():
-        if is_contour:
-            dd = path.vertices
-            # https://matplotlib.org/stable/api/path_api.html
-            codes = path.codes if path.codes is not None else np.array([1] + [2] * (len(dd) - 1))
-            dd_strings = []
-            for row, code in zip(dd, codes):
-                if code == 1:  # MOVETO
-                    # Inserts a newline to trigger "move to" in pgfplots
-                    dd_strings.append([])
-                dd_strings.append([fmt.format(val) for val in row])
-            dd_strings = np.array(dd_strings[1:], dtype=object)
-
-        if len(obj.get_sizes()) == len(dd):
-            # See Pgfplots manual, chapter 4.25.
-            # In Pgfplots, \mark size specifies radii, in matplotlib circle areas.
-            radii = np.sqrt(obj.get_sizes() / np.pi)
-            dd_strings = np.column_stack([dd_strings, radii])
-            labels.append("sizedata")
-            draw_options.extend(
-                [
-                    "visualization depends on=" + "{\\thisrow{sizedata} \\as\\perpointmarksize}",
-                    "scatter",
-                    "scatter/@pre marker code/.append style="
-                    + "{/tikz/mark size=\\perpointmarksize}",
-                    # "scatter/@post marker code/.style={}"
-                ]
-            )
+        _draw_pathcollection_draw_contour(path, data, path_collection_data)
+        _draw_pathcollection_scatter_sizes(path_collection_data)
 
         # remove duplicates
-        draw_options = sorted(list(set(draw_options)))
+        draw_options = sorted(set(path_collection_data.draw_options))
 
+        max_row_length = 80
         len_row = sum(len(item) for item in draw_options)
-        j0, j1, j2 = ("", ", ", "") if len_row < 80 else ("\n  ", ",\n  ", "\n")
+        j0, j1, j2 = ("", ", ", "") if len_row < max_row_length else ("\n  ", ",\n  ", "\n")
         do = f" [{j0}{{}}{j2}]".format(j1.join(draw_options)) if draw_options else ""
         content.append(f"\\addplot{do}\n")
 
         if data["externals search path"] is not None:
             esp = data["externals search path"]
-            table_options.append(f"search path={{{esp}}}")
+            path_collection_data.table_options.append(f"search path={{{esp}}}")
 
-        if len(table_options) > 0:
-            table_options_str = ", ".join(table_options)
+        if len(path_collection_data.table_options) > 0:
+            table_options_str = ", ".join(path_collection_data.table_options)
             content.append(f"table [{table_options_str}]{{")
         else:
             content.append("table{")
 
         plot_table = []
-        plot_table.append("  ".join(labels) + "\n")
-        for row in dd_strings:
-            plot_table.append(" ".join(row) + "\n")
+        plot_table.append("  ".join(path_collection_data.labels) + "\n")
+        plot_table.extend(" ".join(row) + "\n" for row in path_collection_data.dd_strings)
 
         if data["externalize tables"]:
             filepath, rel_filepath = _files.new_filepath(data, "table", ".dat")
-            with open(filepath, "w") as f:
+            with filepath.open("w") as f:
                 # No encoding handling required: plot_table is only ASCII
                 f.write("".join(plot_table))
             content.append(str(rel_filepath))
@@ -307,96 +210,261 @@ def draw_pathcollection(data, obj):
 
         content.append("};\n")
 
-    if legend_text is not None:
-        content.append(f"\\addlegendentry{{{legend_text}}}\n")
+    if path_collection_data.legend_text is not None:
+        content.append(f"\\addlegendentry{{{path_collection_data.legend_text}}}\n")
 
-    return data, content
+    return content
 
 
-def get_draw_options(data, obj, ec, fc, ls, lw, hatch=None):
-    """Get the draw options for a given (patch) object.
-    Get the draw options for a given (patch) object.
-    Input:
-        data -
-        obj -
-        ec - edge color
-        fc - face color
-        ls - linestyle
-        lw - linewidth
-        hatch=None - hatch, i.e., pattern within closed path
-    Output:
-        draw_options - list
-    """
-    draw_options = []
+def _draw_pathcollection_scatter_colormap(data: dict, pcd: PathCollectionData) -> None:
+    pcd.dd_strings = np.column_stack([pcd.dd_strings, pcd.obj.get_array()])
+    pcd.labels.append("colordata")
+    pcd.draw_options.append("scatter src=explicit")
+    pcd.table_options.extend(["x=x", "y=y", "meta=colordata"])
+    if pcd.obj.get_cmap():
+        mycolormap, is_custom_cmap = _mpl_cmap2pgf_cmap(pcd.obj.get_cmap(), data)
+        pcd.draw_options.append("scatter")
+        pcd.draw_options.append("colormap" + ("=" if is_custom_cmap else "/") + mycolormap)
 
-    if ec is not None:
-        data, ec_col, ec_rgba = _color.mpl_color2xcolor(data, ec)
-        if ec_rgba[3] > 0:
-            draw_options.append(f"draw={ec_col}")
-        else:
-            draw_options.append("draw=none")
 
-    if fc is not None:
-        data, fc_col, fc_rgba = _color.mpl_color2xcolor(data, fc)
-        if fc_rgba[3] > 0.0:
-            # Don't draw if it's invisible anyways.
-            draw_options.append(f"fill={fc_col}")
-
-    # handle transparency
-    ff = data["float format"]
-    if ec is not None and fc is not None and ec_rgba[3] != 1.0 and ec_rgba[3] == fc_rgba[3]:
-        draw_options.append(f"opacity={ec[3]:{ff}}")
+def _draw_pathcollection_get_edgecolors(
+    data: dict, pcd: PathCollectionData, line_data: LineData
+) -> None:
+    try:
+        edgecolors = pcd.obj.get_edgecolors()
+    except TypeError:
+        pass
     else:
-        if ec is not None and 0 < ec_rgba[3] < 1.0:
-            draw_options.append(f"draw opacity={ec_rgba[3]:{ff}}")
-        if fc is not None and 0 < fc_rgba[3] < 1.0:
-            draw_options.append(f"fill opacity={fc_rgba[3]:{ff}}")
+        if len(edgecolors) == 1:
+            line_data.ec = edgecolors[0]
+        elif len(edgecolors) > 1:
+            pcd.labels.append("draw")
 
-    if lw is not None:
-        lw_ = mpl_linewidth2pgfp_linewidth(data, lw)
-        if lw_:
-            draw_options.append(lw_)
+            ec_strings = [
+                ",".join(f"{item:{data['float format']}}" for item in row)
+                for row in edgecolors[:, :3] * 255
+            ]
+            pcd.dd_strings = np.column_stack([pcd.dd_strings, ec_strings])
+            pcd.add_individual_color_code = True
 
-    if ls is not None:
-        ls_ = mpl_linestyle2pgfplots_linestyle(data, ls)
-        if ls_ is not None and ls_ != "solid":
-            draw_options.append(ls_)
 
-    if hatch is not None:
-        # In matplotlib hatches are rendered with edge color and linewidth
-        # In PGFPlots patterns are rendered in 'pattern color' which defaults to
-        # black and according to opacity fill.
-        # No 'pattern line width' option exist.
-        # This can be achieved with custom patterns, see _hatches.py
+def _draw_pathcollection_get_facecolors(
+    data: dict, pcd: PathCollectionData, line_data: LineData
+) -> None:
+    try:
+        facecolors = pcd.obj.get_facecolors()
+    except TypeError:
+        pass
+    else:
+        if len(facecolors) == 1:
+            line_data.fc = facecolors[0]
+            pcd.is_filled = True
+        elif len(facecolors) > 1:
+            pcd.labels.append("fill")
+            fc_strings = [
+                ",".join(f"{item:{data['float format']}}" for item in row)
+                for row in facecolors[:, :3] * 255
+            ]
+            pcd.dd_strings = np.column_stack([pcd.dd_strings, fc_strings])
+            pcd.add_individual_color_code = True
+            pcd.is_filled = True
 
-        # There exist an obj.get_hatch_color() method in the mpl API,
-        # but it seems to be unused
-        try:
-            hc = obj._hatch_color
-        except AttributeError:  # Fallback to edge color
-            if ec is None or ec_rgba[3] == 0.0:
-                # Assuming that a hatch marker indicates that hatches are wanted, also
-                # when the edge color is (0, 0, 0, 0), i.e., the edge is invisible
-                h_col, h_rgba = "black", np.array([0, 0, 0, 1])
-            else:
-                h_col, h_rgba = ec_col, ec_rgba
+
+def _draw_pathcollection_add_individual_color(pcd: PathCollectionData) -> None:
+    if pcd.add_individual_color_code:
+        pcd.draw_options.extend(
+            [
+                "scatter",
+                "visualization depends on={value \\thisrow{draw} \\as \\drawcolor}",
+                "visualization depends on={value \\thisrow{fill} \\as \\fillcolor}",
+                "scatter/@pre marker code/.code={%\n"
+                "  \\expanded{%\n"
+                "  \\noexpand\\definecolor{thispointdrawcolor}{RGB}{\\drawcolor}%\n"
+                "  \\noexpand\\definecolor{thispointfillcolor}{RGB}{\\fillcolor}%\n"
+                "  }%\n"
+                "  \\scope[draw=thispointdrawcolor, fill=thispointfillcolor]%\n"
+                "}",
+                "scatter/@post marker code/.code={%\n  \\endscope\n}",
+            ]
+        )
+
+
+def _draw_pathcollection_get_marker(pcd: PathCollectionData) -> None:
+    # "solution" from
+    # <https://github.com/matplotlib/matplotlib/issues/4672#issuecomment-378702670>
+    if pcd.obj.get_paths():
+        p = pcd.obj.get_paths()[0]
+        ms = {style: MarkerStyle(style) for style in MarkerStyle.markers}
+        paths = {
+            style: marker.get_path().transformed(marker.get_transform())
+            for style, marker in ms.items()
+        }
+        tolerance = 1.0e-10
+        for marker, path in paths.items():
+            if (
+                np.array_equal(path.codes, p.codes)
+                and (path.vertices.shape == p.vertices.shape)
+                and np.max(np.abs(path.vertices - p.vertices)) < tolerance
+            ):
+                pcd.marker = marker
+                return
+
+
+def _draw_pathcollection_drawoptions(
+    data: dict, pcd: PathCollectionData, line_data: LineData
+) -> None:
+    if pcd.is_contour:
+        pcd.draw_options = ["draw=none"]
+
+    if pcd.marker is not None:
+        pgfplots_marker, marker_options = _mpl_marker2pgfp_marker(
+            data, pcd.marker, is_filled=pcd.is_filled
+        )
+        pcd.draw_options.append(f"mark={pgfplots_marker}")
+        if marker_options:
+            pcd.draw_options.append("mark options={{{}}}".format(",".join(marker_options)))
+
+    pcd.draw_options.extend(get_draw_options(data, line_data))
+
+    pcd.legend_text = get_legend_text(pcd.obj)
+    if pcd.legend_text is None and has_legend(pcd.obj.axes):
+        pcd.draw_options.append("forget plot")
+
+
+def _draw_pathcollection_draw_contour(path: Path, data: dict, pcd: PathCollectionData) -> None:
+    if pcd.is_contour:
+        dd = path.vertices
+        # https://matplotlib.org/stable/api/path_api.html
+        codes = path.codes if path.codes is not None else np.array([1] + [2] * (len(dd) - 1))
+        pcd.dd_strings = []
+        for row, code in zip(dd, codes):
+            if code == 1:  # MOVETO
+                # Inserts a newline to trigger "move to" in pgfplots
+                pcd.dd_strings.append([])
+            pcd.dd_strings.append([f"{val:{data['float format']}}".format(val) for val in row])
+        pcd.dd_strings = np.array(pcd.dd_strings[1:], dtype=object)
+
+
+def _draw_pathcollection_scatter_sizes(pcd: PathCollectionData) -> None:
+    if len(pcd.obj.get_sizes()) == len(pcd.dd_strings):
+        # See Pgfplots manual, chapter 4.25.
+        # In Pgfplots, \mark size specifies radii, in matplotlib circle areas.
+        radii = np.sqrt(pcd.obj.get_sizes() / np.pi)
+        pcd.dd_strings = np.column_stack([pcd.dd_strings, radii])
+        pcd.labels.append("sizedata")
+        pcd.draw_options.extend(
+            [
+                "visualization depends on=" + "{\\thisrow{sizedata} \\as\\perpointmarksize}",
+                "scatter",
+                "scatter/@pre marker code/.append style={/tikz/mark size=\\perpointmarksize}",
+            ]
+        )
+
+
+def get_draw_options(data: dict, line_data: LineData) -> list:
+    """Get the draw options for a given (patch) object."""
+    return (
+        _get_draw_options_ec(data, line_data)
+        + _get_draw_options_fc(data, line_data)
+        + _get_draw_options_transparency(data, line_data)
+        + _get_draw_options_linewidth(data, line_data)
+        + _get_draw_options_linestyle(data, line_data)
+        + _get_draw_options_hatch(data, line_data)
+    )
+
+
+def _get_draw_options_ec(data: dict, line_data: LineData) -> list:
+    if line_data.ec is None:
+        return []
+    line_data.ec_col, line_data.ec_rgba = _color.mpl_color2xcolor(data, line_data.ec)
+    if line_data.ec_rgba[3] > 0:
+        return [f"draw={line_data.ec_col}"]
+    return ["draw=none"]
+
+
+def _get_draw_options_fc(data: dict, line_data: LineData) -> list:
+    if line_data.fc is None:
+        return []
+    line_data.fc_col, line_data.fc_rgba = _color.mpl_color2xcolor(data, line_data.fc)
+    if line_data.fc_rgba[3] > 0.0:
+        return [f"fill={line_data.fc_col}"]
+    # Don't draw if it's invisible anyways.
+    return []
+
+
+def _get_draw_options_transparency(data: dict, line_data: LineData) -> list:
+    ff = data["float format"]
+    if (
+        line_data.ec is not None
+        and line_data.fc is not None
+        and line_data.ec_rgba[3] != 1.0
+        and line_data.ec_rgba[3] == line_data.fc_rgba[3]
+    ):
+        return [f"opacity={line_data.ec[3]:{ff}}"]
+    draw_options = []
+    if line_data.ec is not None and 0 < line_data.ec_rgba[3] < 1.0:
+        draw_options.append(f"draw opacity={line_data.ec_rgba[3]:{ff}}")
+    if line_data.fc is not None and 0 < line_data.fc_rgba[3] < 1.0:
+        draw_options.append(f"fill opacity={line_data.fc_rgba[3]:{ff}}")
+    return draw_options
+
+
+def _get_draw_options_linewidth(data: dict, line_data: LineData) -> list:
+    if line_data.lw is None:
+        return []
+    lw_ = mpl_linewidth2pgfp_linewidth(data, line_data.lw)
+    if lw_:
+        return [lw_]
+    return []
+
+
+def _get_draw_options_linestyle(data: dict, line_data: LineData) -> list:
+    if line_data.ls is None:
+        return []
+    ls_ = mpl_linestyle2pgfplots_linestyle(data, line_data.ls)
+    if ls_ is not None and ls_ != "solid":
+        return [ls_]
+    return []
+
+
+def _get_draw_options_hatch(data: dict, line_data: LineData) -> list:
+    if line_data.hatch is None:
+        return []
+
+    # In matplotlib hatches are rendered with edge color and linewidth
+    # In PGFPlots patterns are rendered in 'pattern color' which defaults to
+    # black and according to opacity fill.
+    # No 'pattern line width' option exist.
+    # This can be achieved with custom patterns, see _hatches.py
+
+    # There exist an obj.get_hatch_color() method in the mpl API,
+    # but it seems to be unused
+    try:
+        hc = line_data.obj._hatch_color  # noqa: SLF001
+    except AttributeError:  # Fallback to edge color
+        if line_data.ec is None or line_data.line_data.ec_rgba[3] == 0.0:
+            # Assuming that a hatch marker indicates that hatches are wanted, also
+            # when the edge color is (0, 0, 0, 0), i.e., the edge is invisible
+            h_col, h_rgba = "black", np.array([0, 0, 0, 1])
         else:
-            data, h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
-        finally:
-            if h_rgba[3] > 0:
-                data, pattern = _mpl_hatch2pgfp_pattern(data, hatch, h_col, h_rgba)
-                draw_options += pattern
+            h_col, h_rgba = line_data.ec_col, line_data.ec_rgba
+    else:
+        h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
+    finally:
+        if h_rgba[3] > 0:
+            pattern = _mpl_hatch2pgfp_pattern(data, line_data.hatch, h_col, h_rgba)
+        else:
+            pattern = []
+    return pattern
 
-    return data, draw_options
 
-
-def mpl_linewidth2pgfp_linewidth(data, line_width):
+def mpl_linewidth2pgfp_linewidth(data: dict, line_width: float) -> str:
     # PGFplots gives line widths in pt, matplotlib in axes space. Translate.
     # Scale such that the default mpl line width (1.5) is mapped to the PGFplots
     # line with semithick, 0.6. From a visual comparison, semithick or even thick
     # matches best with the default mpl style.
-    # Keep the line with in units of decipoint to make sure we stay in integers.
-    line_width_decipoint = line_width * 4  # 4 = 10 * 0.6 / 1.5
+    # Keep the line width in units of decipoint to make sure we stay in integers.
+    line_width_decipoint = line_width * 4
     try:
         # https://github.com/pgf-tikz/pgf/blob/e9c22dc9fe48f975b7fdb32181f03090b3747499/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex#L1574
         return {
@@ -414,56 +482,53 @@ def mpl_linewidth2pgfp_linewidth(data, line_width):
         return f"line width={line_width_decipoint / 10:{ff}}pt"
 
 
-def mpl_linestyle2pgfplots_linestyle(data, line_style, line=None):
-    """Translates a line style of matplotlib to the corresponding style
-    in PGFPlots.
-    """
+def mpl_linestyle2pgfplots_linestyle(
+    data: dict, line_style: str | tuple, line: Optional[Line2D] = None
+) -> str | None:
+    """Translates a line style of matplotlib to the corresponding style in PGFPlots."""
     # linestyle is a string or dash tuple. Legal string values are
     # solid|dashed|dashdot|dotted.  The dash tuple is (offset, onoffseq) where onoffseq
     # is an even length tuple of on and off ink in points.
     #
-    # solid: [(None, None), (None, None), ..., (None, None)]
-    # dashed: (0, (6.0, 6.0))
-    # dotted: (0, (1.0, 3.0))
-    # dashdot: (0, (3.0, 5.0, 1.0, 5.0))
+    # solid: [(None, None), (None, None), ..., (None, None)]  # noqa: ERA001
+    # dashed: (0, (6.0, 6.0))                                 # noqa: ERA001
+    # dotted: (0, (1.0, 3.0))                                 # noqa: ERA001
+    # dashdot: (0, (3.0, 5.0, 1.0, 5.0))                      # noqa: ERA001
     ff = data["float format"]
     if isinstance(line_style, tuple):
         if line_style[0] is None or line_style[1] is None:
             return None
 
-        if len(line_style[1]) == 2:
-            return f"dash pattern=on {line_style[1][0]:{ff}}pt off {line_style[1][1]:{ff}}pt"
-
-        assert len(line_style[1]) == 4
-        return (
-            "dash pattern="
-            f"on {line_style[1][0]:{ff}}pt "
-            f"off {line_style[1][1]:{ff}}pt "
-            f"on {line_style[1][2]:{ff}}pt "
-            f"off {line_style[1][3]:{ff}}pt"
+        pgf_line_style = "dash pattern="
+        pgf_line_style += " ".join(
+            [
+                f"on {ls_on:{ff}}pt off {ls_off:{ff}}pt"
+                for ls_on, ls_off in zip(line_style[1][::2], line_style[1][1::2])
+            ]
         )
+        return pgf_line_style
 
-    if isinstance(line, mpl.lines.Line2D) and line.is_dashed():
+    if isinstance(line, Line2D) and line.is_dashed():
         # see matplotlib.lines.Line2D.set_dashes
 
         # get defaults
-        default_dashOffset, default_dashSeq = mpl.lines._get_dash_pattern(line_style)
+        default_dash_offset, default_dash_seq = _get_dash_pattern(line_style)
 
         # get dash format of line under test
-        dashOffset, dashSeq = line._unscaled_dash_pattern
+        dash_offset, dash_seq = line._unscaled_dash_pattern  # noqa: SLF001
 
-        lst = list()
-        if dashSeq != default_dashSeq:
+        lst = []
+        if dash_seq != default_dash_seq:
             # generate own dash sequence
             lst.append(
                 "dash pattern="
                 + " ".join(
-                    f"on {a:{ff}}pt off {b:{ff}}pt" for a, b in zip(dashSeq[0::2], dashSeq[1::2])
+                    f"on {a:{ff}}pt off {b:{ff}}pt" for a, b in zip(dash_seq[0::2], dash_seq[1::2])
                 )
             )
 
-        if dashOffset != default_dashOffset:
-            lst.append(f"dash phase={dashOffset}pt")
+        if dash_offset != default_dash_offset:
+            lst.append(f"dash phase={dash_offset}pt")
 
         if len(lst) > 0:
             return ", ".join(lst)

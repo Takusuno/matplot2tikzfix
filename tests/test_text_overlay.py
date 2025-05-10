@@ -1,8 +1,16 @@
+"""Test overlaying text."""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     fig = plt.figure()
 
     xxx = np.linspace(0, 5)
@@ -18,12 +26,12 @@ def plot():
         color="r",
         style="italic",
         weight="light",
-        bbox=dict(
-            boxstyle="round, pad=0.2",
-            ec=(1.0, 0.5, 0.5),
-            fc=(1.0, 0.8, 0.8),
-            ls="dashdot",
-        ),
+        bbox={
+            "boxstyle": "round, pad=0.2",
+            "ec": (1.0, 0.5, 0.5),
+            "fc": (1.0, 0.8, 0.8),
+            "ls": "dashdot",
+        },
     )
     plt.text(
         3,
@@ -35,7 +43,7 @@ def plot():
         va="center",
         color="b",
         weight="bold",
-        bbox=dict(boxstyle="square", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)),
+        bbox={"boxstyle": "square", "ec": (1.0, 0.5, 0.5), "fc": (1.0, 0.8, 0.8)},
     )
     plt.text(
         4,
@@ -47,7 +55,7 @@ def plot():
         va="center",
         color="b",
         weight="demi",
-        bbox=dict(boxstyle="rarrow", ls="dashed", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)),
+        bbox={"boxstyle": "rarrow", "ls": "dashed", "ec": (1.0, 0.5, 0.5), "fc": (1.0, 0.8, 0.8)},
     )
     plt.text(
         4,
@@ -59,7 +67,7 @@ def plot():
         va="center",
         color="b",
         weight="heavy",
-        bbox=dict(boxstyle="larrow", ls="dotted", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)),
+        bbox={"boxstyle": "larrow", "ls": "dotted", "ec": (1.0, 0.5, 0.5), "fc": (1.0, 0.8, 0.8)},
     )
     plt.text(
         2,
@@ -69,7 +77,7 @@ def plot():
         ha="center",
         va="center",
         color="b",
-        bbox=dict(boxstyle="darrow", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)),
+        bbox={"boxstyle": "darrow", "ec": (1.0, 0.5, 0.5), "fc": (1.0, 0.8, 0.8)},
     )
     plt.text(
         1,
@@ -79,7 +87,7 @@ def plot():
         ha="center",
         va="center",
         color="b",
-        bbox=dict(boxstyle="circle", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)),
+        bbox={"boxstyle": "circle", "ec": (1.0, 0.5, 0.5), "fc": (1.0, 0.8, 0.8)},
     )
     plt.text(
         3,
@@ -89,7 +97,7 @@ def plot():
         ha="center",
         va="center",
         color="b",
-        bbox=dict(boxstyle="roundtooth", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)),
+        bbox={"boxstyle": "roundtooth", "ec": (1.0, 0.5, 0.5), "fc": (1.0, 0.8, 0.8)},
     )
     plt.text(
         3,
@@ -99,7 +107,7 @@ def plot():
         ha="center",
         va="center",
         color="b",
-        bbox=dict(boxstyle="sawtooth", ec=(1.0, 0.5, 0.5), fc=(1.0, 0.8, 0.8)),
+        bbox={"boxstyle": "sawtooth", "ec": (1.0, 0.5, 0.5), "fc": (1.0, 0.8, 0.8)},
     )
     plt.plot(xxx, yyy, label="a graph")
     plt.legend()
@@ -107,7 +115,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

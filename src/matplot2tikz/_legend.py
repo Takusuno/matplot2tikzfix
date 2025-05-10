@@ -1,11 +1,13 @@
 import warnings
+from typing import Dict, List
 
 import numpy as np
+from matplotlib.legend import Legend
 
 from . import _color as mycol
 
 
-def draw_legend(data, obj):
+def draw_legend(data: Dict, obj: Legend) -> None:
     """Adds legend code."""
     texts = []
     children_alignment = []
@@ -13,9 +15,58 @@ def draw_legend(data, obj):
         texts.append(f"{text.get_text()}")
         children_alignment.append(f"{text.get_horizontalalignment()}")
 
+    legend_style = [
+        # https://github.com/matplotlib/matplotlib/issues/15764#issuecomment-557823370
+        f"fill opacity={obj.get_frame().get_alpha()}",
+        "draw opacity=1",
+        "text opacity=1",
+    ]
+    _legend_position_anchor(data, obj, legend_style)
+    _legend_edgecolor(data, obj, legend_style)
+    _legend_facecolor(data, obj, legend_style)
+
+    # Get the horizontal alignment
+    try:
+        alignment = children_alignment[0]
+    except IndexError:
+        alignment = None
+
+    for child_alignment in children_alignment:
+        if alignment != child_alignment:
+            warnings.warn(
+                "Varying horizontal alignments in the legend. Using default.", stacklevel=2
+            )
+            alignment = None
+            break
+
+    if alignment:
+        data["current axes"].axis_options.append(f"legend cell align={{{alignment}}}")
+
+    try:
+        ncols = obj._ncols  # noqa: SLF001
+    except AttributeError:
+        # backwards-compatibility with matplotlib < 3.6.0
+        ncols = obj._ncol  # noqa: SLF001
+    if ncols != 1:
+        data["current axes"].axis_options.append(f"legend columns={ncols}")
+
+    # Write styles to data
+    if legend_style:
+        max_length = 80
+        j0, j1, j2 = (
+            ("", ", ", "")
+            if sum(len(s) for s in legend_style) < max_length
+            else ("\n  ", ",\n  ", "\n")
+        )
+        string = j1.join(legend_style)
+        style = f"legend style={{{j0}{string}{j2}}}"
+        data["current axes"].axis_options.append(style)
+
+
+def _legend_position_anchor(data: Dict, obj: Legend, legend_style: List[str]) -> None:
     # Get the location.
     # http://matplotlib.org/api/legend_api.html
-    loc = obj._loc if obj._loc != 0 else _get_location_from_best(obj)
+    loc = obj._loc if obj._loc != 0 else _get_location_from_best(obj)  # noqa: SLF001
     pad = 0.03
     position, anchor = {
         1: (None, None),  # upper right
@@ -32,73 +83,18 @@ def draw_legend(data, obj):
 
     # In case of given position via bbox_to_anchor parameter the center
     # of legend is changed as follows:
-    if obj._bbox_to_anchor:
-        bbox_center = obj.get_bbox_to_anchor()._bbox._points[1]
+    if obj._bbox_to_anchor:  # noqa: SLF001
+        bbox_center = obj.get_bbox_to_anchor()._bbox._points[1]  # noqa: SLF001
         position = [bbox_center[0], bbox_center[1]]
 
-    legend_style = [
-        # https://github.com/matplotlib/matplotlib/issues/15764#issuecomment-557823370
-        f"fill opacity={obj.get_frame().get_alpha()}",
-        "draw opacity=1",
-        "text opacity=1",
-    ]
     if position:
         ff = data["float format"]
         legend_style.append(f"at={{({position[0]:{ff}},{position[1]:{ff}})}}")
     if anchor:
         legend_style.append(f"anchor={anchor}")
 
-    # Get the edgecolor of the box
-    if obj.get_frame_on():
-        edgecolor = obj.get_frame().get_edgecolor()
-        data, frame_xcolor, _ = mycol.mpl_color2xcolor(data, edgecolor)
-        if frame_xcolor != "black":  # black is default
-            legend_style.append(f"draw={frame_xcolor}")
-    else:
-        legend_style.append("draw=none")
 
-    # Get the facecolor of the box
-    facecolor = obj.get_frame().get_facecolor()
-    data, fill_xcolor, _ = mycol.mpl_color2xcolor(data, facecolor)
-    if fill_xcolor != "white":  # white is default
-        legend_style.append(f"fill={fill_xcolor}")
-
-    # Get the horizontal alignment
-    try:
-        alignment = children_alignment[0]
-    except IndexError:
-        alignment = None
-
-    for child_alignment in children_alignment:
-        if alignment != child_alignment:
-            warnings.warn("Varying horizontal alignments in the legend. Using default.")
-            alignment = None
-            break
-
-    if alignment:
-        data["current axes"].axis_options.append(f"legend cell align={{{alignment}}}")
-
-    try:
-        ncols = obj._ncols
-    except AttributeError:
-        # backwards-compatibility with matplotlib < 3.6.0
-        ncols = obj._ncol
-    if ncols != 1:
-        data["current axes"].axis_options.append(f"legend columns={ncols}")
-
-    # Write styles to data
-    if legend_style:
-        j0, j1, j2 = (
-            ("", ", ", "") if sum(len(s) for s in legend_style) < 80 else ("\n  ", ",\n  ", "\n")
-        )
-        string = j1.join(legend_style)
-        style = f"legend style={{{j0}{string}{j2}}}"
-        data["current axes"].axis_options.append(style)
-
-    return data
-
-
-def _get_location_from_best(obj):
+def _get_location_from_best(obj: Legend) -> int:
     # Create a renderer
     from matplotlib.backends import backend_agg
 
@@ -110,7 +106,7 @@ def _get_location_from_best(obj):
 
     # Rectangles of the legend and of the axes
     # Lower left and upper right points
-    x0_legend, x1_legend = obj._legend_box.get_window_extent(renderer).get_points()
+    x0_legend, x1_legend = obj._legend_box.get_window_extent(renderer).get_points()  # noqa: SLF001
     x0_axes, x1_axes = obj.axes.get_window_extent(renderer).get_points()
     dimension_legend = x1_legend - x0_legend
     dimension_axes = x1_axes - x0_axes
@@ -175,3 +171,20 @@ def _get_location_from_best(obj):
     # 4. Take the shortest distance between key points as the final
     # location
     return min(distances, key=distances.get)
+
+
+def _legend_edgecolor(data: Dict, obj: Legend, legend_style: List[str]) -> None:
+    if obj.get_frame_on():
+        edgecolor = obj.get_frame().get_edgecolor()
+        frame_xcolor, _ = mycol.mpl_color2xcolor(data, edgecolor)
+        if frame_xcolor != "black":  # black is default
+            legend_style.append(f"draw={frame_xcolor}")
+    else:
+        legend_style.append("draw=none")
+
+
+def _legend_facecolor(data: Dict, obj: Legend, legend_style: List[str]) -> None:
+    facecolor = obj.get_frame().get_facecolor()
+    fill_xcolor, _ = mycol.mpl_color2xcolor(data, facecolor)
+    if fill_xcolor != "white":  # white is default
+        legend_style.append(f"fill={fill_xcolor}")

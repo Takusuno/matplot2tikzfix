@@ -1,14 +1,22 @@
+"""Test plot with image and horizontal colorbar."""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     # Make plot with vertical (default) colorbar
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    np.random.seed(123)
-    data = np.clip(np.random.randn(250, 250), -1, 1)
+    rng = np.random.default_rng(123)
+    data = np.clip(rng.normal(size=(250, 250)), -1, 1)
 
     cax = ax.imshow(data, interpolation="nearest")
     ax.set_title("Gaussian noise with vertical colorbar")
@@ -20,7 +28,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

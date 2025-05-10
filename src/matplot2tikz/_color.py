@@ -1,6 +1,10 @@
-import matplotlib as mpl
+from __future__ import annotations
+
+from typing import Dict, Tuple
+
 import numpy as np
 import webcolors
+from matplotlib.colors import ColorConverter
 
 # RGB values (as taken from xcolor.dtx):
 builtin_colors = {
@@ -25,7 +29,7 @@ builtin_colors = {
 }
 
 
-def _get_closest_colour_name(rgb):
+def _get_closest_colour_name(rgb: np.ndarray) -> Tuple[str, int]:
     match = None
     mindiff = 1.0e15
     for name in webcolors.names("css3"):
@@ -44,15 +48,21 @@ def _get_closest_colour_name(rgb):
     return match, mindiff
 
 
-def mpl_color2xcolor(data, matplotlib_color):
+def mpl_color2xcolor(
+    data: Dict,
+    matplotlib_color: str
+    | Tuple[float, float, float]
+    | Tuple[float, float, float, float]
+    | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float],
+) -> Tuple[str, str]:
     """Translates a matplotlib color specification into a proper LaTeX xcolor."""
     # Convert it to RGBA.
-    my_col = np.array(mpl.colors.ColorConverter().to_rgba(matplotlib_color))
+    my_col = np.array(ColorConverter().to_rgba(matplotlib_color))
 
     # If the alpha channel is exactly 0, then the color is really 'none'
     # regardless of the RGB channels.
     if my_col[-1] == 0.0:
-        return data, "none", my_col
+        return "none", my_col
 
     # Check if it exactly matches any of the colors already available.
     # This case is actually treated below (alpha==1), but that loop
@@ -60,7 +70,7 @@ def mpl_color2xcolor(data, matplotlib_color):
     # match. Hence, first check all colors.
     for name, rgb in builtin_colors.items():
         if all(my_col[:3] == rgb):
-            return data, name, my_col
+            return name, my_col
 
     # Don't handle gray colors separately. They can be specified in xcolor as
     #
@@ -80,4 +90,4 @@ def mpl_color2xcolor(data, matplotlib_color):
             name = f"{name}{rgb255[0]}{rgb255[1]}{rgb255[2]}"
     data["custom colors"][name] = ("RGB", ",".join([str(val) for val in rgb255]))
 
-    return data, name, my_col
+    return name, my_col

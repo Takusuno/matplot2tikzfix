@@ -1,8 +1,16 @@
+"""Test dual axis."""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     fig = plt.figure()
     ax = fig.add_subplot(111)
     dat = np.linspace(0, 10, 20)
@@ -13,7 +21,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, "test_dual_axis_reference.tex")

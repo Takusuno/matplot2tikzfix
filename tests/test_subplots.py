@@ -1,8 +1,17 @@
-def plot():
-    import numpy as np
-    from matplotlib import pyplot as plt
+"""Test subplot."""
 
-    def f(t):
+import matplotlib as mpl
+import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
+
+
+def plot() -> Figure:
+    def f(t: np.ndarray) -> np.ndarray:
         s1 = np.cos(2 * np.pi * t)
         e1 = np.exp(-t)
         return np.multiply(s1, e1)
@@ -15,13 +24,13 @@ def plot():
 
     plt.subplot(211)
     plt.plot(t1, f(t1), "bo", t2, f(t2), "k--", markerfacecolor="green")
-    plt.grid(True)
+    plt.grid(visible=True)
     plt.title("A tale of 2 subplots")
     plt.ylabel("Damped oscillation")
 
     plt.subplot(212)
     plt.plot(t3, np.cos(2 * np.pi * t3), "r.")
-    plt.grid(True)
+    plt.grid(visible=True)
     plt.xlabel("time (s)")
     plt.ylabel("Undamped")
 
@@ -30,7 +39,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")

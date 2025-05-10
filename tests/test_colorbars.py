@@ -1,14 +1,21 @@
+"""Test different colorbars."""
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
 
 
-def plot():
+def plot() -> Figure:
     # Make a figure and axes with dimensions as desired.
     fig, ax = plt.subplots(3)
 
     # Set the colormap and norm to correspond to the data for which the colorbar will be
     # used.
-    cmap = mpl.cm.cool
+    cmap = plt.get_cmap("cool")
     norm = mpl.colors.Normalize(vmin=-5, vmax=10)
 
     # ColorbarBase derives from ScalarMappable and puts a colorbar in a specified axes,
@@ -25,7 +32,7 @@ def plot():
 
     # If a ListedColormap is used, the length of the bounds array must be one greater
     # than the length of the color list.  The bounds must be monotonically increasing.
-    bounds = [1, 2, 4, 7, 8]
+    bounds = [1.0, 2, 4, 7, 8]
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
     cb2 = mpl.colorbar.ColorbarBase(
         ax[1],
@@ -33,7 +40,7 @@ def plot():
         norm=norm,
         # to use 'extend', you must
         # specify two extra boundaries:
-        boundaries=[0] + bounds + [13],
+        boundaries=[0, *bounds, 13],
         extend="both",
         ticks=bounds,  # optional
         spacing="proportional",
@@ -55,7 +62,7 @@ def plot():
         ax[2],
         cmap=cmap,
         norm=norm,
-        boundaries=[-10] + bounds + [10],
+        boundaries=[-10, *bounds, 10],
         extend="both",
         # Make the length of each extension
         # the same as the length of the
@@ -70,7 +77,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
-    assert_equality(plot, "test_colorbars_reference.tex", assert_compilation=False)
+def test() -> None:
+    assert_equality(plot, "test_colorbars_reference.tex")

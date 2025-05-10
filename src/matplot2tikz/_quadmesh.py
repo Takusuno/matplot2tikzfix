@@ -1,12 +1,12 @@
+from matplotlib.backends.backend_agg import RendererAgg
+from matplotlib.collections import QuadMesh
 from PIL import Image
 
 from . import _files
 
 
-def draw_quadmesh(data, obj):
-    """Returns the PGFPlots code for an graphics environment holding a
-    rendering of the object.
-    """
+def draw_quadmesh(data: dict, obj: QuadMesh) -> list:
+    """Returns the PGFPlots code for a graphics environment holding a rendering of the object."""
     content = []
 
     # Generate file name for current object
@@ -18,11 +18,9 @@ def draw_quadmesh(data, obj):
     obj.figure.set_dpi(dpi)
 
     # Render the object and save as png file
-    from matplotlib.backends.backend_agg import RendererAgg
-
     cbox = obj.get_clip_box()
-    width = int(round(cbox.extents[2]))
-    height = int(round(cbox.extents[3]))
+    width = round(cbox.extents[2])
+    height = round(cbox.extents[3])
     ren = RendererAgg(width, height, dpi)
     obj.draw(ren)
 
@@ -30,16 +28,16 @@ def draw_quadmesh(data, obj):
     image = Image.frombuffer(
         "RGBA", ren.get_canvas_width_height(), ren.buffer_rgba(), "raw", "RGBA", 0, 1
     )
-    # Crop the image to the actual content (removing the the regions otherwise
+    # Crop the image to the actual content (removing the regions otherwise
     # used for axes, etc.)
     # 'image.crop' expects the crop box to specify the left, upper, right, and
     # lower pixel. 'cbox.extents' gives the left, lower, right, and upper
     # pixel.
     box = (
-        int(round(cbox.extents[0])),
+        round(cbox.extents[0]),
         0,
-        int(round(cbox.extents[2])),
-        int(round(cbox.extents[3] - cbox.extents[1])),
+        round(cbox.extents[2]),
+        round(cbox.extents[3] - cbox.extents[1]),
     )
     cropped = image.crop(box)
     cropped.save(filepath)
@@ -60,4 +58,4 @@ def draw_quadmesh(data, obj):
         f"ymin={extent[2]:{ff}}, ymax={extent[3]:{ff}}] {{{posix_filepath}}};\n"
     )
 
-    return data, content
+    return content

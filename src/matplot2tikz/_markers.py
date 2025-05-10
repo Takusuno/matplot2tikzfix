@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # for matplotlib markers, see https://matplotlib.org/api/markers_api.html
 _MP_MARKER2PGF_MARKER = {
     ".": "*",  # point
@@ -37,10 +39,10 @@ _MP_MARKER2PLOTMARKS = {
 }
 
 
-def _mpl_marker2pgfp_marker(data, mpl_marker: str, is_filled: bool):
-    """Translates a marker style of matplotlib to the corresponding style
-    in PGFPlots.
-    """
+def _mpl_marker2pgfp_marker(
+    data: dict, mpl_marker: str, *, is_filled: bool
+) -> tuple[str | None, list]:
+    """Translates a marker style of matplotlib to the corresponding style in PGFPlots."""
     # try default list
     try:
         pgfplots_marker = _MP_MARKER2PGF_MARKER[mpl_marker]
@@ -51,7 +53,7 @@ def _mpl_marker2pgfp_marker(data, mpl_marker: str, is_filled: bool):
             pgfplots_marker = "*"
             data["tikz libs"].add("plotmarks")
         marker_options = []
-        return data, pgfplots_marker, marker_options
+        return pgfplots_marker, marker_options
 
     # try plotmarks list
     try:
@@ -63,6 +65,6 @@ def _mpl_marker2pgfp_marker(data, mpl_marker: str, is_filled: bool):
     else:
         if is_filled and pgfplots_marker not in ["|", "-", "asterisk", "star"]:
             pgfplots_marker += "*"
-        return data, pgfplots_marker, marker_options
+        return pgfplots_marker, marker_options
 
-    return data, None, []
+    return None, []

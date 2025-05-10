@@ -1,14 +1,26 @@
-import matplotlib as mpl
-import numpy as np
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING, Dict, List, Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.axes import Subplot
+from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
 
 from . import _color
 from ._util import _common_texification
 
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.colorbar import Colorbar
 
-class Axes:
-    def __init__(self, data, obj):  # noqa: C901
+
+class MyAxes:
+    def __init__(self, data: Dict, obj: Axes) -> None:
         """Returns the PGFPlots code for an axis environment."""
+        self.data = data
+        self.obj = obj
         self.content = []
 
         # Are we dealing with an axis that hosts a colorbar? Skip then, those are
@@ -22,60 +34,76 @@ class Axes:
         self.subplot_index = 0
         self.is_subplot = False
 
-        if isinstance(obj, mpl.axes.Subplot):
-            self._subplot(obj, data)
+        if isinstance(obj, Subplot):
+            self._subplot()
 
         self.axis_options = []
 
+        self._set_hide_axis()
+        self._set_plot_title()
+        self._set_axis_titles()
+        xlim, ylim = self._set_axis_limits()
+        self._set_axis_scaling()
+        self._set_axis_on_top()
+        self._set_axis_dimensions(self._get_aspect_ratio(), xlim, ylim)
+        self._set_axis_positions()
+        self._set_ticks()
+        self._set_grid()
+        self._set_axis_line_styles()
+        self._set_background_color()
+        self._set_colorbar()
+        self._content_end()
+
+    def _set_hide_axis(self) -> None:
         # check if axes need to be displayed at all
-        if not obj.axison:
+        if not self.obj.axison:
             self.axis_options.append("hide x axis")
             self.axis_options.append("hide y axis")
 
-        # get plot title
-        title = obj.get_title()
-        data["current axis title"] = title
+    def _set_plot_title(self) -> None:
+        title = self.obj.get_title()
+        self.data["current axis title"] = title
         if title:
             title = _common_texification(title)
             self.axis_options.append(f"title={{{title}}}")
 
-        # get axes titles
-        xlabel = obj.get_xlabel()
+    def _set_axis_titles(self) -> None:
+        xlabel = self.obj.get_xlabel()
         if xlabel:
             xlabel = _common_texification(xlabel)
 
-            labelcolor = obj.xaxis.label.get_c()
+            labelcolor = self.obj.xaxis.label.get_c()
 
             if labelcolor != "black":
-                data, col, _ = _color.mpl_color2xcolor(data, labelcolor)
+                col, _ = _color.mpl_color2xcolor(self.data, labelcolor)
                 self.axis_options.append(f"xlabel=\\textcolor{{{col}}}{{{xlabel}}}")
             else:
                 self.axis_options.append(f"xlabel={{{xlabel}}}")
 
-            xrotation = obj.xaxis.get_label().get_rotation()
+            xrotation = self.obj.xaxis.get_label().get_rotation()
             if xrotation != 0:
                 self.axis_options.append(f"xlabel style={{rotate={xrotation - 90}}}")
 
-        ylabel = obj.get_ylabel()
+        ylabel = self.obj.get_ylabel()
         if ylabel:
             ylabel = _common_texification(ylabel)
 
-            labelcolor = obj.yaxis.label.get_c()
+            labelcolor = self.obj.yaxis.label.get_c()
             if labelcolor != "black":
-                data, col, _ = _color.mpl_color2xcolor(data, labelcolor)
+                col, _ = _color.mpl_color2xcolor(self.data, labelcolor)
                 self.axis_options.append(f"ylabel=\\textcolor{{{col}}}{{{ylabel}}}")
             else:
                 self.axis_options.append(f"ylabel={{{ylabel}}}")
 
-            yrotation = obj.yaxis.get_label().get_rotation()
-            if yrotation != 90:
+            yrotation = self.obj.yaxis.get_label().get_rotation()
+            if yrotation != 90:  # noqa: PLR2004
                 self.axis_options.append(f"ylabel style={{rotate={yrotation - 90}}}")
 
-        # Axes limits.
-        ff = data["float format"]
-        xlim = list(obj.get_xlim())
+    def _set_axis_limits(self) -> Tuple[List[float], List[float]]:
+        ff = self.data["float format"]
+        xlim = list(self.obj.get_xlim())
         xlim0, xlim1 = sorted(xlim)
-        ylim = list(obj.get_ylim())
+        ylim = list(self.obj.get_ylim())
         ylim0, ylim1 = sorted(ylim)
         # Sort the limits so make sure that the smaller of the two is actually *min.
         self.axis_options.append(f"xmin={xlim0:{ff}}, xmax={xlim1:{ff}}")
@@ -85,215 +113,87 @@ class Axes:
             self.axis_options.append("x dir=reverse")
         if ylim != sorted(ylim):
             self.axis_options.append("y dir=reverse")
+        return xlim, ylim
 
-        # axes scaling
-        if obj.get_xscale() == "log":
+    def _set_axis_scaling(self) -> None:
+        if self.obj.get_xscale() == "log":
             self.axis_options.append("xmode=log")
-            self.axis_options.append(f"log basis x={{{_try_f2i(obj.xaxis._scale.base)}}}")
-        if obj.get_yscale() == "log":
+            self.axis_options.append(
+                f"log basis x={{{_try_f2i(self.obj.xaxis._scale.base)}}}"  # noqa: SLF001
+            )
+        if self.obj.get_yscale() == "log":
             self.axis_options.append("ymode=log")
-            self.axis_options.append(f"log basis y={{{_try_f2i(obj.yaxis._scale.base)}}}")
+            self.axis_options.append(
+                f"log basis y={{{_try_f2i(self.obj.yaxis._scale.base)}}}"  # noqa: SLF001
+            )
 
+    def _set_axis_on_top(self) -> None:
         # Possible values for get_axisbelow():
         #   True (zorder = 0.5):   Ticks and gridlines are below all Artists.
         #   'line' (zorder = 1.5): Ticks and gridlines are above patches (e.g.
         #                          rectangles) but still below lines / markers.
         #   False (zorder = 2.5):  Ticks and gridlines are above patches and lines /
         #                          markers.
-        if not obj.get_axisbelow():
+        if not self.obj.get_axisbelow():
             self.axis_options.append("axis on top")
 
-        # aspect ratio, plot width/height
-        aspect = obj.get_aspect()
+    def _get_aspect_ratio(self) -> float | None:
+        aspect = self.obj.get_aspect()
         if aspect in ["auto", "normal"]:
-            aspect_num = None  # just take the given width/height values
-        elif aspect == "equal":
-            aspect_num = 1.0
-        else:
-            aspect_num = float(aspect)
+            return None  # just take the given width/height values
+        if aspect == "equal":
+            return 1.0
+        return float(aspect)
 
-        self._set_axis_dimensions(data, aspect_num, xlim, ylim)
+    def _set_axis_dimensions(self, aspect_num: float, xlim: List[float], ylim: List[float]) -> None:
+        if self.data["axis width"] and self.data["axis height"]:
+            # width and height overwrite aspect ratio
+            self.axis_options.append("width=" + self.data["axis width"])
+            self.axis_options.append("height=" + self.data["axis height"])
+        elif self.data["axis width"]:
+            # only self.data["axis width"] given. calculate height by the aspect ratio
+            self.axis_options.append("width=" + self.data["axis width"])
+            if aspect_num:
+                alpha = aspect_num * (ylim[1] - ylim[0]) / (xlim[1] - xlim[0])
+                if alpha == 1.0:
+                    self.data["axis height"] = self.data["axis width"]
+                else:
+                    # Concatenate the literals, as self.data["axis width"] could as well
+                    # be a LaTeX length variable such as \figurewidth.
+                    self.data["axis height"] = str(alpha) + "*" + self.data["axis width"]
+                self.axis_options.append("height=" + self.data["axis height"])
+        elif self.data["axis height"]:
+            # only self.data["axis height"] given. calculate width by the aspect ratio
+            self.axis_options.append("height=" + self.data["axis height"])
+            if aspect_num:
+                alpha = aspect_num * (ylim[1] - ylim[0]) / (xlim[1] - xlim[0])
+                if alpha == 1.0:
+                    self.data["axis width"] = self.data["axis height"]
+                else:
+                    # Concatenate the literals, as self.data["axis height"] could as
+                    # well be a LaTeX length variable such as \figureheight.
+                    self.data["axis width"] = str(1.0 / alpha) + "*" + self.data["axis height"]
+                self.axis_options.append("width=" + self.data["axis width"])
 
-        # axis positions
-        xaxis_pos = obj.get_xaxis().label_position
+    def _set_axis_positions(self) -> None:
+        xaxis_pos = self.obj.get_xaxis().label_position
         if xaxis_pos == "top":
-            # default: "bottom"
+            # By default, x-axis position is "bottom"
             self.axis_options.append("axis x line=top")
 
-        yaxis_pos = obj.get_yaxis().label_position
+        yaxis_pos = self.obj.get_yaxis().label_position
         if yaxis_pos == "right":
-            # default: "left"
+            # By default, y-axis position is "left"
             self.axis_options.append("axis y line=right")
 
-        self._ticks(data, obj)
+    def _set_ticks(self) -> None:
+        self._get_ticks()
+        self._get_tick_colors()
+        self._get_tick_direction()
+        self._set_tick_rotation()
+        self._set_tick_positions()
 
-        self._grid(obj, data)
-
-        # axis line styles
-        # Assume that the bottom edge color is the color of the entire box.
-        axcol = obj.spines["bottom"].get_edgecolor()
-        data, col, _ = _color.mpl_color2xcolor(data, axcol)
-        if col != "black":
-            self.axis_options.append(f"axis line style={{{col}}}")
-
-        # background color
-        bgcolor = obj.get_facecolor()
-
-        data, col, _ = _color.mpl_color2xcolor(data, bgcolor)
-        if col != "white":
-            self.axis_options.append(f"axis background/.style={{fill={col}}}")
-
-        # find color bar
-        colorbar = _find_associated_colorbar(obj)
-        if colorbar:
-            self._colorbar(colorbar, data)
-
-        if self.is_subplot:
-            self.content.append("\n\\nextgroupplot")
-        else:
-            self.content.append(data["flavor"].start("axis"))
-
-    def get_begin_code(self):
-        content = self.content
-        if self.axis_options:
-            # Put axis_options in a deterministic order to avoid diff churn.
-            self.axis_options.sort()
-            content.append("[\n" + ",\n".join(self.axis_options) + "\n]\n")
-        return content
-
-    def get_end_code(self, data):
-        if not self.is_subplot:
-            return data["flavor"].end("axis") + "\n\n"
-        if self.is_subplot and self.nsubplots == self.subplot_index:
-            data["is_in_groupplot_env"] = False
-            return data["flavor"].end("groupplot") + "\n\n"
-
-        return ""
-
-    def _set_axis_dimensions(self, data, aspect_num, xlim, ylim):
-        if data["axis width"] and data["axis height"]:
-            # width and height overwrite aspect ratio
-            self.axis_options.append("width=" + data["axis width"])
-            self.axis_options.append("height=" + data["axis height"])
-        elif data["axis width"]:
-            # only data["axis width"] given. calculate height by the aspect ratio
-            self.axis_options.append("width=" + data["axis width"])
-            if aspect_num:
-                alpha = aspect_num * (ylim[1] - ylim[0]) / (xlim[1] - xlim[0])
-                if alpha == 1.0:
-                    data["axis height"] = data["axis width"]
-                else:
-                    # Concatenate the literals, as data["axis width"] could as well
-                    # be a LaTeX length variable such as \figurewidth.
-                    data["axis height"] = str(alpha) + "*" + data["axis width"]
-                self.axis_options.append("height=" + data["axis height"])
-        elif data["axis height"]:
-            # only data["axis height"] given. calculate width by the aspect ratio
-            self.axis_options.append("height=" + data["axis height"])
-            if aspect_num:
-                alpha = aspect_num * (ylim[1] - ylim[0]) / (xlim[1] - xlim[0])
-                if alpha == 1.0:
-                    data["axis width"] = data["axis height"]
-                else:
-                    # Concatenate the literals, as data["axis height"] could as
-                    # well be a LaTeX length variable such as \figureheight.
-                    data["axis width"] = str(1.0 / alpha) + "*" + data["axis height"]
-                self.axis_options.append("width=" + data["axis width"])
-        else:
-            # TODO keep an eye on https://tex.stackexchange.com/q/480058/13262
-            pass
-
-    def _ticks(self, data, obj):
-        # get ticks
-        self.axis_options.extend(_get_ticks(data, "x", obj.get_xticks(), obj.get_xticklabels()))
-        self.axis_options.extend(_get_ticks(data, "y", obj.get_yticks(), obj.get_yticklabels()))
-        self.axis_options.extend(
-            _get_ticks(
-                data,
-                "minor x",
-                obj.get_xticks(minor=True),
-                obj.get_xticklabels(minor=True),
-            )
-        )
-        self.axis_options.extend(
-            _get_ticks(
-                data,
-                "minor y",
-                obj.get_yticks(minor=True),
-                obj.get_yticklabels(minor=True),
-            )
-        )
-
-        try:
-            l0 = obj.get_xticklines()[0]
-        except IndexError:
-            pass
-        else:
-            c0 = l0.get_color()
-            data, xtickcolor, _ = _color.mpl_color2xcolor(data, c0)
-            self.axis_options.append(f"xtick style={{color={xtickcolor}}}")
-
-        try:
-            l0 = obj.get_yticklines()[0]
-        except IndexError:
-            pass
-        else:
-            c0 = l0.get_color()
-            data, ytickcolor, _ = _color.mpl_color2xcolor(data, c0)
-            self.axis_options.append(f"ytick style={{color={ytickcolor}}}")
-
-        # Find tick direction
-        # For new matplotlib versions, we could replace the direction getter by
-        # `get_ticks_direction()`, see
-        # <https://github.com/matplotlib/matplotlib/pull/5290>.  Unfortunately, _tickdir
-        # doesn't seem to be quite accurate. See
-        # <https://github.com/matplotlib/matplotlib/issues/5311>.  For now, just take
-        # the first tick direction of each of the axes.
-        x_tick_dirs = [tick._tickdir for tick in obj.xaxis.get_major_ticks()]
-        y_tick_dirs = [tick._tickdir for tick in obj.yaxis.get_major_ticks()]
-        if x_tick_dirs or y_tick_dirs:
-            if x_tick_dirs and y_tick_dirs:
-                direction = x_tick_dirs[0] if x_tick_dirs[0] == y_tick_dirs[0] else None
-            elif x_tick_dirs:
-                direction = x_tick_dirs[0]
-            else:
-                # y_tick_dirs must be present
-                direction = y_tick_dirs[0]
-
-            if direction:
-                if direction == "in":
-                    # 'tick align=inside' is the PGFPlots default
-                    pass
-                elif direction == "out":
-                    self.axis_options.append("tick align=outside")
-                else:
-                    assert direction == "inout"
-                    self.axis_options.append("tick align=center")
-
-        # Set each rotation for every label
-        x_tick_rotation_and_horizontal_alignment = (
-            self._get_label_rotation_and_horizontal_alignment(obj, data, "x")
-        )
-        if x_tick_rotation_and_horizontal_alignment:
-            self.axis_options.append(x_tick_rotation_and_horizontal_alignment)
-
-        y_tick_rotation_and_horizontal_alignment = (
-            self._get_label_rotation_and_horizontal_alignment(obj, data, "y")
-        )
-        if y_tick_rotation_and_horizontal_alignment:
-            self.axis_options.append(y_tick_rotation_and_horizontal_alignment)
-
-        # Set tick position
-        x_tick_position_string, x_tick_position = _get_tick_position(obj, "x")
-        y_tick_position_string, y_tick_position = _get_tick_position(obj, "y")
-
-        if x_tick_position == y_tick_position and x_tick_position is not None:
-            self.axis_options.append(f"tick pos={x_tick_position}")
-        else:
-            self.axis_options.append(x_tick_position_string)
-            self.axis_options.append(y_tick_position_string)
-
-    def _grid(self, obj, data):
+    def _set_grid(self) -> None:
         # Don't use get_{x,y}gridlines for gridlines; see discussion on
         # <http://sourceforge.net/p/matplotlib/mailman/message/25169234/> Coordinate of
         # the lines are entirely meaningless, but styles (colors,...) are respected.
@@ -301,25 +201,25 @@ class Axes:
         try:
             # mpl 3.3.3+
             # <https://github.com/matplotlib/matplotlib/pull/18769>
-            has_major_xgrid = obj.xaxis._major_tick_kw["gridOn"]
-            has_minor_xgrid = obj.xaxis._minor_tick_kw["gridOn"]
-            has_major_ygrid = obj.yaxis._major_tick_kw["gridOn"]
-            has_minor_ygrid = obj.yaxis._minor_tick_kw["gridOn"]
+            has_major_xgrid = self.obj.xaxis._major_tick_kw["gridOn"]  # noqa: SLF001
+            has_minor_xgrid = self.obj.xaxis._minor_tick_kw["gridOn"]  # noqa: SLF001
+            has_major_ygrid = self.obj.yaxis._major_tick_kw["gridOn"]  # noqa: SLF001
+            has_minor_ygrid = self.obj.yaxis._minor_tick_kw["gridOn"]  # noqa: SLF001
         except KeyError:
-            has_major_xgrid = obj.xaxis._gridOnMajor
-            has_minor_xgrid = obj.xaxis._gridOnMinor
-            has_major_ygrid = obj.yaxis._gridOnMajor
-            has_minor_ygrid = obj.yaxis._gridOnMinor
+            has_major_xgrid = self.obj.xaxis._gridOnMajor  # noqa: SLF001
+            has_minor_xgrid = self.obj.xaxis._gridOnMinor  # noqa: SLF001
+            has_major_ygrid = self.obj.yaxis._gridOnMajor  # noqa: SLF001
+            has_minor_ygrid = self.obj.yaxis._gridOnMinor  # noqa: SLF001
 
         if has_major_xgrid:
             self.axis_options.append("xmajorgrids")
         if has_minor_xgrid:
             self.axis_options.append("xminorgrids")
 
-        xlines = obj.get_xgridlines()
+        xlines = self.obj.get_xgridlines()
         if xlines:
             xgridcolor = xlines[0].get_color()
-            data, col, _ = _color.mpl_color2xcolor(data, xgridcolor)
+            col, _ = _color.mpl_color2xcolor(self.data, xgridcolor)
             if col != "black":
                 self.axis_options.append(f"x grid style={{{col}}}")
 
@@ -328,14 +228,31 @@ class Axes:
         if has_minor_ygrid:
             self.axis_options.append("yminorgrids")
 
-        ylines = obj.get_ygridlines()
+        ylines = self.obj.get_ygridlines()
         if ylines:
             ygridcolor = ylines[0].get_color()
-            data, col, _ = _color.mpl_color2xcolor(data, ygridcolor)
+            col, _ = _color.mpl_color2xcolor(self.data, ygridcolor)
             if col != "black":
                 self.axis_options.append(f"y grid style={{{col}}}")
 
-    def _colorbar(self, colorbar, data):
+    def _set_axis_line_styles(self) -> None:
+        # Assume that the bottom edge color is the color of the entire box.
+        axcol = self.obj.spines["bottom"].get_edgecolor()
+        col, _ = _color.mpl_color2xcolor(self.data, axcol)
+        if col != "black":
+            self.axis_options.append(f"axis line style={{{col}}}")
+
+    def _set_background_color(self) -> None:
+        bgcolor = self.obj.get_facecolor()
+        col, _ = _color.mpl_color2xcolor(self.data, bgcolor)
+        if col != "white":
+            self.axis_options.append(f"axis background/.style={{fill={col}}}")
+
+    def _set_colorbar(self) -> None:
+        colorbar = _find_associated_colorbar(self.obj)
+        if not colorbar:
+            return
+
         colorbar_styles = []
 
         orientation = colorbar.orientation
@@ -362,14 +279,12 @@ class Axes:
             colorbar_ticklabels = colorbar.ax.get_xticklabels()
             colorbar_ticklabels_minor = colorbar.ax.get_xticklabels(minor=True)
 
-            colorbar_styles.extend(_get_ticks(data, "x", colorbar_ticks, colorbar_ticklabels))
+            colorbar_styles.extend(_get_ticks(self.data, "x", colorbar_ticks, colorbar_ticklabels))
             colorbar_styles.extend(
-                _get_ticks(data, "minor x", colorbar_ticks_minor, colorbar_ticklabels_minor)
+                _get_ticks(self.data, "minor x", colorbar_ticks_minor, colorbar_ticklabels_minor)
             )
 
-        else:
-            assert orientation == "vertical"
-
+        elif orientation == "vertical":
             self.axis_options.append("colorbar")
             colorbar_ticks = colorbar.ax.get_yticks()
             colorbar_ticks_minor = colorbar.ax.get_yticks(minor=True)
@@ -391,55 +306,178 @@ class Axes:
             colorbar_ticklabels = colorbar.ax.get_yticklabels()
             colorbar_ylabel = colorbar.ax.get_ylabel()
             colorbar_ticklabels_minor = colorbar.ax.get_yticklabels(minor=True)
-            colorbar_styles.extend(_get_ticks(data, "y", colorbar_ticks, colorbar_ticklabels))
+            colorbar_styles.extend(_get_ticks(self.data, "y", colorbar_ticks, colorbar_ticklabels))
             colorbar_styles.extend(
-                _get_ticks(data, "minor y", colorbar_ticks_minor, colorbar_ticklabels_minor)
+                _get_ticks(self.data, "minor y", colorbar_ticks_minor, colorbar_ticklabels_minor)
             )
             colorbar_styles.append("ylabel={" + colorbar_ylabel + "}")
+        else:
+            msg = f"Orientation must be either 'horizontal' or 'vertical', but is '{orientation}'."
+            raise ValueError(msg)
 
-        mycolormap, is_custom_cmap = _mpl_cmap2pgf_cmap(colorbar.mappable.get_cmap(), data)
+        mycolormap, is_custom_cmap = _mpl_cmap2pgf_cmap(colorbar.mappable.get_cmap(), self.data)
         if is_custom_cmap:
             self.axis_options.append("colormap=" + mycolormap)
         else:
             self.axis_options.append("colormap/" + mycolormap)
 
-        ff = data["float format"]
+        ff = self.data["float format"]
         self.axis_options.append(f"point meta min={limits[0]:{ff}}")
         self.axis_options.append(f"point meta max={limits[1]:{ff}}")
 
         if colorbar_styles:
             self.axis_options.append("colorbar style={{{}}}".format(",".join(colorbar_styles)))
 
-    def _subplot(self, obj, data):
+    def _content_end(self) -> None:
+        if self.is_subplot:
+            self.content.append("\n\\nextgroupplot")
+        else:
+            self.content.append(self.data["flavor"].start("axis"))
+
+    def get_begin_code(self) -> List[str]:
+        if self.axis_options:
+            # Put axis_options in a deterministic order to avoid diff churn.
+            self.axis_options.sort()
+            self.content.append("[\n" + ",\n".join(self.axis_options) + "\n]\n")
+        return self.content
+
+    def get_end_code(self) -> str:
+        if not self.is_subplot:
+            return self.data["flavor"].end("axis") + "\n\n"
+        if self.is_subplot and self.nsubplots == self.subplot_index:
+            self.data["is_in_groupplot_env"] = False
+            return self.data["flavor"].end("groupplot") + "\n\n"
+
+        return ""
+
+    def _get_ticks(self) -> None:
+        self.axis_options.extend(
+            _get_ticks(self.data, "x", self.obj.get_xticks(), self.obj.get_xticklabels())
+        )
+        self.axis_options.extend(
+            _get_ticks(self.data, "y", self.obj.get_yticks(), self.obj.get_yticklabels())
+        )
+        self.axis_options.extend(
+            _get_ticks(
+                self.data,
+                "minor x",
+                self.obj.get_xticks(minor=True),
+                self.obj.get_xticklabels(minor=True),
+            )
+        )
+        self.axis_options.extend(
+            _get_ticks(
+                self.data,
+                "minor y",
+                self.obj.get_yticks(minor=True),
+                self.obj.get_yticklabels(minor=True),
+            )
+        )
+
+    def _get_tick_colors(self) -> None:
+        try:
+            l0 = self.obj.get_xticklines()[0]
+        except IndexError:
+            pass
+        else:
+            c0 = l0.get_color()
+            xtickcolor, _ = _color.mpl_color2xcolor(self.data, c0)
+            self.axis_options.append(f"xtick style={{color={xtickcolor}}}")
+
+        try:
+            l0 = self.obj.get_yticklines()[0]
+        except IndexError:
+            pass
+        else:
+            c0 = l0.get_color()
+            ytickcolor, _ = _color.mpl_color2xcolor(self.data, c0)
+            self.axis_options.append(f"ytick style={{color={ytickcolor}}}")
+
+    def _get_tick_direction(self) -> None:
+        # For new matplotlib versions, we could replace the direction getter by
+        # `get_ticks_direction()`, see
+        # <https://github.com/matplotlib/matplotlib/pull/5290>.  Unfortunately, _tickdir
+        # doesn't seem to be quite accurate. See
+        # <https://github.com/matplotlib/matplotlib/issues/5311>.  For now, just take
+        # the first tick direction of each of the axes.
+        x_tick_dirs = [tick._tickdir for tick in self.obj.xaxis.get_major_ticks()]  # noqa: SLF001
+        y_tick_dirs = [tick._tickdir for tick in self.obj.yaxis.get_major_ticks()]  # noqa: SLF001
+        if x_tick_dirs or y_tick_dirs:
+            if x_tick_dirs and y_tick_dirs:
+                direction = x_tick_dirs[0] if x_tick_dirs[0] == y_tick_dirs[0] else None
+            elif x_tick_dirs:
+                direction = x_tick_dirs[0]
+            else:
+                # y_tick_dirs must be present
+                direction = y_tick_dirs[0]
+
+            if direction:
+                if direction == "in":
+                    # 'tick align=inside' is the PGFPlots default
+                    pass
+                elif direction == "out":
+                    self.axis_options.append("tick align=outside")
+                elif direction == "inout":
+                    self.axis_options.append("tick align=center")
+                else:
+                    msg = f"Direction can be 'in', 'out', or 'inout', but is '{direction}'."
+                    raise ValueError(msg)
+
+    def _set_tick_rotation(self) -> None:
+        x_tick_rotation_and_horizontal_alignment = (
+            self._get_label_rotation_and_horizontal_alignment("x")
+        )
+        if x_tick_rotation_and_horizontal_alignment:
+            self.axis_options.append(x_tick_rotation_and_horizontal_alignment)
+
+        y_tick_rotation_and_horizontal_alignment = (
+            self._get_label_rotation_and_horizontal_alignment("y")
+        )
+        if y_tick_rotation_and_horizontal_alignment:
+            self.axis_options.append(y_tick_rotation_and_horizontal_alignment)
+
+    def _set_tick_positions(self) -> None:
+        x_tick_position_string, x_tick_position = _get_tick_position(self.obj, "x")
+        y_tick_position_string, y_tick_position = _get_tick_position(self.obj, "y")
+
+        if x_tick_position == y_tick_position and x_tick_position is not None:
+            self.axis_options.append(f"tick pos={x_tick_position}")
+        else:
+            self.axis_options.append(x_tick_position_string)
+            self.axis_options.append(y_tick_position_string)
+
+    def _subplot(self) -> None:
         # https://github.com/matplotlib/matplotlib/issues/7225#issuecomment-252173667
-        if obj.get_subplotspec() is None:
+        if self.obj.get_subplotspec() is None:
             return
-        geom = obj.get_subplotspec().get_topmost_subplotspec().get_geometry()
+        geom = self.obj.get_subplotspec().get_topmost_subplotspec().get_geometry()
 
         self.nsubplots = geom[0] * geom[1]
         if self.nsubplots > 1:
             # Is this an axis-colorbar pair? No need for groupplot then.
-            is_groupplot = self.nsubplots != 2 or not _find_associated_colorbar(obj)
+            is_groupplot = self.nsubplots != 2 or not _find_associated_colorbar(self.obj)  # noqa: PLR2004
 
             if is_groupplot:
                 self.is_subplot = True
                 # subplotspec geometry positioning is 0-based
                 self.subplot_index = geom[2] + 1
-                if "is_in_groupplot_env" not in data or not data["is_in_groupplot_env"]:
+                if "is_in_groupplot_env" not in self.data or not self.data["is_in_groupplot_env"]:
                     group_style = [f"group size={geom[1]} by {geom[0]}"]
-                    group_style.extend(data["extra groupstyle options [base]"])
+                    group_style.extend(self.data["extra groupstyle options [base]"])
                     options = ["group style={{{}}}".format(", ".join(group_style))]
                     self.content.append(
-                        data["flavor"].start("groupplot") + f"[{', '.join(options)}]"
+                        self.data["flavor"].start("groupplot") + f"[{', '.join(options)}]"
                     )
-                    data["is_in_groupplot_env"] = True
-                    data["pgfplots libs"].add("groupplots")
+                    self.data["is_in_groupplot_env"] = True
+                    self.data["pgfplots libs"].add("groupplots")
 
-    def _get_label_rotation_and_horizontal_alignment(self, obj, data, x_or_y):
+    def _get_label_rotation_and_horizontal_alignment(self, x_or_y: str) -> str:
         label_style = ""
 
         major_tick_labels = (
-            obj.xaxis.get_majorticklabels() if x_or_y == "x" else obj.yaxis.get_majorticklabels()
+            self.obj.xaxis.get_majorticklabels()
+            if x_or_y == "x"
+            else self.obj.yaxis.get_majorticklabels()
         )
 
         if not major_tick_labels:
@@ -477,30 +515,12 @@ class Axes:
 
         # Ignore horizontal alignment if no '{x,y} tick label text width' has been
         # passed in the 'extra' parameter
-        # if tick_label_text_width:
-        #     if is_tick_label_alignment_identical:
-        #         values.append(f"align={tick_labels_horizontal_alignment[0]}")
-        #         values.append(f"text width={tick_label_text_width}")
-        #     else:
-        #         for idx, x in enumerate(tick_labels_horizontal_alignment):
-        #             label_style += f"{x_or_y}_tick_label_ha_{idx}/.initial = {x}"
-
-        #         values.append(
-        #             f"align=\\pgfkeysvalueof{{/pgfplots/{x_or_y}_tick_label_ha_\\ticknum}}"
-        #         )
-        #         values.append(f"text width={tick_label_text_width}")
-
-        # label_style = (
-        #     "every {} tick label/.style = {{\n"
-        #     "{}\n"
-        #     "}}".format(x_or_y, ",\n".join(values))
-        # )
 
         return label_style
 
 
-def _get_tick_position(obj, axes_obj):
-    major_ticks = obj.xaxis.majorTicks if axes_obj == "x" else obj.yaxis.majorTicks
+def _get_tick_position(obj: Axes, x_or_y: str) -> Tuple[List[str], str]:
+    major_ticks = obj.xaxis.majorTicks if x_or_y == "x" else obj.yaxis.majorTicks
 
     major_ticks_bottom = [tick.tick1line.get_visible() for tick in major_ticks]
     major_ticks_top = [tick.tick2line.get_visible() for tick in major_ticks]
@@ -516,7 +536,7 @@ def _get_tick_position(obj, axes_obj):
     position_string = None
     major_ticks_position = None
     if not major_ticks_bottom_show_all and not major_ticks_top_show_all:
-        position_string = f"{axes_obj}majorticks=false"
+        position_string = f"{x_or_y}majorticks=false"
     elif major_ticks_bottom_show_all and major_ticks_top_show_all:
         major_ticks_position = "both"
     elif major_ticks_bottom_show_all:
@@ -525,55 +545,19 @@ def _get_tick_position(obj, axes_obj):
         major_ticks_position = "right"
 
     if major_ticks_position:
-        position_string = f"{axes_obj}tick pos={major_ticks_position}"
+        position_string = f"{x_or_y}tick pos={major_ticks_position}"
 
     return position_string, major_ticks_position
 
 
-def _get_ticks(data, xy, ticks, ticklabels):
-    """Gets a {'x','y'}, a number of ticks and ticks labels, and returns the
-    necessary axis options for the given configuration.
+def _get_ticks(data: Dict, xy: str, ticks: np.ndarray, ticklabels: List) -> List[str]:
+    """Gets a {'x','y'}, a number of ticks and ticks labels.
+
+    Returns the necessary axis options for the given configuration.
     """
     axis_options = []
-
-    # Check if the label is necessary. If one of the labels is, then all of them must
-    # appear in the TikZ plot.
-    is_label_required = False
-    for tick, ticklabel in zip(ticks, ticklabels):
-        # store the label anyway
-        label = ticklabel.get_text()
-
-        if not ticklabel.get_visible():
-            is_label_required = True
-            break
-
-        if not label:
-            continue
-
-        try:
-            label_float = float(label.replace("\N{MINUS SIGN}", "-"))
-        except ValueError:
-            # Check if label is in format "$\matchdefault{<base>^{<exponent>}}$" (for log plots)
-            match = re.search(r"\$\\mathdefault\{(\d+)\^\{(-?\d+(?:\.\d+)?)\}\}\$", label)
-            if match is None:
-                is_label_required = True
-                break
-            label_float = float(match.group(1)) ** float(match.group(2))
-        if abs(label_float - tick) > 1.0e-10 + 1.0e-10 * abs(tick):
-            is_label_required = True
-            break
-
-    pgfplots_ticks = []
-    pgfplots_ticklabels = []
-    for tick, ticklabel in zip(ticks, ticklabels):
-        label = ticklabel.get_text()
-        if "," in label:
-            label = "{" + label + "}"
-        pgfplots_ticklabels.append(_common_texification(label))
-
-    # note: ticks may be present even if labels are not, keep them for grid lines
-    for tick in ticks:
-        pgfplots_ticks.append(tick)
+    is_label_required = _is_label_required(ticks, ticklabels)
+    pgfplots_ticklabels = _get_pgfplots_ticklabels(ticklabels)
 
     # if the labels are all missing, then we need to output an empty set of labels
     if len(ticklabels) == 0 and len(ticks) != 0:
@@ -584,10 +568,10 @@ def _get_ticks(data, xy, ticks, ticklabels):
     # Leave the ticks to PGFPlots if not in STRICT mode and if there are no explicit
     # labels.
     if data["strict"] or is_label_required:
-        if pgfplots_ticks:
+        if len(ticks):
             ff = data["float format"]
             axis_options.append(
-                "{}tick={{{}}}".format(xy, ",".join([f"{el:{ff}}" for el in pgfplots_ticks]))
+                "{}tick={{{}}}".format(xy, ",".join([f"{el:{ff}}" for el in ticks]))
             )
         else:
             val = "{}" if "minor" in xy else "\\empty"
@@ -595,22 +579,61 @@ def _get_ticks(data, xy, ticks, ticklabels):
 
         if is_label_required:
             length = sum(len(label) for label in pgfplots_ticklabels)
-            sep = ("", ",", "") if length < 75 else ("\n  ", ",\n  ", "\n")
+            max_line_length = 75
+            sep = ("", ",", "") if length < max_line_length else ("\n  ", ",\n  ", "\n")
             string = sep[1].join(pgfplots_ticklabels)
             axis_options.append(f"{xy}ticklabels={{{sep[0]}{string}{sep[2]}}}")
     return axis_options
 
 
-def _is_colorbar_heuristic(obj):
-    """Find out if the object is in fact a color bar."""
+def _is_label_required(ticks: np.ndarray, ticklabels: List) -> bool:
+    """Check if the label is necessary.
+
+    If one of the labels is, then all of them must appear in the TikZ plot.
+    """
+    for tick, ticklabel in zip(ticks, ticklabels):
+        # store the label anyway
+        label = ticklabel.get_text()
+
+        if not ticklabel.get_visible():
+            return True
+
+        if not label:
+            continue
+
+        try:
+            label_float = float(label.replace("\N{MINUS SIGN}", "-"))
+        except ValueError:
+            # Check if label is in format "$\matchdefault{<base>^{<exponent>}}$" (for log plots)
+            match = re.search(r"\$\\mathdefault\{(\d+)\^\{(-?\d+(?:\.\d+)?)\}\}\$", label)
+            if match is None:
+                return True
+            label_float = float(match.group(1)) ** float(match.group(2))
+        if abs(label_float - tick) > 1.0e-10 + 1.0e-10 * abs(tick):
+            return True
+    return False
+
+
+def _get_pgfplots_ticklabels(ticklabels: List) -> List[str]:
+    pgfplots_ticklabels = []
+    for ticklabel in ticklabels:
+        label = ticklabel.get_text()
+        if "," in label:
+            label = "{" + label + "}"
+        pgfplots_ticklabels.append(_common_texification(label))
+    return pgfplots_ticklabels
+
+
+def _is_colorbar_heuristic(obj: Axes) -> bool:
+    """Find out if the object is in fact a color bar.
+
+    To come up with something more accurate, see
+    # <https://discourse.matplotlib.org/t/find-out-if-an-axes-object-is-a-colorbar/22563>
+    # Might help: Are the colorbars exactly the l.collections.PolyCollection's?
+    """
     # Not sure if these properties are always present
     if hasattr(obj, "_colorbar") or hasattr(obj, "_colorbar_info"):
         return True
-
-    # TODO come up with something more accurate here. See
-    # <https://discourse.matplotlib.org/t/find-out-if-an-axes-object-is-a-colorbar/22563>
-    # Might help:
-    # TODO Are the colorbars exactly the l.collections.PolyCollection's?
 
     try:
         aspect = float(obj.get_aspect())
@@ -623,7 +646,7 @@ def _is_colorbar_heuristic(obj):
     # though: The ratio of a color can be freely adjusted by the aspect
     # keyword, e.g.,
     #
-    #    plt.colorbar(im, aspect=5)
+    #    plt.colorbar(im, aspect=5)  # noqa: ERA001
     #
     threshold_ratio = 5.0
 
@@ -632,34 +655,31 @@ def _is_colorbar_heuristic(obj):
     )
 
 
-def _mpl_cmap2pgf_cmap(cmap, data):
-    """Converts a color map as given in matplotlib to a color map as
-    represented in PGFPlots.
-    """
-    if isinstance(cmap, mpl.colors.LinearSegmentedColormap):
+def _mpl_cmap2pgf_cmap(cmap: Colormap, data: Dict) -> Tuple[str, bool]:
+    """Converts a color map as given in matplotlib to a color map as represented in PGFPlots."""
+    if isinstance(cmap, LinearSegmentedColormap):
         return _handle_linear_segmented_color_map(cmap, data)
+    if isinstance(cmap, ListedColormap):
+        return _handle_listed_color_map(cmap, data)
+    msg = "Only LinearSegmentedColormap and ListedColormap are supported."
+    raise NotImplementedError(msg)
 
-    assert isinstance(cmap, mpl.colors.ListedColormap), (
-        "Only LinearSegmentedColormap and ListedColormap are supported"
-    )
-    return _handle_listed_color_map(cmap, data)
 
-
-def _handle_linear_segmented_color_map(cmap, data):
-    assert isinstance(cmap, mpl.colors.LinearSegmentedColormap)
-
+def _handle_linear_segmented_color_map(
+    cmap: LinearSegmentedColormap, data: Dict
+) -> Tuple[str, bool]:
     if cmap.is_gray():
         is_custom_colormap = False
-        return ("blackwhite", is_custom_colormap)
+        return "blackwhite", is_custom_colormap
 
     # For an explanation of what _segmentdata contains, see
     # http://matplotlib.org/mpl_examples/pylab_examples/custom_cmap.py
     # A key sentence:
-    # If there are discontinuities, then it is a little more complicated.  Label the 3
-    # elements in each row in the cdict entry for a given color as (x, y0, y1).  Then
+    # If there are discontinuities, then it is a little more complicated. Label the 3
+    # elements in each row in the cdict entry for a given color as (x, y0, y1). Then
     # for values of x between x[i] and x[i+1] the color value is interpolated between
     # y1[i] and y0[i+1].
-    segdata = cmap._segmentdata
+    segdata = cmap._segmentdata  # noqa: SLF001
     red = segdata["red"]
     green = segdata["green"]
     blue = segdata["blue"]
@@ -672,7 +692,7 @@ def _handle_linear_segmented_color_map(cmap, data):
     k_green = 0
     k_blue = 0
     colors = []
-    X = []
+    xx = []
     while True:
         # find next x
         x = min(red[k_red][0], green[k_green][0], blue[k_blue][0])
@@ -707,7 +727,7 @@ def _handle_linear_segmented_color_map(cmap, data):
                 (blue[k_blue - 1][2], blue[k_blue][1]),
             )
 
-        X.append(x)
+        xx.append(x)
         colors.append((red_comp, green_comp, blue_comp))
 
         if x >= 1.0:
@@ -726,44 +746,40 @@ def _handle_linear_segmented_color_map(cmap, data):
     # dimension errors or memory errors in latex)
     # 0-1000 is the internal granularity of PGFplots.
     # 16300 was the maximum value for pgfplots<=1.13
-    X = _scale_to_int(np.array(X), 1000)
+    xx = _scale_to_int(np.array(xx), 1000)
 
     color_changes = []
     ff = data["float format"]
-    for k, x in enumerate(X):
+    for k, x in enumerate(xx):
         color_changes.append(
             f"rgb({x}{unit})=({colors[k][0]:{ff}},{colors[k][1]:{ff}},{colors[k][2]:{ff}})"
         )
 
     colormap_string = "{{mymap}}{{[1{}]\n  {}\n}}".format(unit, ";\n  ".join(color_changes))
     is_custom_colormap = True
-    return (colormap_string, is_custom_colormap)
+    return colormap_string, is_custom_colormap
 
 
-def _handle_listed_color_map(cmap, data):
-    assert isinstance(cmap, mpl.colors.ListedColormap)
-
+def _handle_listed_color_map(cmap: ListedColormap, data: Dict) -> Tuple[str, bool]:
     # check for predefined colormaps in both matplotlib and pgfplots
-    from matplotlib import pyplot as plt
-
     cm_translate = {
         # All the rest are LinearSegmentedColorMaps. :/
-        # 'autumn': 'autumn',
-        # 'cool': 'cool',
-        # 'copper': 'copper',
-        # 'gray': 'blackwhite',
-        # 'hot': 'hot2',
-        # 'hsv': 'hsv',
-        # 'jet': 'jet',
-        # 'spring': 'spring',
-        # 'summer': 'summer',
+        # 'autumn': 'autumn',  # noqa: ERA001
+        # 'cool': 'cool',  # noqa: ERA001
+        # 'copper': 'copper',  # noqa: ERA001
+        # 'gray': 'blackwhite',  # noqa: ERA001
+        # 'hot': 'hot2',  # noqa: ERA001
+        # 'hsv': 'hsv',  # noqa: ERA001
+        # 'jet': 'jet',  # noqa: ERA001
+        # 'spring': 'spring',  # noqa: ERA001
+        # 'summer': 'summer',  # noqa: ERA001
         "viridis": "viridis",
-        # 'winter': 'winter',
+        # 'winter': 'winter',  # noqa: ERA001
     }
     for mpl_cm, pgf_cm in cm_translate.items():
         if cmap.colors == plt.get_cmap(mpl_cm).colors:
             is_custom_colormap = False
-            return (pgf_cm, is_custom_colormap)
+            return pgf_cm, is_custom_colormap
 
     unit = "pt"
     ff = data["float format"]
@@ -781,30 +797,27 @@ def _handle_listed_color_map(cmap, data):
         ]
     colormap_string = "{{mymap}}{{[1{}]\n {}\n}}".format(unit, ";\n  ".join(colors))
     is_custom_colormap = True
-    return (colormap_string, is_custom_colormap)
+    return colormap_string, is_custom_colormap
 
 
-def _scale_to_int(X, max_val):
+def _scale_to_int(array: np.ndarray, max_val: float) -> List[int]:
     """Scales the array X such that it contains only integers."""
-    # if max_val is None:
-    #     X = X / _gcd_array(X)
-    X = X / max(1 / max_val, _gcd_array(X))
-    return [int(entry) for entry in X]
+    array = array / max(1 / max_val, _gcd_array(array))
+    return [int(entry) for entry in array]
 
 
-def _gcd_array(X):
-    """Return the largest real value h such that all elements in x are integer
-    multiples of h.
-    """
+def _gcd_array(array: np.ndarray) -> float:
+    """Return the largest real value h such that all elements in x are integer multiples of h."""
     greatest_common_divisor = 0.0
-    for x in X:
+    for x in array:
         greatest_common_divisor = _gcd(greatest_common_divisor, x)
 
     return greatest_common_divisor
 
 
-def _gcd(a, b):
+def _gcd(a: float, b: float) -> float:
     """Euclidean algorithm for calculating the GCD of two numbers a, b.
+
     This algorithm also works for real numbers:
     Find the greatest number h such that a and b are integer multiples of h.
     """
@@ -812,18 +825,21 @@ def _gcd(a, b):
     # round-off errors will be accounted for, returning 1.0e-10 instead of 1.0 for the
     # values
     #   [1.0, 2.0000000001, 3.0, 4.0].
-    while a > 1.0e-5:
+    tolerance = 1e-5
+    while a > tolerance:
         a, b = b % a, a
     return b
 
 
-def _linear_interpolation(x, X, Y):
-    """Given two data points [X,Y], linearly interpolate those at x."""
-    return (Y[1] * (x - X[0]) + Y[0] * (X[1] - x)) / (X[1] - X[0])
+def _linear_interpolation(x: float, a: Tuple[float, float], b: Tuple[float, float]) -> float:
+    """Given two data points [a,b], linearly interpolate those at x."""
+    return (b[1] * (x - a[0]) + b[0] * (a[1] - x)) / (a[1] - a[0])
 
 
-def _find_associated_colorbar(obj):
-    """A rather poor way of telling whether an axis has a colorbar associated: Check the
+def _find_associated_colorbar(obj: Axes) -> Colorbar | None:
+    """Find associated colorbar, if any.
+
+    A rather poor way of telling whether an axis has a colorbar associated: Check the
     next axis environment, and see if it is de facto a color bar; if yes, return the
     color bar object.
     """
@@ -839,8 +855,9 @@ def _find_associated_colorbar(obj):
     return None
 
 
-def _try_f2i(x):
+def _try_f2i(x: float) -> float:
     """If possible, convert float to int without rounding.
+
     Used for log base: if not used, base for log scale can be "10.0" (and then
     printed as such  by pgfplots).
     """

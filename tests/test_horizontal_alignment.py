@@ -1,8 +1,15 @@
+"""Test rotation of ticks."""
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .helpers import assert_equality
 
-def plot():
+mpl.use("Agg")
+
+
+def plot() -> None:
     labels = ["lab1", "label 2", "another super label"]
     n = len(labels)
     x = np.arange(n)
@@ -16,7 +23,5 @@ def plot():
     plt.xticks(rotation=45, ha="right")
 
 
-def test():
-    from .helpers import assert_equality
-
-    assert_equality(plot, "test_horizontal_alignment_reference.tex")
+def test() -> None:
+    assert_equality(plot, __file__[:-3] + "_reference.tex")

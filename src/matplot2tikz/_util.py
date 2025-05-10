@@ -1,14 +1,26 @@
+"""Several utility functions used at various parts of matplot2tikz library."""
+
+from __future__ import annotations
+
 import functools
 import re
+from typing import TYPE_CHECKING, Tuple
+
 import matplotlib.transforms
 import numpy as np
 
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.collections import PathCollection
+    from matplotlib.lines import Line2D
+    from mpl_toolkits.mplot3d import Axes3D
 
-def has_legend(axes):
+
+def has_legend(axes: Axes | Axes3D) -> bool:
     return axes.get_legend() is not None
 
 
-def get_legend_text(obj):
+def get_legend_text(obj: Line2D | PathCollection) -> [None, str]:
     """Check if line is in legend."""
     leg = obj.axes.get_legend()
     if leg is None:
@@ -25,9 +37,12 @@ def get_legend_text(obj):
     return None
 
 
-def transform_to_data_coordinates(obj, xdata, ydata):
-    """The coordinates might not be in data coordinates, but could be sometimes in axes
-    coordinates. For example, the matplotlib command
+def transform_to_data_coordinates(
+    obj: Line2D, xdata: np.ndarray, ydata: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    """The coordinates might not be in data coordinates, but could be sometimes in axes coordinates.
+
+    For example, the matplotlib command
       axes.axvline(2)
     will have the y coordinates set to 0 and 1, not to the limits. Therefore, a
     two-stage transform has to be applied:
@@ -52,15 +67,14 @@ _replace_mathdefault = functools.partial(
 )
 
 
-def _common_texification(text):
+def _common_texification(text: str) -> str:
     return _tex_escape(text)
 
 
 # https://github.com/nschloe/tikzplotlib/pull/603
-def _tex_escape(text):
-    r"""
-    Do some necessary and/or useful substitutions for texts to be included in
-    LaTeX documents.
+def _tex_escape(text: str) -> str:
+    r"""Do some necessary and/or useful substitutions for texts to be included in LaTeX documents.
+
     This distinguishes text-mode and math-mode by replacing the math separator
     ``$`` with ``\(\displaystyle %s\)``. Escaped math separators (``\$``)
     are ignored.
@@ -76,6 +90,5 @@ def _tex_escape(text):
     parts = _split_math(text)
     for i, s in enumerate(parts):
         if i % 2:  # mathmode replacements
-            s = r"\(\displaystyle %s\)" % s
-        parts[i] = s
+            parts[i] = rf"\(\displaystyle {s}\)"
     return "".join(parts)

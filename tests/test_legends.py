@@ -1,15 +1,25 @@
-def plot():
-    import numpy as np
-    from matplotlib import pyplot as plt
+"""Test legend."""
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.figure import Figure
+
+from .helpers import assert_equality
+
+mpl.use("Agg")
+
+
+def plot() -> Figure:
     fig = plt.figure()
 
     x = np.ma.arange(0, 2 * np.pi, 0.4)
     y = np.ma.sin(x)
     y1 = np.sin(2 * x)
     y2 = np.sin(3 * x)
-    ym1 = np.ma.masked_where(y1 > 0.5, y1)
-    ym2 = np.ma.masked_where(y2 < -0.5, y2)
+    limit = 0.5
+    ym1 = np.ma.masked_where(y1 > limit, y1)
+    ym2 = np.ma.masked_where(y2 < -limit, y2)
 
     lines = plt.plot(x, y, "r", x, ym1, "g", x, ym2, "bo")
     plt.setp(lines[0], linewidth=4)
@@ -21,7 +31,5 @@ def plot():
     return fig
 
 
-def test():
-    from .helpers import assert_equality
-
+def test() -> None:
     assert_equality(plot, __file__[:-3] + "_reference.tex")
