@@ -145,7 +145,9 @@ class MyAxes:
             return 1.0
         return float(aspect)
 
-    def _set_axis_dimensions(self, aspect_num: float | None, xlim: List[float], ylim: List[float]) -> None:
+    def _set_axis_dimensions(
+        self, aspect_num: float | None, xlim: List[float], ylim: List[float]
+    ) -> None:
         if self.data["axis width"] and self.data["axis height"]:
             # width and height overwrite aspect ratio
             self.axis_options.append("width=" + self.data["axis width"])
