@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from matplotlib.dates import DateConverter, num2date
@@ -44,7 +44,7 @@ class PathCollectionData:
     table_options: list
     is_contour: bool
     marker: Optional[str] = None
-    is_filled: Optional[bool] = False
+    is_filled: bool = False
     add_individual_color_code: Optional[bool] = False
     legend_text: Optional[str] = None
 
@@ -294,6 +294,8 @@ def _draw_pathcollection_get_marker(pcd: PathCollectionData) -> None:
     # <https://github.com/matplotlib/matplotlib/issues/4672#issuecomment-378702670>
     if pcd.obj.get_paths():
         p = pcd.obj.get_paths()[0]
+        if not isinstance(p.codes, np.ndarray) or not isinstance(p.vertices, np.ndarray):
+            return
         ms = {style: MarkerStyle(style) for style in MarkerStyle.markers}
         paths = {
             style: marker.get_path().transformed(marker.get_transform())
@@ -301,12 +303,14 @@ def _draw_pathcollection_get_marker(pcd: PathCollectionData) -> None:
         }
         tolerance = 1.0e-10
         for marker, path in paths.items():
+            if not isinstance(path.codes, np.ndarray) or not isinstance(path.vertices, np.ndarray):
+                continue
             if (
                 np.array_equal(path.codes, p.codes)
                 and (path.vertices.shape == p.vertices.shape)
                 and np.max(np.abs(path.vertices - p.vertices)) < tolerance
             ):
-                pcd.marker = marker
+                pcd.marker = str(marker)
                 return
 
 
@@ -333,16 +337,23 @@ def _draw_pathcollection_drawoptions(
 
 def _draw_pathcollection_draw_contour(path: Path, data: dict, pcd: PathCollectionData) -> None:
     if pcd.is_contour:
+        ff = data["float format"]
         dd = path.vertices
+        if not isinstance(dd, Iterable):
+            return  # We cannot draw a path
         # https://matplotlib.org/stable/api/path_api.html
         codes = path.codes if path.codes is not None else np.array([1] + [2] * (len(dd) - 1))
-        pcd.dd_strings = []
+        dd_strings: List[List[str]] = []
+        if not isinstance(codes, Iterable):
+            return  # We cannot draw a path
         for row, code in zip(dd, codes):
             if code == 1:  # MOVETO
                 # Inserts a newline to trigger "move to" in pgfplots
-                pcd.dd_strings.append([])
-            pcd.dd_strings.append([f"{val:{data['float format']}}".format(val) for val in row])
-        pcd.dd_strings = np.array(pcd.dd_strings[1:], dtype=object)
+                dd_strings.append([])
+            if not isinstance(row, Iterable):
+                raise TypeError
+            dd_strings.append([f"{val:{ff}}" for val in row])  # type: ignore[str-bytes-safe]
+        pcd.dd_strings = np.array(dd_strings[1:], dtype=object)
 
 
 def _draw_pathcollection_scatter_sizes(pcd: PathCollectionData) -> None:
@@ -376,40 +387,40 @@ def get_draw_options(data: dict, line_data: LineData) -> list:
 def _get_draw_options_ec(data: dict, line_data: LineData) -> list:
     if line_data.ec is None:
         return []
-    line_data.ec_col, line_data.ec_rgba = _color.mpl_color2xcolor(data, line_data.ec)
+    line_data.ec_name, line_data.ec_rgba = _color.mpl_color2xcolor(data, line_data.ec)
     if line_data.ec_rgba[3] > 0:
-        return [f"draw={line_data.ec_col}"]
+        return [f"draw={line_data.ec_name}"]
     return ["draw=none"]
 
 
 def _get_draw_options_fc(data: dict, line_data: LineData) -> list:
     if line_data.fc is None:
         return []
-    line_data.fc_col, line_data.fc_rgba = _color.mpl_color2xcolor(data, line_data.fc)
+    line_data.fc_name, line_data.fc_rgba = _color.mpl_color2xcolor(data, line_data.fc)
     if line_data.fc_rgba[3] > 0.0:
-        return [f"fill={line_data.fc_col}"]
+        return [f"fill={line_data.fc_name}"]
     # Don't draw if it's invisible anyways.
     return []
 
 
-def _get_draw_options_transparency(data: dict, line_data: LineData) -> list:
+def _get_draw_options_transparency(data: Dict, line_data: LineData) -> List[str]:
     ff = data["float format"]
     if (
-        line_data.ec is not None
-        and line_data.fc is not None
+        line_data.ec_rgba is not None
+        and line_data.fc_rgba is not None
         and line_data.ec_rgba[3] != 1.0
         and line_data.ec_rgba[3] == line_data.fc_rgba[3]
     ):
-        return [f"opacity={line_data.ec[3]:{ff}}"]
+        return [f"opacity={line_data.ec_rgba[3]:{ff}}"]
     draw_options = []
-    if line_data.ec is not None and 0 < line_data.ec_rgba[3] < 1.0:
+    if line_data.ec_rgba is not None and 0 < line_data.ec_rgba[3] < 1.0:
         draw_options.append(f"draw opacity={line_data.ec_rgba[3]:{ff}}")
-    if line_data.fc is not None and 0 < line_data.fc_rgba[3] < 1.0:
+    if line_data.fc_rgba is not None and 0 < line_data.fc_rgba[3] < 1.0:
         draw_options.append(f"fill opacity={line_data.fc_rgba[3]:{ff}}")
     return draw_options
 
 
-def _get_draw_options_linewidth(data: dict, line_data: LineData) -> list:
+def _get_draw_options_linewidth(data: Dict, line_data: LineData) -> List[str]:
     if line_data.lw is None:
         return []
     lw_ = mpl_linewidth2pgfp_linewidth(data, line_data.lw)
@@ -418,7 +429,7 @@ def _get_draw_options_linewidth(data: dict, line_data: LineData) -> list:
     return []
 
 
-def _get_draw_options_linestyle(data: dict, line_data: LineData) -> list:
+def _get_draw_options_linestyle(data: Dict, line_data: LineData) -> List[str]:
     if line_data.ls is None:
         return []
     ls_ = mpl_linestyle2pgfplots_linestyle(data, line_data.ls)
@@ -427,7 +438,7 @@ def _get_draw_options_linestyle(data: dict, line_data: LineData) -> list:
     return []
 
 
-def _get_draw_options_hatch(data: dict, line_data: LineData) -> list:
+def _get_draw_options_hatch(data: Dict, line_data: LineData) -> List[str]:
     if line_data.hatch is None:
         return []
 
@@ -440,14 +451,18 @@ def _get_draw_options_hatch(data: dict, line_data: LineData) -> list:
     # There exist an obj.get_hatch_color() method in the mpl API,
     # but it seems to be unused
     try:
-        hc = line_data.obj._hatch_color  # noqa: SLF001
+        hc = line_data.obj._hatch_color  # type: ignore[union-attr]  # noqa: SLF001
     except AttributeError:  # Fallback to edge color
-        if line_data.ec is None or line_data.line_data.ec_rgba[3] == 0.0:
+        if (
+            line_data.ec_name is not None
+            and line_data.ec_rgba is not None
+            and line_data.ec_rgba[3] != 0.0
+        ):
+            h_col, h_rgba = line_data.ec_name, line_data.ec_rgba
+        else:
             # Assuming that a hatch marker indicates that hatches are wanted, also
             # when the edge color is (0, 0, 0, 0), i.e., the edge is invisible
             h_col, h_rgba = "black", np.array([0, 0, 0, 1])
-        else:
-            h_col, h_rgba = line_data.ec_col, line_data.ec_rgba
     else:
         h_col, h_rgba = _color.mpl_color2xcolor(data, hc)
     finally:
@@ -458,23 +473,25 @@ def _get_draw_options_hatch(data: dict, line_data: LineData) -> list:
     return pattern
 
 
-def mpl_linewidth2pgfp_linewidth(data: dict, line_width: float) -> str:
-    # PGFplots gives line widths in pt, matplotlib in axes space. Translate.
-    # Scale such that the default mpl line width (1.5) is mapped to the PGFplots
-    # line with semithick, 0.6. From a visual comparison, semithick or even thick
-    # matches best with the default mpl style.
-    # Keep the line width in units of decipoint to make sure we stay in integers.
+def mpl_linewidth2pgfp_linewidth(data: Dict, line_width: float) -> str | None:
+    """PGFplots gives line widths in pt, matplotlib in axes space. Translate.
+
+    Scale such that the default mpl line width (1.5) is mapped to the PGFplots
+    line with semithick, 0.6. From a visual comparison, semithick or even thick
+    matches best with the default mpl style.
+    Keep the line width in units of decipoint to make sure we stay in integers.
+    """
     line_width_decipoint = line_width * 4
     try:
         # https://github.com/pgf-tikz/pgf/blob/e9c22dc9fe48f975b7fdb32181f03090b3747499/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex#L1574
         return {
-            1: "ultra thin",
-            2: "very thin",
-            4: None,  # "thin",
-            6: "semithick",
-            8: "thick",
-            12: "very thick",
-            16: "ultra thick",
+            1.0: "ultra thin",
+            2.0: "very thin",
+            4.0: None,  # "thin",
+            6.0: "semithick",
+            8.0: "thick",
+            12.0: "very thick",
+            16.0: "ultra thick",
         }[line_width_decipoint]
     except KeyError:
         # explicit line width
@@ -483,7 +500,7 @@ def mpl_linewidth2pgfp_linewidth(data: dict, line_width: float) -> str:
 
 
 def mpl_linestyle2pgfplots_linestyle(
-    data: dict, line_style: str | tuple, line: Optional[Line2D] = None
+    data: Dict, line_style: str | Tuple, line: Optional[Line2D] = None
 ) -> str | None:
     """Translates a line style of matplotlib to the corresponding style in PGFPlots."""
     # linestyle is a string or dash tuple. Legal string values are
@@ -515,7 +532,7 @@ def mpl_linestyle2pgfplots_linestyle(
         default_dash_offset, default_dash_seq = _get_dash_pattern(line_style)
 
         # get dash format of line under test
-        dash_offset, dash_seq = line._unscaled_dash_pattern  # noqa: SLF001
+        dash_offset, dash_seq = line._unscaled_dash_pattern  # type: ignore[attr-defined]  # noqa: SLF001
 
         lst = []
         if dash_seq != default_dash_seq:
