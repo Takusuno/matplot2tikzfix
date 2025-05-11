@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Sized, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +21,7 @@ class MyAxes:
         """Returns the PGFPlots code for an axis environment."""
         self.data = data
         self.obj = obj
-        self.content = []
+        self.content: List[str] = []
 
         # Are we dealing with an axis that hosts a colorbar? Skip then, those are
         # treated implicitily by the associated axis.
@@ -37,7 +37,7 @@ class MyAxes:
         if isinstance(obj, Subplot):
             self._subplot()
 
-        self.axis_options = []
+        self.axis_options: List[str] = []
 
         self._set_hide_axis()
         self._set_plot_title()
@@ -72,7 +72,7 @@ class MyAxes:
         if xlabel:
             xlabel = _common_texification(xlabel)
 
-            labelcolor = self.obj.xaxis.label.get_c()
+            labelcolor = self.obj.xaxis.label.get_color()
 
             if labelcolor != "black":
                 col, _ = _color.mpl_color2xcolor(self.data, labelcolor)
@@ -88,7 +88,7 @@ class MyAxes:
         if ylabel:
             ylabel = _common_texification(ylabel)
 
-            labelcolor = self.obj.yaxis.label.get_c()
+            labelcolor = self.obj.yaxis.label.get_color()
             if labelcolor != "black":
                 col, _ = _color.mpl_color2xcolor(self.data, labelcolor)
                 self.axis_options.append(f"ylabel=\\textcolor{{{col}}}{{{ylabel}}}")
@@ -119,12 +119,12 @@ class MyAxes:
         if self.obj.get_xscale() == "log":
             self.axis_options.append("xmode=log")
             self.axis_options.append(
-                f"log basis x={{{_try_f2i(self.obj.xaxis._scale.base)}}}"  # noqa: SLF001
+                f"log basis x={{{_try_f2i(self.obj.xaxis._scale.base)}}}"  # type: ignore[attr-defined]  # noqa: SLF001
             )
         if self.obj.get_yscale() == "log":
             self.axis_options.append("ymode=log")
             self.axis_options.append(
-                f"log basis y={{{_try_f2i(self.obj.yaxis._scale.base)}}}"  # noqa: SLF001
+                f"log basis y={{{_try_f2i(self.obj.yaxis._scale.base)}}}"  # type: ignore[attr-defined]  # noqa: SLF001
             )
 
     def _set_axis_on_top(self) -> None:
@@ -203,15 +203,15 @@ class MyAxes:
         try:
             # mpl 3.3.3+
             # <https://github.com/matplotlib/matplotlib/pull/18769>
-            has_major_xgrid = self.obj.xaxis._major_tick_kw["gridOn"]  # noqa: SLF001
-            has_minor_xgrid = self.obj.xaxis._minor_tick_kw["gridOn"]  # noqa: SLF001
-            has_major_ygrid = self.obj.yaxis._major_tick_kw["gridOn"]  # noqa: SLF001
-            has_minor_ygrid = self.obj.yaxis._minor_tick_kw["gridOn"]  # noqa: SLF001
+            has_major_xgrid = self.obj.xaxis._major_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_xgrid = self.obj.xaxis._minor_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
+            has_major_ygrid = self.obj.yaxis._major_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_ygrid = self.obj.yaxis._minor_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
         except KeyError:
-            has_major_xgrid = self.obj.xaxis._gridOnMajor  # noqa: SLF001
-            has_minor_xgrid = self.obj.xaxis._gridOnMinor  # noqa: SLF001
-            has_major_ygrid = self.obj.yaxis._gridOnMajor  # noqa: SLF001
-            has_minor_ygrid = self.obj.yaxis._gridOnMinor  # noqa: SLF001
+            has_major_xgrid = self.obj.xaxis._gridOnMajor  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_xgrid = self.obj.xaxis._gridOnMinor  # type: ignore[attr-defined]  # noqa: SLF001
+            has_major_ygrid = self.obj.yaxis._gridOnMajor  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_ygrid = self.obj.yaxis._gridOnMinor  # type: ignore[attr-defined]  # noqa: SLF001
 
         if has_major_xgrid:
             self.axis_options.append("xmajorgrids")
@@ -402,8 +402,8 @@ class MyAxes:
         # doesn't seem to be quite accurate. See
         # <https://github.com/matplotlib/matplotlib/issues/5311>.  For now, just take
         # the first tick direction of each of the axes.
-        x_tick_dirs = [tick._tickdir for tick in self.obj.xaxis.get_major_ticks()]  # noqa: SLF001
-        y_tick_dirs = [tick._tickdir for tick in self.obj.yaxis.get_major_ticks()]  # noqa: SLF001
+        x_tick_dirs = [tick._tickdir for tick in self.obj.xaxis.get_major_ticks()]  # type: ignore[attr-defined]  # noqa: SLF001
+        y_tick_dirs = [tick._tickdir for tick in self.obj.yaxis.get_major_ticks()]  # type: ignore[attr-defined]  # noqa: SLF001
         if x_tick_dirs or y_tick_dirs:
             if x_tick_dirs and y_tick_dirs:
                 direction = x_tick_dirs[0] if x_tick_dirs[0] == y_tick_dirs[0] else None
@@ -445,14 +445,17 @@ class MyAxes:
         if x_tick_position == y_tick_position and x_tick_position is not None:
             self.axis_options.append(f"tick pos={x_tick_position}")
         else:
-            self.axis_options.append(x_tick_position_string)
-            self.axis_options.append(y_tick_position_string)
+            if x_tick_position_string is not None:
+                self.axis_options.append(x_tick_position_string)
+            if y_tick_position_string is not None:
+                self.axis_options.append(y_tick_position_string)
 
     def _subplot(self) -> None:
         # https://github.com/matplotlib/matplotlib/issues/7225#issuecomment-252173667
-        if self.obj.get_subplotspec() is None:
+        subplotspec = self.obj.get_subplotspec()
+        if subplotspec is None:
             return
-        geom = self.obj.get_subplotspec().get_topmost_subplotspec().get_geometry()
+        geom = subplotspec.get_topmost_subplotspec().get_geometry()
 
         self.nsubplots = geom[0] * geom[1]
         if self.nsubplots > 1:
@@ -483,7 +486,7 @@ class MyAxes:
         )
 
         if not major_tick_labels:
-            return None
+            return ""
 
         tick_label_text_width_identifier = f"{x_or_y} tick label text width"
         if tick_label_text_width_identifier in self.axis_options:
@@ -521,7 +524,7 @@ class MyAxes:
         return label_style
 
 
-def _get_tick_position(obj: Axes, x_or_y: str) -> Tuple[List[str], str]:
+def _get_tick_position(obj: Axes, x_or_y: str) -> Tuple[str | None, str | None]:
     major_ticks = obj.xaxis.majorTicks if x_or_y == "x" else obj.yaxis.majorTicks
 
     major_ticks_bottom = [tick.tick1line.get_visible() for tick in major_ticks]
@@ -681,7 +684,7 @@ def _handle_linear_segmented_color_map(
     # elements in each row in the cdict entry for a given color as (x, y0, y1). Then
     # for values of x between x[i] and x[i+1] the color value is interpolated between
     # y1[i] and y0[i+1].
-    segdata = cmap._segmentdata  # noqa: SLF001
+    segdata = cmap._segmentdata  # type: ignore[attr-defined]  # noqa: SLF001
     red = segdata["red"]
     green = segdata["green"]
     blue = segdata["blue"]
@@ -778,19 +781,25 @@ def _handle_listed_color_map(cmap: ListedColormap, data: Dict) -> Tuple[str, boo
         "viridis": "viridis",
         # 'winter': 'winter',  # noqa: ERA001
     }
-    for mpl_cm, pgf_cm in cm_translate.items():
-        if cmap.colors == plt.get_cmap(mpl_cm).colors:
+    for mpl_cm_name, pgf_cm in cm_translate.items():
+        mpl_cm = plt.get_cmap(mpl_cm_name)
+        if isinstance(mpl_cm, ListedColormap) and cmap.colors == mpl_cm.colors:
             is_custom_colormap = False
             return pgf_cm, is_custom_colormap
 
     unit = "pt"
     ff = data["float format"]
-    if cmap.N is None or len(cmap.colors) == cmap.N:
+    if cmap.N is None or (
+        isinstance(cmap.colors, Sized)
+        and len(cmap.colors) == cmap.N
+        and isinstance(cmap.colors, Iterable)
+    ):
         colors = [
             f"rgb({k}{unit})=({rgb[0]:{ff}},{rgb[1]:{ff}},{rgb[2]:{ff}})"
             for k, rgb in enumerate(cmap.colors)
+            if isinstance(rgb, list)
         ]
-    else:
+    elif isinstance(cmap.colors, list):
         reps = int(float(cmap.N) / len(cmap.colors) - 0.5) + 1
         repeated_cols = reps * cmap.colors
         colors = [
@@ -847,7 +856,7 @@ def _find_associated_colorbar(obj: Axes) -> Colorbar | None:
     """
     for child in obj.get_children():
         try:
-            cbar = child.colorbar
+            cbar = child.colorbar  # type: ignore[attr-defined]
         except AttributeError:
             continue
         if cbar is not None:  # really necessary?
