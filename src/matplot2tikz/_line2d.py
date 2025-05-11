@@ -163,7 +163,7 @@ def draw_linecollection(data: Dict, obj: LineCollection) -> List[str]:
             data, mypath.LineData(obj=obj, ec=color, ls=style, lw=width)
         )
 
-        cont, _, _ = mypath.draw_path(data, path, draw_options=options, simplify=False)
+        cont, _ = mypath.draw_path(data, path, draw_options=options, simplify=False)
         content.append(cont + "\n")
 
     return content

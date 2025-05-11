@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import contextlib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence, Sized, Tuple
 
 import numpy as np
 from matplotlib.dates import DateConverter, num2date
-from matplotlib.lines import Line2D, _get_dash_pattern
+from matplotlib.lines import Line2D, _get_dash_pattern  # type: ignore[attr-defined]
 from matplotlib.markers import MarkerStyle
 from matplotlib.path import Path
 
@@ -24,13 +24,13 @@ from ._util import get_legend_text, has_legend
 @dataclass
 class LineData:
     obj: Collection | Patch
-    ec: Optional[str | tuple] = None  # edgecolor
+    ec: Optional[str | Tuple] = None  # edgecolor
     ec_name: Optional[str] = None
     ec_rgba: Optional[np.ndarray] = None
-    fc: Optional[str | tuple] = None  # facecolor
+    fc: Optional[str | Tuple] = None  # facecolor
     fc_name: Optional[str] = None
     fc_rgba: Optional[np.ndarray] = None
-    ls: Optional[str | tuple] = None  # linestyle
+    ls: Optional[str | Tuple[float, Sequence[float]]] = None  # linestyle
     lw: Optional[float] = None  # linewidth
     hatch: Optional[str] = None
 
@@ -50,18 +50,26 @@ class PathCollectionData:
 
 
 def draw_path(
-    data: dict, path: Path, draw_options: Optional[list] = None, simplify: Optional[bool] = None
-) -> tuple[str, list, bool]:
+    data: Dict,
+    path: Path,
+    draw_options: Optional[List[str]] = None,
+    simplify: Optional[bool] = None,
+) -> Tuple[str, bool]:
     """Adds code for drawing an ordinary path in PGFPlots (TikZ)."""
     # For some reasons, matplotlib sometimes adds void paths which consist of
     # only one point and have 0 fill opacity. To not let those clutter the
     # output TeX file, bail out here.
     if (
-        len(path.vertices) == 2  # noqa: PLR2004
-        and all(path.vertices[0] == path.vertices[1])
-        and "fill opacity=0" in draw_options
+        not isinstance(path.vertices, Sized)
+        or not isinstance(path.vertices, Iterable)
+        or (
+            len(path.vertices) == 2  # noqa: PLR2004
+            and np.all(path.vertices[0] == path.vertices[1])
+            and draw_options is not None
+            and "fill opacity=0" in draw_options
+        )
     ):
-        return "", None, False
+        return "", False
 
     try:
         converter = data["current mpl axes obj"].xaxis.get_converter()
@@ -72,7 +80,7 @@ def draw_path(
     ff = data["float format"]
     xformat = "" if x_is_date else ff
     prev = None
-    is_area = None
+    is_area = False
     for vert, code in path.iter_segments(simplify=simplify):
         # For path codes see: http://matplotlib.org/api/path_api.html
         is_area = False
@@ -105,9 +113,9 @@ def draw_path(
             if prev is None:
                 msg = "Cannot draw quadratic Bezier curves as the beginning of a path"
                 raise ValueError(msg)
-            q1 = 1.0 / 3.0 * prev + 2.0 / 3.0 * vert[0:2]
-            q2 = 2.0 / 3.0 * vert[0:2] + 1.0 / 3.0 * vert[2:4]
-            q3 = vert[2:4]
+            q1 = list(1.0 / 3.0 * prev + 2.0 / 3.0 * vert[0:2])
+            q2 = list(2.0 / 3.0 * vert[0:2] + 1.0 / 3.0 * vert[2:4])
+            q3 = list(vert[2:4])
             if x_is_date:
                 q1 = [num2date(q1[0]), q1[1]]
                 q2 = [num2date(q2[0]), q2[1]]
@@ -139,7 +147,7 @@ def draw_path(
     do = "[{}]".format(", ".join(draw_options)) if draw_options else ""
     path_command = "\\path {}\n{};\n".format(do, "\n".join(nodes))
 
-    return path_command, draw_options, is_area
+    return path_command, is_area
 
 
 def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
@@ -147,14 +155,23 @@ def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
     content = []
     # gather data
     dd = obj.get_offsets()
+    if not isinstance(dd, Iterable):
+        # No idea what to draw.
+        return []
 
     path_collection_data = PathCollectionData(
         obj=obj,
-        dd_strings=np.array([[f"{val:{data['float format']}}" for val in row] for row in dd]),
+        dd_strings=np.array(
+            [
+                [f"{val:{data['float format']}}" for val in row]  # type: ignore[str-bytes-safe]
+                for row in dd
+                if isinstance(row, Iterable)
+            ]
+        ),
         draw_options=["only marks"],
         labels=["x", "y"],
         table_options=[],
-        is_contour=len(dd) == 1,
+        is_contour=isinstance(dd, Sized) and len(dd) == 1,
     )
     line_data = LineData(obj=obj)
 
@@ -165,7 +182,9 @@ def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
         _draw_pathcollection_get_edgecolors(data, path_collection_data, line_data)
         _draw_pathcollection_get_facecolors(data, path_collection_data, line_data)
         with contextlib.suppress(TypeError, IndexError):
-            line_data.ls = obj.get_linestyle()[0]
+            line_style = obj.get_linestyle()[0]
+            if isinstance(line_style, (str, tuple)):  # Mypy thinks it can also be a float?
+                line_data.ls = line_style
         _draw_pathcollection_add_individual_color(path_collection_data)
         _draw_pathcollection_get_marker(path_collection_data)
 
@@ -216,8 +235,10 @@ def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
     return content
 
 
-def _draw_pathcollection_scatter_colormap(data: dict, pcd: PathCollectionData) -> None:
-    pcd.dd_strings = np.column_stack([pcd.dd_strings, pcd.obj.get_array()])
+def _draw_pathcollection_scatter_colormap(data: Dict, pcd: PathCollectionData) -> None:
+    obj_array = pcd.obj.get_array()
+    if obj_array is not None:
+        pcd.dd_strings = np.column_stack([pcd.dd_strings, obj_array])
     pcd.labels.append("colordata")
     pcd.draw_options.append("scatter src=explicit")
     pcd.table_options.extend(["x=x", "y=y", "meta=colordata"])
@@ -228,10 +249,10 @@ def _draw_pathcollection_scatter_colormap(data: dict, pcd: PathCollectionData) -
 
 
 def _draw_pathcollection_get_edgecolors(
-    data: dict, pcd: PathCollectionData, line_data: LineData
+    data: Dict, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     try:
-        edgecolors = pcd.obj.get_edgecolors()
+        edgecolors = pcd.obj.get_edgecolors()  # type: ignore[attr-defined]
     except TypeError:
         pass
     else:
@@ -249,10 +270,10 @@ def _draw_pathcollection_get_edgecolors(
 
 
 def _draw_pathcollection_get_facecolors(
-    data: dict, pcd: PathCollectionData, line_data: LineData
+    data: Dict, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     try:
-        facecolors = pcd.obj.get_facecolors()
+        facecolors = pcd.obj.get_facecolors()  # type: ignore[attr-defined]
     except TypeError:
         pass
     else:
@@ -315,7 +336,7 @@ def _draw_pathcollection_get_marker(pcd: PathCollectionData) -> None:
 
 
 def _draw_pathcollection_drawoptions(
-    data: dict, pcd: PathCollectionData, line_data: LineData
+    data: Dict, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     if pcd.is_contour:
         pcd.draw_options = ["draw=none"]
@@ -335,7 +356,7 @@ def _draw_pathcollection_drawoptions(
         pcd.draw_options.append("forget plot")
 
 
-def _draw_pathcollection_draw_contour(path: Path, data: dict, pcd: PathCollectionData) -> None:
+def _draw_pathcollection_draw_contour(path: Path, data: Dict, pcd: PathCollectionData) -> None:
     if pcd.is_contour:
         ff = data["float format"]
         dd = path.vertices
@@ -372,7 +393,7 @@ def _draw_pathcollection_scatter_sizes(pcd: PathCollectionData) -> None:
         )
 
 
-def get_draw_options(data: dict, line_data: LineData) -> list:
+def get_draw_options(data: Dict, line_data: LineData) -> List[str]:
     """Get the draw options for a given (patch) object."""
     return (
         _get_draw_options_ec(data, line_data)
@@ -384,7 +405,7 @@ def get_draw_options(data: dict, line_data: LineData) -> list:
     )
 
 
-def _get_draw_options_ec(data: dict, line_data: LineData) -> list:
+def _get_draw_options_ec(data: dict, line_data: LineData) -> List[str]:
     if line_data.ec is None:
         return []
     line_data.ec_name, line_data.ec_rgba = _color.mpl_color2xcolor(data, line_data.ec)
@@ -393,7 +414,7 @@ def _get_draw_options_ec(data: dict, line_data: LineData) -> list:
     return ["draw=none"]
 
 
-def _get_draw_options_fc(data: dict, line_data: LineData) -> list:
+def _get_draw_options_fc(data: dict, line_data: LineData) -> List[str]:
     if line_data.fc is None:
         return []
     line_data.fc_name, line_data.fc_rgba = _color.mpl_color2xcolor(data, line_data.fc)
@@ -500,7 +521,7 @@ def mpl_linewidth2pgfp_linewidth(data: Dict, line_width: float) -> str | None:
 
 
 def mpl_linestyle2pgfplots_linestyle(
-    data: Dict, line_style: str | Tuple, line: Optional[Line2D] = None
+    data: Dict, line_style: str | Tuple[float, Sequence[float]], line: Optional[Line2D] = None
 ) -> str | None:
     """Translates a line style of matplotlib to the corresponding style in PGFPlots."""
     # linestyle is a string or dash tuple. Legal string values are

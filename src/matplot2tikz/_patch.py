@@ -114,7 +114,7 @@ def draw_patchcollection(data: Dict, obj: Collection) -> List[str]:
         draw_options = mypath.get_draw_options(
             data, mypath.LineData(obj=obj, ec=ec, fc=fc, ls=ls, lw=lw)
         )
-        cont, draw_options, is_area = mypath.draw_path(
+        cont, is_area = mypath.draw_path(
             data,
             path.transformed(Affine2D(t).translate(*off)) if t is not None else path,
             draw_options=draw_options,
@@ -128,7 +128,7 @@ def draw_patchcollection(data: Dict, obj: Collection) -> List[str]:
 
 
 def _draw_polygon(data: dict, obj: Patch, draw_options: list) -> List[str]:
-    str_path, _, is_area = mypath.draw_path(data, obj.get_path(), draw_options=draw_options)
+    str_path, is_area = mypath.draw_path(data, obj.get_path(), draw_options=draw_options)
     legend_type = "area legend" if is_area else "line legend"
     return [str_path, _patch_legend(obj, draw_options, legend_type)]
 
@@ -214,7 +214,7 @@ def _draw_fancy_arrow(data: dict, obj: FancyArrowPatch, draw_options: list) -> L
             f"(axis cs:{pos_b[0]:{ff}},{pos_b[1]:{ff}});\n"
         )
     else:
-        str_path, _, _ = mypath.draw_path(
+        str_path, _ = mypath.draw_path(
             data,
             obj._path_original,  # type: ignore[attr-defined]  # noqa: SLF001
             draw_options=draw_options + style,
