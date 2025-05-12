@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import webcolors
@@ -29,10 +29,11 @@ builtin_colors = {
 }
 
 
-def _get_closest_colour_name(rgb: np.ndarray) -> Tuple[str, int]:
-    match = None
+def _get_closest_colour_name(rgb: np.ndarray) -> Tuple[str, float]:
+    wnames: List[str] = webcolors.names("css3")
+    match = wnames[0]
     mindiff = 1.0e15
-    for name in webcolors.names("css3"):
+    for name in wnames:
         wc_rgb = webcolors.name_to_rgb(name)
 
         diff = (
@@ -53,11 +54,13 @@ def mpl_color2xcolor(
     matplotlib_color: str
     | Tuple[float, float, float]
     | Tuple[float, float, float, float]
-    | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float],
+    | Tuple[str | Tuple[float, float, float], float]
+    | Tuple[Tuple[float, float, float, float], float],
 ) -> Tuple[str, np.ndarray]:
     """Translates a matplotlib color specification into a proper LaTeX xcolor."""
     # Convert it to RGBA.
-    my_col = np.array(ColorConverter().to_rgba(matplotlib_color))
+    rgba = ColorConverter().to_rgba(matplotlib_color)
+    my_col = np.array(rgba)
 
     # If the alpha channel is exactly 0, then the color is really 'none'
     # regardless of the RGB channels.
