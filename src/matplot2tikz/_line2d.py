@@ -27,19 +27,22 @@ class MarkerData:
         str
         | Tuple[float, float, float]
         | Tuple[float, float, float, float]
-        | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float]
+        | Tuple[str | Tuple[float, float, float], float]
+        | Tuple[Tuple[float, float, float, float], float]
     ] = None  # facecolor
     ec: Optional[
         str
         | Tuple[float, float, float]
         | Tuple[float, float, float, float]
-        | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float]
+        | Tuple[str | Tuple[float, float, float], float]
+        | Tuple[Tuple[float, float, float, float], float]
     ] = None  # edgecolor
     lc: Optional[
         str
         | Tuple[float, float, float]
         | Tuple[float, float, float, float]
-        | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float]
+        | Tuple[str | Tuple[float, float, float], float]
+        | Tuple[Tuple[float, float, float, float], float]
     ] = None  # linecolor
 
 
