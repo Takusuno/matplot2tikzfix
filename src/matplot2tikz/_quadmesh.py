@@ -19,6 +19,8 @@ def draw_quadmesh(data: dict, obj: QuadMesh) -> list:
 
     # Render the object and save as png file
     cbox = obj.get_clip_box()
+    if cbox is None:
+        raise ValueError
     width = round(cbox.extents[2])
     height = round(cbox.extents[3])
     ren = RendererAgg(width, height, dpi)
@@ -46,7 +48,11 @@ def draw_quadmesh(data: dict, obj: QuadMesh) -> list:
     obj.figure.set_dpi(fig_dpi)
 
     # write the corresponding information to the TikZ file
-    extent = obj.axes.get_xlim() + obj.axes.get_ylim()
+    axes = obj.axes
+    if axes is None:
+        msg = "Object has no axes."
+        raise ValueError(msg)
+    extent = axes.get_xlim() + axes.get_ylim()
 
     # Explicitly use \pgfimage as includegrapics command, as the default
     # \includegraphics fails unexpectedly in some cases
