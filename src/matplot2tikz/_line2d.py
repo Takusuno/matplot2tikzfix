@@ -328,7 +328,7 @@ def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
     ff = data["float format"]
 
     if isinstance(xdata_iterable[0], datetime.datetime):
-        xdata = xdata_iterable
+        xdata = np.array(xdata_iterable)
     else:
         if isinstance(xdata_iterable[0], str):
             # Remove old xtick,xticklabels (if any).
