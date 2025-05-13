@@ -253,7 +253,7 @@ def _draw_pathcollection_get_edgecolors(
         pass
     else:
         if len(edgecolors) == 1:
-            line_data.ec = tuple(edgecolors[0])
+            line_data.ec = edgecolors[0]
         elif len(edgecolors) > 1:
             pcd.labels.append("draw")
 

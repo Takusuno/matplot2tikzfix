@@ -162,7 +162,7 @@ def draw_linecollection(data: Dict, obj: LineCollection) -> List[str]:
     paths = obj.get_paths()
 
     for i, path in enumerate(paths):
-        color = tuple(edgecolors[i] if i < len(edgecolors) else edgecolors[0])
+        color = edgecolors[i] if i < len(edgecolors) else edgecolors[0]
         style = linestyles[i] if i < len(linestyles) else linestyles[0]
         # Ensure that if style is a tuple, that first element is a float
         if isinstance(style, tuple):

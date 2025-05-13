@@ -57,9 +57,14 @@ def mpl_color2xcolor(
     | Tuple[float, float, float]
     | Tuple[float, float, float, float]
     | Tuple[str | Tuple[float, float, float], float]
-    | Tuple[Tuple[float, float, float, float], float],
+    | Tuple[Tuple[float, float, float, float], float]
+    | np.ndarray,
 ) -> Tuple[str, np.ndarray]:
     """Translates a matplotlib color specification into a proper LaTeX xcolor."""
+    # Ensure type is right.
+    if isinstance(matplotlib_color, np.ndarray):
+        matplotlib_color = tuple(matplotlib_color)
+
     # Convert it to RGBA.
     rgba = ColorConverter().to_rgba(matplotlib_color)
     my_col = np.array(rgba)
