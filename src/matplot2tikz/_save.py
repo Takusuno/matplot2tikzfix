@@ -411,7 +411,7 @@ def _recurse(data: Dict, obj: Artist) -> Tuple[Dict, List]:
                 (Text, _text.draw_text),
             ):
                 if isinstance(child, child_type):
-                    content.extend(process_func(data, child), child.get_zorder())  # type: ignore[arg-type]
+                    content.extend(process_func(data, child), child.get_zorder())
                     break
             else:
                 warnings.warn(

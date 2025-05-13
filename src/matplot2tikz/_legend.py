@@ -44,10 +44,10 @@ def draw_legend(data: Dict, obj: Legend) -> None:
         data["current axes"].axis_options.append(f"legend cell align={{{alignment}}}")
 
     try:
-        ncols = obj._ncols  # type: ignore[attr-defined]  # noqa: SLF001
+        ncols = obj._ncols  # noqa: SLF001
     except AttributeError:
         # backwards-compatibility with matplotlib < 3.6.0
-        ncols = obj._ncol  # type: ignore[attr-defined]  # noqa: SLF001
+        ncols = obj._ncol  # noqa: SLF001
     if ncols != 1:
         data["current axes"].axis_options.append(f"legend columns={ncols}")
 
@@ -67,7 +67,7 @@ def draw_legend(data: Dict, obj: Legend) -> None:
 def _legend_position_anchor(data: Dict, obj: Legend, legend_style: List[str]) -> None:
     # Get the location.
     # http://matplotlib.org/api/legend_api.html
-    loc = obj._loc if obj._loc != 0 else _get_location_from_best(obj)  # type: ignore[attr-defined]  # noqa: SLF001
+    loc = obj._loc if obj._loc != 0 else _get_location_from_best(obj)  # noqa: SLF001
     pad = 0.03
     position, anchor = {
         1: (None, None),  # upper right
@@ -84,8 +84,8 @@ def _legend_position_anchor(data: Dict, obj: Legend, legend_style: List[str]) ->
 
     # In case of given position via bbox_to_anchor parameter the center
     # of legend is changed as follows:
-    if obj._bbox_to_anchor:  # type: ignore[attr-defined]  # noqa: SLF001
-        bbox_center = obj.get_bbox_to_anchor()._bbox._points[1]  # type: ignore[attr-defined]  # noqa: SLF001
+    if obj._bbox_to_anchor:  # noqa: SLF001
+        bbox_center = obj.get_bbox_to_anchor()._bbox._points[1]  # noqa: SLF001
         position = [bbox_center[0], bbox_center[1]]
 
     if position:
@@ -110,7 +110,7 @@ def _get_location_from_best(obj: Legend) -> int:
 
     # Rectangles of the legend and of the axes
     # Lower left and upper right points
-    x0_legend, x1_legend = obj._legend_box.get_window_extent(renderer).get_points()  # type: ignore[attr-defined]  # noqa: SLF001
+    x0_legend, x1_legend = obj._legend_box.get_window_extent(renderer).get_points()  # noqa: SLF001
     x0_axes, x1_axes = obj.axes.get_window_extent(renderer).get_points()
     dimension_legend = x1_legend - x0_legend
     dimension_axes = x1_axes - x0_axes

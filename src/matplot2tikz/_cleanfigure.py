@@ -252,7 +252,7 @@ def _clean_collections(
 
 def _is_step(linehandle: Line2D | art3d.Line3D) -> bool:
     """Check if plot is a step plot."""
-    return linehandle._drawstyle in STEP_DRAW_STYLES  # type: ignore[union-attr]  # noqa: SLF001
+    return linehandle._drawstyle in STEP_DRAW_STYLES  # noqa: SLF001
 
 
 def _get_visual_limits(axhandle: Axes) -> Tuple[np.ndarray, np.ndarray]:

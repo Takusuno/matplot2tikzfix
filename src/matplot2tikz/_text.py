@@ -29,7 +29,7 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
         # already captured by the `title` property of pgfplots axes, so skip them here.
         return content
 
-    size = obj.get_size()  # type: ignore[attr-defined]
+    size = obj.get_size()
     bbox = obj.get_bbox_patch()
     converter = mpl.colors.ColorConverter()
     # without the factor 0.5, the fonts are too big most of the time.
@@ -40,8 +40,8 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
     if bbox is not None:
         _bbox(data, bbox, properties, scaling)
 
-    ha = obj.get_ha()  # type: ignore[attr-defined]
-    va = obj.get_va()  # type: ignore[attr-defined]
+    ha = obj.get_ha()
+    va = obj.get_va()
     anchor = _transform_positioning(ha, va)
     if anchor:
         properties.append(anchor)
@@ -49,10 +49,10 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
     properties.append(f"text={col}")
     properties.append(f"rotate={obj.get_rotation():.1f}")
 
-    if obj.get_style() == "italic":  # type: ignore[attr-defined]
+    if obj.get_style() == "italic":
         style.append("\\itshape")
-    elif obj.get_style() != "normal":  # type: ignore[attr-defined]
-        msg = f"Object style '{obj.get_style()}' not implemented."  # type: ignore[attr-defined]
+    elif obj.get_style() != "normal":
+        msg = f"Object style '{obj.get_style()}' not implemented."
         raise NotImplementedError(msg)
 
     # get_weights returns a numeric value in the range 0-1000 or one of (value in parenthesis)
@@ -60,7 +60,7 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
     # `medium` (500), `roman` (500), `semibold` (600), `demibold` (600), `demi` (600), `bold` (700),
     # `heavy` (800), `extra bold` (800), `black` (900)
     # (from matplotlib/font_manager.py)
-    weight = obj.get_weight()  # type: ignore[attr-defined]
+    weight = obj.get_weight()
     min_weight_bold = 550
     if weight in ["semibold", "demibold", "demi", "bold", "heavy", "extra bold", "black"] or (
         isinstance(weight, int) and weight > min_weight_bold
@@ -165,10 +165,10 @@ def _get_arrow_style(data: Dict, obj: FancyArrowPatch) -> list:
     # To support multiple mpl versions, check in a loop instead of a dictionary lookup.
     latex_style = None
     for key, value in arrow_translate.items():
-        if key not in ArrowStyle._style_list:  # type: ignore[attr-defined]  # noqa: SLF001  (there is no other way; not all ArrowStyle contain the .arrow attribute)
+        if key not in ArrowStyle._style_list:  # noqa: SLF001  (there is no other way; not all ArrowStyle contain the .arrow attribute)
             continue
 
-        if ArrowStyle._style_list[key] == style_cls:  # type: ignore[attr-defined]  # noqa: SLF001
+        if ArrowStyle._style_list[key] == style_cls:  # noqa: SLF001
             latex_style = value
             break
 
@@ -176,7 +176,7 @@ def _get_arrow_style(data: Dict, obj: FancyArrowPatch) -> list:
         msg = f"Unknown arrow style {style_cls}"
         raise NotImplementedError(msg)
 
-    col, _ = _color.mpl_color2xcolor(data, obj.get_ec())  # type: ignore[attr-defined]
+    col, _ = _color.mpl_color2xcolor(data, obj.get_ec())
     return [*latex_style, "draw=" + col]
 
 
@@ -226,9 +226,9 @@ def _bbox(data: Dict, bbox: FancyBboxPatch, properties: List[str], scaling: floa
     if edgecolor:
         properties.append(f"draw={edgecolor}")
     ff = data["float format"]
-    line_width = bbox.get_lw() * 0.4  # type: ignore[attr-defined]
+    line_width = bbox.get_lw() * 0.4
     properties.append(f"line width={line_width:{ff}}pt")
-    inner_sep = bbox_style.pad * data["font size"]  # type: ignore[attr-defined]
+    inner_sep = bbox_style.pad * data["font size"]
     properties.append(f"inner sep={inner_sep:{ff}}pt")
     if bbox.get_alpha():
         properties.append(f"fill opacity={bbox.get_alpha()}")
@@ -266,7 +266,7 @@ def _bbox_style(data: Dict, bbox_style: BoxStyle, properties: List[str]) -> None
 
 
 def _bbox_linestyle(bbox: FancyBboxPatch, properties: List[str], scaling: float) -> None:
-    bbox_ls = bbox.get_ls()  # type: ignore[attr-defined]
+    bbox_ls = bbox.get_ls()
     if bbox_ls == "dotted":
         properties.append("dotted")
     elif bbox_ls == "dashed":

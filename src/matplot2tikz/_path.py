@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence, Size
 
 import numpy as np
 from matplotlib.dates import DateConverter, num2date
-from matplotlib.lines import Line2D, _get_dash_pattern  # type: ignore[attr-defined]
+from matplotlib.lines import Line2D, _get_dash_pattern
 from matplotlib.markers import MarkerStyle
 from matplotlib.path import Path
 
@@ -59,15 +59,11 @@ def draw_path(
     # For some reasons, matplotlib sometimes adds void paths which consist of
     # only one point and have 0 fill opacity. To not let those clutter the
     # output TeX file, bail out here.
-    if (
-        not isinstance(path.vertices, Sized)
-        or not isinstance(path.vertices, Iterable)
-        or (
-            len(path.vertices) == 2  # noqa: PLR2004
-            and np.all(path.vertices[0] == path.vertices[1])
-            and draw_options is not None
-            and "fill opacity=0" in draw_options
-        )
+    if not isinstance(path.vertices, np.ndarray) or (
+        len(path.vertices) == 2  # noqa: PLR2004
+        and np.all(path.vertices[0] == path.vertices[1])
+        and draw_options is not None
+        and "fill opacity=0" in draw_options
     ):
         return "", False
 
@@ -163,7 +159,7 @@ def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
         obj=obj,
         dd_strings=np.array(
             [
-                [f"{val:{data['float format']}}" for val in row]  # type: ignore[str-bytes-safe]
+                [f"{val:{data['float format']}}" for val in row]
                 for row in dd
                 if isinstance(row, Iterable)
             ]
@@ -252,7 +248,7 @@ def _draw_pathcollection_get_edgecolors(
     data: Dict, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     try:
-        edgecolors = pcd.obj.get_edgecolors()  # type: ignore[attr-defined]
+        edgecolors = pcd.obj.get_edgecolors()
     except TypeError:
         pass
     else:
@@ -273,7 +269,7 @@ def _draw_pathcollection_get_facecolors(
     data: Dict, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     try:
-        facecolors = pcd.obj.get_facecolors()  # type: ignore[attr-defined]
+        facecolors = pcd.obj.get_facecolors()
     except TypeError:
         pass
     else:
@@ -360,10 +356,10 @@ def _draw_pathcollection_draw_contour(path: Path, data: Dict, pcd: PathCollectio
     if pcd.is_contour:
         ff = data["float format"]
         dd = path.vertices
-        if not isinstance(dd, Iterable):
+        if not isinstance(dd, Iterable) or not isinstance(dd, Sized):
             return  # We cannot draw a path
         # https://matplotlib.org/stable/api/path_api.html
-        codes = path.codes if path.codes is not None else np.array([1] + [2] * (len(dd) - 1))
+        codes = path.codes if path.codes is not None else [1] + [2] * (len(dd) - 1)
         dd_strings: List[List[str]] = []
         if not isinstance(codes, Iterable):
             return  # We cannot draw a path
@@ -373,7 +369,7 @@ def _draw_pathcollection_draw_contour(path: Path, data: Dict, pcd: PathCollectio
                 dd_strings.append([])
             if not isinstance(row, Iterable):
                 raise TypeError
-            dd_strings.append([f"{val:{ff}}" for val in row])  # type: ignore[str-bytes-safe]
+            dd_strings.append([f"{val:{ff}}" for val in row])
         pcd.dd_strings = np.array(dd_strings[1:], dtype=object)
 
 
@@ -472,7 +468,7 @@ def _get_draw_options_hatch(data: Dict, line_data: LineData) -> List[str]:
     # There exist an obj.get_hatch_color() method in the mpl API,
     # but it seems to be unused
     try:
-        hc = line_data.obj._hatch_color  # type: ignore[union-attr]  # noqa: SLF001
+        hc = line_data.obj._hatch_color  # noqa: SLF001
     except AttributeError:  # Fallback to edge color
         if (
             line_data.ec_name is not None
@@ -553,7 +549,7 @@ def mpl_linestyle2pgfplots_linestyle(
         default_dash_offset, default_dash_seq = _get_dash_pattern(line_style)
 
         # get dash format of line under test
-        dash_offset, dash_seq = line._unscaled_dash_pattern  # type: ignore[attr-defined]  # noqa: SLF001
+        dash_offset, dash_seq = line._unscaled_dash_pattern  # noqa: SLF001
 
         lst = []
         if dash_seq != default_dash_seq:

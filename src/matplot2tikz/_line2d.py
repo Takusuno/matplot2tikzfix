@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import datetime
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sized, Tuple
 
 import numpy as np
 from matplotlib.dates import num2date
@@ -54,7 +54,11 @@ def draw_line2d(data: Dict, obj: Line2D) -> List[str]:
     '' or '.tex'.  Instead, render nothing.
     """
     obj_xdata = obj.get_xdata()
-    xdata = obj_xdata if isinstance(obj_xdata, Iterable) else [obj_xdata]
+    xdata = (
+        obj_xdata
+        if isinstance(obj_xdata, Iterable) and isinstance(obj_xdata, Sized)
+        else [obj_xdata]
+    )
 
     if len(xdata) == 0:
         return []
@@ -152,9 +156,9 @@ def draw_linecollection(data: Dict, obj: LineCollection) -> List[str]:
     """Returns Pgfplots code for a number of patch objects."""
     content = []
 
-    edgecolors = obj.get_edgecolors()  # type: ignore[attr-defined]
-    linestyles = obj.get_linestyles()  # type: ignore[attr-defined]
-    linewidths = obj.get_linewidths()  # type: ignore[attr-defined]
+    edgecolors = obj.get_edgecolors()
+    linestyles = obj.get_linestyles()
+    linewidths = obj.get_linewidths()
     paths = obj.get_paths()
 
     for i, path in enumerate(paths):
@@ -316,7 +320,7 @@ def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
 
     # get_{x,y}data gives datetime or string objects if so specified in the plotter
     xdata_alt = obj.get_xdata()
-    xdata_iterable = xdata_alt if isinstance(xdata_alt, Iterable) else [xdata_alt]
+    xdata_iterable = list(xdata_alt) if isinstance(xdata_alt, Iterable) else [xdata_alt]
 
     ff = data["float format"]
 
