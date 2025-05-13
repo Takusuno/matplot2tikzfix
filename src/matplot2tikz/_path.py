@@ -30,7 +30,7 @@ class LineData:
     fc: Optional[str | Tuple] = None  # facecolor
     fc_name: Optional[str] = None
     fc_rgba: Optional[np.ndarray] = None
-    ls: Optional[str | Tuple[float, Sequence[float]]] = None  # linestyle
+    ls: Optional[str | Tuple[float, Sequence[float] | None]] = None  # linestyle
     lw: Optional[float] = None  # linewidth
     hatch: Optional[str] = None
 
@@ -253,7 +253,7 @@ def _draw_pathcollection_get_edgecolors(
         pass
     else:
         if len(edgecolors) == 1:
-            line_data.ec = edgecolors[0]
+            line_data.ec = tuple(edgecolors[0])
         elif len(edgecolors) > 1:
             pcd.labels.append("draw")
 
@@ -404,6 +404,7 @@ def get_draw_options(data: Dict, line_data: LineData) -> List[str]:
 def _get_draw_options_ec(data: dict, line_data: LineData) -> List[str]:
     if line_data.ec is None:
         return []
+
     line_data.ec_name, line_data.ec_rgba = _color.mpl_color2xcolor(data, line_data.ec)
     if line_data.ec_rgba[3] > 0:
         return [f"draw={line_data.ec_name}"]
@@ -517,7 +518,9 @@ def mpl_linewidth2pgfp_linewidth(data: Dict, line_width: float) -> str | None:
 
 
 def mpl_linestyle2pgfplots_linestyle(
-    data: Dict, line_style: str | Tuple[float, Sequence[float]], line: Optional[Line2D] = None
+    data: Dict,
+    line_style: str | Tuple[float, Sequence[float] | None],
+    line: Optional[Line2D] = None,
 ) -> str | None:
     """Translates a line style of matplotlib to the corresponding style in PGFPlots."""
     # linestyle is a string or dash tuple. Legal string values are
