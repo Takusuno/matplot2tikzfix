@@ -29,15 +29,17 @@ builtin_colors = {
 }
 
 
-def _get_closest_colour_name(rgb: np.ndarray) -> Tuple[str, float]:
+def _get_closest_colour_name(rgb: np.ndarray) -> Tuple[str, int]:
     wnames: List[str] = webcolors.names("css3")
     match = wnames[0]
-    mindiff = 1.0e15
+    mindiff = 195076  # = 255**2 * 3 + 1 (maximum difference possible + 1)
     for name in wnames:
         wc_rgb = webcolors.name_to_rgb(name)
 
         diff = (
-            (rgb[0] - wc_rgb.red) ** 2 + (rgb[1] - wc_rgb.green) ** 2 + (rgb[2] - wc_rgb.blue) ** 2
+            int(rgb[0] - wc_rgb.red) ** 2
+            + int(rgb[1] - wc_rgb.green) ** 2
+            + int(rgb[2] - wc_rgb.blue) ** 2
         )
         if diff < mindiff:
             match = name
