@@ -23,6 +23,10 @@ if TYPE_CHECKING:
 STEP_DRAW_STYLES = ["steps-pre", "steps-post", "steps-mid"]
 
 
+def initial_data() -> np.ndarray:
+    return np.array([])
+
+
 def initial_axis_limits() -> np.ndarray:
     return np.array([-np.inf, np.inf])
 
@@ -33,7 +37,7 @@ class CleanFigureData:
     axes: Axes | Axes3D
     target_resolution: int | List[int] | np.ndarray
     scale_precision: float
-    data: np.ndarray = field(default=np.array([]))
+    data: np.ndarray = field(default_factory=initial_data)
     visual_data: Optional[np.ndarray] = None
     x_lim: np.ndarray = field(default_factory=initial_axis_limits)
     y_lim: np.ndarray = field(default_factory=initial_axis_limits)
