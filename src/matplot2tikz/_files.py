@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 
-def _gen_filepath(data: Dict, nb_key: int, ext: str) -> Tuple[Path, Path]:
+def _gen_filepath(data: Dict, nb_key: str, ext: str) -> Tuple[Path, Path]:
     rel_filepath = Path(f"{data['base name']}-{data[nb_key]:03d}{ext}")
 
     if data["rel data path"]:
