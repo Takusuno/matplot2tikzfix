@@ -204,7 +204,7 @@ def _draw_circle(data: dict, obj: Circle, draw_options: list) -> List[str]:
 
 
 def _draw_fancy_arrow(data: dict, obj: FancyArrowPatch, draw_options: list) -> List[str]:
-    style = _get_arrow_style(obj, data)
+    style = _get_arrow_style(data, obj)
     ff = data["float format"]
     if obj._posA_posB is not None:  # type: ignore[attr-defined]  # noqa: SLF001  (no known method to obtain posA and posB)
         pos_a, pos_b = obj._posA_posB  # type: ignore[attr-defined]  # noqa: SLF001
