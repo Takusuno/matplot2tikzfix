@@ -555,7 +555,7 @@ def _get_tick_position(obj: Axes, x_or_y: str) -> Tuple[str | None, str | None]:
     return position_string, major_ticks_position
 
 
-def _get_ticks(data: Dict, xy: str, ticks: np.ndarray, ticklabels: List) -> List[str]:
+def _get_ticks(data: Dict, xy: str, ticks: List | np.ndarray, ticklabels: List) -> List[str]:
     """Gets a {'x','y'}, a number of ticks and ticks labels.
 
     Returns the necessary axis options for the given configuration.
@@ -591,7 +591,7 @@ def _get_ticks(data: Dict, xy: str, ticks: np.ndarray, ticklabels: List) -> List
     return axis_options
 
 
-def _is_label_required(ticks: np.ndarray, ticklabels: List) -> bool:
+def _is_label_required(ticks: List | np.ndarray, ticklabels: List) -> bool:
     """Check if the label is necessary.
 
     If one of the labels is, then all of them must appear in the TikZ plot.
