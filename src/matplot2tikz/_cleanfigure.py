@@ -427,6 +427,7 @@ def _get_collection_data(collection: PathCollection | art3d.Path3DCollection) ->
         # https://stackoverflow.com/questions/51716696/extracting-data-from-a-3d-scatter-plot-in-matplotlib
         offsets = collection._offsets3d  # noqa: SLF001
         x_data, y_data, z_data = (o.data for o in offsets)
+        z_data = np.array(z_data)  # Needed, because it can be a memoryview.
         data = _stack_data_3d(x_data, y_data, z_data)
     else:
         offsets = collection.get_offsets()
