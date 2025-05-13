@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import matplotlib as mpl
@@ -11,36 +11,44 @@ from matplotlib.axes import Axes
 from matplotlib.collections import PathCollection
 from matplotlib.container import BarContainer
 from matplotlib.contour import QuadContourSet
+from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from mpl_toolkits import mplot3d
+from mpl_toolkits.mplot3d import Axes3D, art3d
 
 if TYPE_CHECKING:
     from matplotlib.artist import Artist
-    from matplotlib.figure import Figure
+    from matplotlib.figure import FigureBase
 
 
 STEP_DRAW_STYLES = ["steps-pre", "steps-post", "steps-mid"]
 
 
+def initial_data() -> np.ndarray:
+    return np.array([])
+
+
+def initial_axis_limits() -> np.ndarray:
+    return np.array([-np.inf, np.inf])
+
+
 @dataclass
 class CleanFigureData:
-    fig: Figure
-    axes: Axes
+    fig: FigureBase
+    axes: Axes | Axes3D
     target_resolution: int | List[int] | np.ndarray
     scale_precision: float
-    data: Optional[np.ndarray] = None
+    data: np.ndarray = field(default_factory=initial_data)
     visual_data: Optional[np.ndarray] = None
-    x_lim: Optional[np.ndarray] = None
-    y_lim: Optional[np.ndarray] = None
-    is_3d: Optional[bool] = None
+    x_lim: np.ndarray = field(default_factory=initial_axis_limits)
+    y_lim: np.ndarray = field(default_factory=initial_axis_limits)
     has_lines: Optional[bool] = None
     has_markers: Optional[bool] = None
 
 
 def clean_figure(
-    fig: Optional[Figure] = None,
-    target_resolution: Optional[int | List[int] | np.ndarray] = 600,
-    scale_precision: Optional[float] = 1.0,
+    fig: Optional[FigureBase] = None,
+    target_resolution: int | List[int] | np.ndarray = 600,
+    scale_precision: float = 1.0,
 ) -> None:
     r"""Cleans figure as a preparation for tikz export.
 
@@ -139,36 +147,20 @@ def _recursive_cleanfigure(
             # This is a problem because a bar plot creates a Barcontainer.
             _clean_containers(child)
             _recursive_cleanfigure(child, target_resolution, scale_precision)
-        elif isinstance(child, mplot3d.axes3d.Axes3D):
+        elif isinstance(child, Axes3D):
             _clean_containers(child)
             _recursive_cleanfigure(child, target_resolution, scale_precision)
-        elif isinstance(child, (Line2D, mplot3d.art3d.Line3D)):
-            _cleanline(
-                CleanFigureData(
-                    fig=child.axes.figure,
-                    axes=child.axes,
-                    target_resolution=target_resolution,
-                    scale_precision=scale_precision,
-                ),
-                linehandle=child,
-            )
-        elif isinstance(child, (PathCollection, mplot3d.art3d.Path3DCollection)):
-            _clean_collections(
-                CleanFigureData(
-                    fig=child.axes.figure,
-                    axes=child.axes,
-                    target_resolution=target_resolution,
-                    scale_precision=scale_precision,
-                ),
-                child,
-            )
+        elif isinstance(child, (Line2D, art3d.Line3D)):
+            _cleanline(child, target_resolution, scale_precision)
+        elif isinstance(child, (PathCollection, art3d.Path3DCollection)):
+            _clean_collections(child, target_resolution, scale_precision)
         elif isinstance(child, mpl.collections.LineCollection):
             warnings.warn(
                 "Cleaning Line Collections (scatter plot) is not supported yet.", stacklevel=2
             )
-        elif isinstance(child, mplot3d.art3d.Line3DCollection):
+        elif isinstance(child, art3d.Line3DCollection):
             warnings.warn("Cleaning Line3DCollection is not supported yet.", stacklevel=2)
-        elif isinstance(child, mplot3d.art3d.Poly3DCollection):
+        elif isinstance(child, art3d.Poly3DCollection):
             warnings.warn("Cleaning Poly3DCollections is not supported yet.", stacklevel=2)
         elif isinstance(child, QuadContourSet):
             warnings.warn("Cleaning QuadContourSet is not supported yet.", stacklevel=2)
@@ -183,54 +175,86 @@ def _clean_containers(axes: Axes) -> None:
             warnings.warn("Cleaning Bar Container (bar plot) is not supported yet.", stacklevel=2)
 
 
-def _cleanline(cfd: CleanFigureData, linehandle: Line2D | mplot3d.art3d.Line3D) -> None:
+def _cleanline(
+    linehandle: Line2D | art3d.Line3D,
+    target_resolution: int | List[int] | np.ndarray,
+    scale_precision: float,
+) -> None:
     """Clean a 2D or 3D Line plot figure."""
+    axes = linehandle.axes
+    if axes is None:
+        return
+    figure = axes.figure
+    if figure is None:
+        return
+    cfd = CleanFigureData(
+        fig=figure,
+        axes=axes,
+        target_resolution=target_resolution,
+        scale_precision=scale_precision,
+    )
+
     if _is_step(linehandle):
         warnings.warn("step plot simplification not yet implemented.", stacklevel=2)
     else:
-        cfd.data, cfd.is_3d = _get_line_data(linehandle)
+        cfd.data = _get_line_data(linehandle)
         cfd.x_lim, cfd.y_lim = _get_visual_limits(cfd.axes)
-        cfd.visual_data = _get_visual_data(cfd.axes, cfd.data, is_3d=cfd.is_3d)
+        cfd.visual_data = _get_visual_data(cfd.axes, cfd.data)
         cfd.has_lines = _line_has_lines(linehandle)
 
         cfd.data = _prune_outside_box(cfd)
-        cfd.visual_data = _get_visual_data(cfd.axes, cfd.data, is_3d=cfd.is_3d)
+        cfd.visual_data = _get_visual_data(cfd.axes, cfd.data)
 
-        if not cfd.is_3d:
+        if not isinstance(linehandle, art3d.Line3D):
             cfd.visual_data = _move_points_closer(cfd.x_lim, cfd.y_lim, cfd.visual_data)
 
         cfd.has_markers = linehandle.get_marker() != "None"
         cfd.has_lines = linehandle.get_linestyle() != "None"
         data = _simplify_line(cfd)
-        data = _limit_precision(cfd.axes, data, cfd.scale_precision, is_3d=cfd.is_3d)
+        data = _limit_precision(cfd.axes, data, cfd.scale_precision)
         _update_line_data(linehandle, data)
 
 
 def _clean_collections(
-    cfd: CleanFigureData, collection: PathCollection | mplot3d.art3d.Path3DCollection
+    collection: PathCollection | art3d.Path3DCollection,
+    target_resolution: int | List[int] | np.ndarray,
+    scale_precision: float,
 ) -> None:
     """Clean a 2D or 3D collection, i.e., scatter plot."""
-    cfd.data, cfd.is_3d = _get_collection_data(collection)
+    axes = collection.axes
+    if axes is None:
+        return
+    figure = axes.figure
+    if figure is None:
+        return
+    cfd = CleanFigureData(
+        fig=figure,
+        axes=axes,
+        target_resolution=target_resolution,
+        scale_precision=scale_precision,
+    )
+
+    cfd.data = _get_collection_data(collection)
     cfd.x_lim, cfd.y_lim = _get_visual_limits(cfd.axes)
-    cfd.visual_data = _get_visual_data(cfd.axes, cfd.data, is_3d=cfd.is_3d)
+    cfd.visual_data = _get_visual_data(cfd.axes, cfd.data)
 
     cfd.has_lines = True
 
     cfd.data = _prune_outside_box(cfd)
-    cfd.visual_data = _get_visual_data(cfd.axes, cfd.data, is_3d=cfd.is_3d)
+    cfd.visual_data = _get_visual_data(cfd.axes, cfd.data)
 
-    if not cfd.is_3d:
+    if not isinstance(collection, art3d.Path3DCollection):
         cfd.visual_data = _move_points_closer(cfd.x_lim, cfd.y_lim, cfd.visual_data)
-        cfd.visual_data = _get_visual_data(cfd.axes, cfd.visual_data, is_3d=cfd.is_3d)
+        cfd.visual_data = _get_visual_data(cfd.axes, cfd.visual_data)
 
     cfd.has_markers = True
     cfd.has_lines = False
     data = _simplify_line(cfd)
-    data = _limit_precision(cfd.axes, data, cfd.scale_precision, is_3d=cfd.is_3d)
+    data = _limit_precision(cfd.axes, data, cfd.scale_precision)
     collection.set_offsets(data)
 
 
-def _is_step(linehandle: Line2D | mplot3d.art3d.Line3D) -> bool:
+def _is_step(linehandle: Line2D | art3d.Line3D) -> bool:
     """Check if plot is a step plot."""
     return linehandle._drawstyle in STEP_DRAW_STYLES  # noqa: SLF001
 
@@ -240,25 +264,17 @@ def _get_visual_limits(axhandle: Axes) -> Tuple[np.ndarray, np.ndarray]:
 
     Respecting possible log_scaling and projection into the image plane.
     """
-    is_3d = _axes_is_3d(axhandle)
-
     x_lim = np.array(axhandle.get_xlim())
-    y_lim = np.array(axhandle.get_ylim())
-    if is_3d:
-        z_lim = np.array(axhandle.get_zlim())
-
-    # Check for logarithmic scales
-    is_xlog = _ax_is_xlog(axhandle)
-    if is_xlog:
+    if _ax_is_xlog(axhandle):
         x_lim = np.log10(x_lim)
 
-    is_y_log = _ax_is_ylog(axhandle)
-    if is_y_log:
+    y_lim = np.array(axhandle.get_ylim())
+    if _ax_is_ylog(axhandle):
         y_lim = np.log10(y_lim)
 
-    if is_3d:
-        is_z_log = _ax_is_zlog(axhandle)
-        if is_z_log:
+    if isinstance(axhandle, Axes3D):
+        z_lim = np.array(axhandle.get_zlim())
+        if _ax_is_zlog(axhandle):
             z_lim = np.log10(z_lim)
 
         p = _get_projection_matrix(axhandle)
@@ -278,46 +294,45 @@ def _get_visual_limits(axhandle: Axes) -> Tuple[np.ndarray, np.ndarray]:
     return x_lim, y_lim
 
 
-def _replace_data_with_nan(data: np.ndarray, id_replace: np.ndarray, *, is_3d: bool) -> np.ndarray:
+def _replace_data_with_nan(data: np.ndarray, id_replace: np.ndarray) -> np.ndarray:
     """Replaces data at id_replace with NaNs."""
     if _isempty(id_replace):
         return data
 
-    if is_3d:
+    if data.shape[1] == 3:  # noqa: PLR2004
         x_data, y_data, z_data = _split_data_3d(data)
     else:
         x_data, y_data = _split_data_2d(data)
 
     x_data[id_replace] = np.nan
     y_data[id_replace] = np.nan
-    if is_3d:
+    if data.shape[1] == 3:  # noqa: PLR2004
         z_data = z_data.copy()
         z_data[id_replace] = np.nan
         return _stack_data_3d(x_data, y_data, z_data)
     return _stack_data_2d(x_data, y_data)
 
 
-def _remove_data(data: np.ndarray, id_remove: np.ndarray, *, is_3d: bool) -> np.ndarray:
+def _remove_data(data: np.ndarray, id_remove: np.ndarray) -> np.ndarray:
     """Remove data at id_remove."""
     if _isempty(id_remove):
         return data
 
-    if is_3d:
+    if data.shape[1] == 3:  # noqa: PLR2004
         x_data, y_data, z_data = _split_data_3d(data)
     else:
         x_data, y_data = _split_data_2d(data)
 
     x_data = np.delete(x_data, id_remove, axis=0)
     y_data = np.delete(y_data, id_remove, axis=0)
-    if is_3d:
+    if data.shape[1] == 3:  # noqa: PLR2004
         z_data = np.delete(z_data, id_remove, axis=0)
         return _stack_data_3d(x_data, y_data, z_data)
     return _stack_data_2d(x_data, y_data)
 
 
-def _update_line_data(linehandle: Line2D | mplot3d.art3d.Line3D, data: np.ndarray) -> None:
-    is_3d = _line_is_3d(linehandle)
-    if is_3d:
+def _update_line_data(linehandle: Line2D | art3d.Line3D, data: np.ndarray) -> None:
+    if isinstance(linehandle, art3d.Line3D):
         x_data, y_data, z_data = _split_data_3d(data)
         # I don't understand why I need to set both to get tikz code reduction to work
         linehandle.set_data_3d(x_data, y_data, z_data)
@@ -382,16 +397,6 @@ def _is_in_box(data: np.ndarray, x_lim: np.ndarray, y_lim: np.ndarray) -> np.nda
     return np.logical_and(mask_x, mask_y)
 
 
-def _line_is_3d(linehandle: Line2D | mplot3d.art3d.Line3D) -> bool:
-    """Check if given line object is a 3D plot."""
-    return isinstance(linehandle, mplot3d.art3d.Line3D)
-
-
-def _axes_is_3d(axhandle: Axes) -> bool:
-    """Check if given axes handle object is a 3D plot."""
-    return hasattr(axhandle, "get_zlim")
-
-
 def _ax_is_xlog(axhandle: Axes) -> bool:
     return axhandle.get_xscale() == "log"
 
@@ -400,68 +405,58 @@ def _ax_is_ylog(axhandle: Axes) -> bool:
     return axhandle.get_yscale() == "log"
 
 
-def _ax_is_zlog(axhandle: Axes) -> bool:
+def _ax_is_zlog(axhandle: Axes3D) -> bool:
     return axhandle.get_zscale() == "log"
 
 
-def _get_line_data(linehandle: Line2D | mplot3d.art3d.Line3D) -> Tuple[np.ndarray, bool]:
+def _get_line_data(linehandle: Line2D | art3d.Line3D) -> np.ndarray:
     """Retrieve 2D or 3D data from line object.
 
     :param linehandle: matplotlib linehandle object
 
     :returns : (data, is3D)
     """
-    is_3d = _line_is_3d(linehandle)
-    if is_3d:
+    if isinstance(linehandle, art3d.Line3D):
         x_data, y_data, z_data = linehandle.get_data_3d()
         data = _stack_data_3d(x_data, y_data, z_data)
     else:
         x_data = np.asarray(linehandle.get_xdata()).astype(np.float32)
         y_data = np.asarray(linehandle.get_ydata()).astype(np.float32)
         data = _stack_data_2d(x_data, y_data)
-    return data, is_3d
+    return data
 
 
-def _collection_is_3d(collection: PathCollection | mplot3d.art3d.Path3DCollection) -> bool:
-    return isinstance(collection, mplot3d.art3d.Path3DCollection)
-
-
-def _get_collection_data(
-    collection: PathCollection | mplot3d.art3d.Path3DCollection,
-) -> Tuple[np.ndarray, bool]:
-    is_3d = _collection_is_3d(collection)
-    if is_3d:
+def _get_collection_data(collection: PathCollection | art3d.Path3DCollection) -> np.ndarray:
+    if isinstance(collection, art3d.Path3DCollection):
         # https://stackoverflow.com/questions/51716696/extracting-data-from-a-3d-scatter-plot-in-matplotlib
         offsets = collection._offsets3d  # noqa: SLF001
         x_data, y_data, z_data = (o.data for o in offsets)
+        z_data = np.array(z_data)  # Needed, because it can be a memoryview.
         data = _stack_data_3d(x_data, y_data, z_data)
     else:
         offsets = collection.get_offsets()
         data = offsets.data
-    return data, is_3d
+    return data
 
 
-def _get_visual_data(axhandle: Axes, data: np.ndarray, *, is_3d: bool) -> np.ndarray:
+def _get_visual_data(axhandle: Axes | Axes3D, data: np.ndarray) -> np.ndarray:
     """Returns the visual representation of the data.
 
     Respecting possible log_scaling and projection into the image plane.
 
     :returns : visualData
     """
-    if is_3d:
+    if isinstance(axhandle, Axes3D):
         x_data, y_data, z_data = _split_data_3d(data)
     else:
         x_data, y_data = _split_data_2d(data)
 
-    is_xlog = axhandle.get_xscale() == "log"
-    if is_xlog:
+    if axhandle.get_xscale() == "log":
         x_data = np.log10(x_data)
-    is_ylog = axhandle.get_yscale() == "log"
-    if is_ylog:
+    if axhandle.get_yscale() == "log":
         y_data = np.log10(y_data)
-    if is_3d:
-        is_zlog = axhandle.get_zscale() == "log"
-        if is_zlog:
+    if isinstance(axhandle, Axes3D):
+        if axhandle.get_zscale() == "log":
             z_data = np.log10(z_data)
 
         p = _get_projection_matrix(axhandle)
@@ -485,7 +480,7 @@ def _isempty(array: np.ndarray) -> bool:
     return array.size == 0
 
 
-def _line_has_lines(linehandle: Line2D | mplot3d.art3d.Line3D) -> bool:
+def _line_has_lines(linehandle: Line2D | art3d.Line3D) -> bool:
     """Check if linestyle is not None and linewidth is larger than 0."""
     return (linehandle.get_linestyle() is not None) and (linehandle.get_linewidth() > 0.0)
 
@@ -495,7 +490,7 @@ def _prune_outside_box(cfd: CleanFigureData) -> np.ndarray:
 
     This method is not pure because it updates the linehandle object's data.
     """
-    if cfd.visual_data.size == 0:
+    if cfd.visual_data is None or cfd.visual_data.size == 0:
         return cfd.data
 
     tol = 1.0e-10
@@ -530,8 +525,8 @@ def _prune_outside_box(cfd: CleanFigureData) -> np.ndarray:
         id_replace = id_remove[idx]
         id_remove = id_remove[np.logical_not(idx)]
 
-    data = _replace_data_with_nan(cfd.data, id_replace, is_3d=cfd.is_3d)
-    data = _remove_data(data, id_remove, is_3d=cfd.is_3d)
+    data = _replace_data_with_nan(cfd.data, id_replace)
+    data = _remove_data(data, id_remove)
     return _remove_nans(data)
 
 
@@ -597,10 +592,17 @@ def _simplify_line(cfd: CleanFigureData) -> np.ndarray:
     A scalar value of INF or 0 disables path simplification.
     (default = 600)
     """
-    if not isinstance(cfd.target_resolution, (List, np.ndarray)):
-        if np.isinf(cfd.target_resolution) or cfd.target_resolution == 0:
-            return cfd.data
-    elif any(np.logical_or(np.isinf(cfd.target_resolution), cfd.target_resolution == 0)):
+    if (
+        (
+            not isinstance(cfd.target_resolution, (List, np.ndarray))
+            and (np.isinf(cfd.target_resolution) or cfd.target_resolution == 0)
+        )
+        or (
+            isinstance(cfd.target_resolution, (List, np.ndarray))
+            and any(np.logical_or(np.isinf(cfd.target_resolution), cfd.target_resolution == 0))
+        )
+        or cfd.visual_data is None
+    ):
         return cfd.data
     width, height = _get_width_height_in_pixels(cfd.fig, cfd.target_resolution)
     x_data_vis, y_data_vis = _split_data_2d(cfd.visual_data)
@@ -646,7 +648,7 @@ def _simplify_line(cfd: CleanFigureData) -> np.ndarray:
         line_end = line_end.reshape((-1,))
         num_lines = np.size(line_start)
 
-        id_remove = [np.array([], dtype=np.int32).reshape((-1,))] * num_lines
+        id_removes = [np.array([], dtype=np.int32).reshape((-1,))] * num_lines
 
         # Simplify the line segments
         for ii in np.arange(num_lines):
@@ -657,12 +659,12 @@ def _simplify_line(cfd: CleanFigureData) -> np.ndarray:
             # Line simplification
             if np.size(x) > 2:  # noqa: PLR2004
                 mask = _opheim_simplify(x, y, tol)
-                id_remove[ii] = np.argwhere(mask == 0).reshape((-1,)) + line_start[ii]
+                id_removes[ii] = np.argwhere(mask == 0).reshape((-1,)) + line_start[ii]
         # Merge the indices of the line segments
-        id_remove = np.concatenate(id_remove)
+        id_remove = np.concatenate(id_removes)
 
     # remove the data points
-    return _remove_data(cfd.data, id_remove, is_3d=cfd.is_3d)
+    return _remove_data(cfd.data, id_remove)
 
 
 def _pixelate(x: np.ndarray, y: np.ndarray, x_to_pix: float, y_to_pix: float) -> np.ndarray:
@@ -696,7 +698,7 @@ def _pixelate(x: np.ndarray, y: np.ndarray, x_to_pix: float, y_to_pix: float) ->
 
 
 def _get_width_height_in_pixels(
-    fighandle: Figure, target_resolution: float | List | np.ndarray
+    fighandle: FigureBase, target_resolution: float | List | np.ndarray
 ) -> Tuple[float, float]:
     """Target resolution as ppi / dpi. Return width and height in pixels.
 
@@ -704,12 +706,17 @@ def _get_width_height_in_pixels(
     :param target_resolution: Target resolution in PPI/ DPI. If target_resolution is a scalar,
         calculate final pixels based on figure width and height.
     """
-    if np.isscalar(target_resolution):
+    if isinstance(target_resolution, (float, int)):
         # in matplotlib, the figsize units are always in inches
-        fig_width_inches = fighandle.get_figwidth()
-        fig_height_inches = fighandle.get_figheight()
-        width = fig_width_inches * target_resolution
-        height = fig_height_inches * target_resolution
+        if isinstance(fighandle, Figure):
+            fig_width_inches = fighandle.get_figwidth()
+            fig_height_inches = fighandle.get_figheight()
+            if not isinstance(fig_width_inches, float) or not isinstance(fig_height_inches, float):
+                raise TypeError
+            width = fig_width_inches * target_resolution
+            height = fig_height_inches * target_resolution
+        else:
+            raise TypeError
     else:
         width = target_resolution[0]
         height = target_resolution[1]
@@ -801,28 +808,22 @@ def _opheim_simplify(x: np.ndarray, y: np.ndarray, tol: float) -> np.ndarray:
     return mask
 
 
-def _limit_precision(axhandle: Axes, data: np.ndarray, alpha: float, *, is_3d: bool) -> np.ndarray:
+def _limit_precision(axhandle: Axes | Axes3D, data: np.ndarray, alpha: float) -> np.ndarray:
     """Limit the precision of the given data. If alpha is 0 or negative do nothing."""
     if alpha <= 0:
         return data
 
-    if is_3d:
-        x_data, y_data, z_data = _split_data_3d(data)
-    else:
-        x_data, y_data = _split_data_2d(data)
-
     is_xlog = axhandle.get_xscale() == "log"
     is_ylog = axhandle.get_yscale() == "log"
-    if is_3d:
-        is_zlog = axhandle.get_zscale() == "log"
-
-    # Put the data into a matrix and log bits into vector
-    if is_3d:
-        data = np.stack([x_data, y_data, z_data], axis=1)
-        is_log = np.array([is_xlog, is_ylog, is_zlog])
-    else:
+    if not isinstance(axhandle, Axes3D):
+        x_data, y_data = _split_data_2d(data)
         data = np.stack([x_data, y_data], axis=1)
         is_log = np.array([is_xlog, is_ylog])
+    else:
+        x_data, y_data, z_data = _split_data_3d(data)
+        is_zlog = axhandle.get_zscale() == "log"
+        data = np.stack([x_data, y_data, z_data], axis=1)
+        is_log = np.array([is_xlog, is_ylog, is_zlog])
 
     # Only do something if the data is not empty
     if _isempty(data) or np.isinf(data).all():
@@ -844,7 +845,7 @@ def _limit_precision(axhandle: Axes, data: np.ndarray, alpha: float, *, is_3d: b
 
 
 def _segment_visible(
-    data: np.ndarray, data_is_in_box: np.ndarray, x_lim: List | np.ndarray, y_lim: List | np.ndarray
+    data: np.ndarray, data_is_in_box: np.ndarray, x_lim: np.ndarray, y_lim: np.ndarray
 ) -> np.ndarray:
     """Given a bounding box, determine if a line is visible.
 
@@ -934,7 +935,7 @@ def _corners3d(
     )
 
 
-def _get_projection_matrix(axhandle: Axes) -> np.ndarray:
+def _get_projection_matrix(axhandle: Axes3D) -> np.ndarray:
     """Get Projection matrix that projects 3D points into 2D image plane.
 
     :returns: Projection matrix P

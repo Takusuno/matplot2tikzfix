@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import datetime
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sized, Tuple
 
 import numpy as np
 from matplotlib.dates import num2date
@@ -27,19 +27,22 @@ class MarkerData:
         str
         | Tuple[float, float, float]
         | Tuple[float, float, float, float]
-        | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float]
+        | Tuple[str | Tuple[float, float, float], float]
+        | Tuple[Tuple[float, float, float, float], float]
     ] = None  # facecolor
     ec: Optional[
         str
         | Tuple[float, float, float]
         | Tuple[float, float, float, float]
-        | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float]
+        | Tuple[str | Tuple[float, float, float], float]
+        | Tuple[Tuple[float, float, float, float], float]
     ] = None  # edgecolor
     lc: Optional[
         str
         | Tuple[float, float, float]
         | Tuple[float, float, float, float]
-        | Tuple[str | Tuple[float, float, float] | Tuple[float, float, float, float], float]
+        | Tuple[str | Tuple[float, float, float], float]
+        | Tuple[Tuple[float, float, float, float], float]
     ] = None  # linecolor
 
 
@@ -51,7 +54,11 @@ def draw_line2d(data: Dict, obj: Line2D) -> List[str]:
     '' or '.tex'.  Instead, render nothing.
     """
     obj_xdata = obj.get_xdata()
-    xdata = obj_xdata if isinstance(obj_xdata, Iterable) else [obj_xdata]
+    xdata = (
+        obj_xdata
+        if isinstance(obj_xdata, Iterable) and isinstance(obj_xdata, Sized)
+        else [obj_xdata]
+    )
 
     if len(xdata) == 0:
         return []
@@ -149,21 +156,24 @@ def draw_linecollection(data: Dict, obj: LineCollection) -> List[str]:
     """Returns Pgfplots code for a number of patch objects."""
     content = []
 
-    edgecolors = obj.get_edgecolors()  # type: ignore[attr-defined]
-    linestyles = obj.get_linestyles()  # type: ignore[attr-defined]
-    linewidths = obj.get_linewidths()  # type: ignore[attr-defined]
+    edgecolors = obj.get_edgecolors()
+    linestyles = obj.get_linestyles()
+    linewidths = obj.get_linewidths()
     paths = obj.get_paths()
 
     for i, path in enumerate(paths):
         color = edgecolors[i] if i < len(edgecolors) else edgecolors[0]
         style = linestyles[i] if i < len(linestyles) else linestyles[0]
-        width = linewidths[i] if i < len(linewidths) else linewidths[0]
+        # Ensure that if style is a tuple, that first element is a float
+        if isinstance(style, tuple):
+            style = (float(style[0]), style[1])
+        width = float(linewidths[i] if i < len(linewidths) else linewidths[0])
 
         options = mypath.get_draw_options(
             data, mypath.LineData(obj=obj, ec=color, ls=style, lw=width)
         )
 
-        cont, _, _ = mypath.draw_path(data, path, draw_options=options, simplify=False)
+        cont, _ = mypath.draw_path(data, path, draw_options=options, simplify=False)
         content.append(cont + "\n")
 
     return content
@@ -313,12 +323,12 @@ def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
 
     # get_{x,y}data gives datetime or string objects if so specified in the plotter
     xdata_alt = obj.get_xdata()
-    xdata_iterable = xdata_alt if isinstance(xdata_alt, Iterable) else [xdata_alt]
+    xdata_iterable = list(xdata_alt) if isinstance(xdata_alt, Iterable) else [xdata_alt]
 
     ff = data["float format"]
 
     if isinstance(xdata_iterable[0], datetime.datetime):
-        xdata = xdata_iterable
+        xdata = np.array(xdata_iterable)
     else:
         if isinstance(xdata_iterable[0], str):
             # Remove old xtick,xticklabels (if any).
@@ -343,15 +353,15 @@ def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
     return xdata, ydata
 
 
-def _get_ydata_mask(obj: Line2D) -> List:
+def _get_ydata_mask(obj: Line2D) -> np.ndarray:
     ydata = obj.get_ydata()
     if not hasattr(ydata, "mask"):
-        return []
+        return np.array([], dtype=bool)
     ydata_mask = ydata.mask
     if isinstance(ydata_mask, np.bool_) and not ydata_mask:
-        return []
+        return np.array([], dtype=bool)
     if callable(ydata_mask):
         # pandas.Series have the method mask
         # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.mask.html
-        return []
+        return np.array([], dtype=bool)
     return ydata_mask

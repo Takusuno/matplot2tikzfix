@@ -22,10 +22,9 @@ matplot2tikz.save(sys.argv[1])
 
 
 def test() -> None:
-    return
     _, tmp_base = tempfile.mkstemp()
     # trade-off between test duration and probability of false negative
-    n_tests = 4
+    n_tests = 2
     tikzs = []
     for _ in range(n_tests):
         tikz_file = tmp_base + "_tikz.tex"

@@ -36,18 +36,23 @@ classifiers=[
 [project.optional-dependencies]
 lint = [
     "mypy",
-    "ruff"
+    "ruff",
 ]
 test = [
     "pytest==7.4.1",
     "pytest-cov==4.1.0",
     "coverage[toml]==7.3.1",
+    "typeguard==4.4.0",
 ]
 dev = [
     "tox",
     "tox-pyenv-redux",
-    "matplot2tikz[lint]",
-    "matplot2tikz[test]",
+    "mypy",
+    "ruff",
+    "pytest==7.4.1",
+    "pytest-cov==4.1.0",
+    "coverage[toml]==7.3.1",
+    "typeguard==4.4.0",
 ]
 
 [tool.ruff]

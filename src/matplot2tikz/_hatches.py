@@ -62,7 +62,7 @@ def _mpl_hatch2pgfp_pattern(
     Input:
         hatch - str, like {'/', '\', '|', '-', '+', 'x', 'o', 'O', '.', '*'}
         color_name - str, xcolor or custom color name
-        color_rgba - np.array, the rgba value of the color
+        color_rgba - np.ndarray, the rgba value of the color
     Output:
         draw_options - list, empty or with a post action string
     """

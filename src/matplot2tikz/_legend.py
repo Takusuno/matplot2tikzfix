@@ -2,6 +2,7 @@ import warnings
 from typing import Dict, List
 
 import numpy as np
+from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 
 from . import _color as mycol
@@ -98,10 +99,13 @@ def _get_location_from_best(obj: Legend) -> int:
     # Create a renderer
     from matplotlib.backends import backend_agg
 
+    figure = obj.figure
+    if not isinstance(figure, Figure):
+        raise TypeError
     renderer = backend_agg.RendererAgg(
-        width=obj.figure.get_figwidth(),
-        height=obj.figure.get_figheight(),
-        dpi=obj.figure.dpi,
+        width=figure.get_figwidth(),
+        height=figure.get_figheight(),
+        dpi=figure.dpi,
     )
 
     # Rectangles of the legend and of the axes
@@ -170,7 +174,7 @@ def _get_location_from_best(obj: Legend) -> int:
 
     # 4. Take the shortest distance between key points as the final
     # location
-    return min(distances, key=distances.get)
+    return min(distances, key=lambda k: distances[k])
 
 
 def _legend_edgecolor(data: Dict, obj: Legend, legend_style: List[str]) -> None:

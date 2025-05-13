@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Sized, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +21,7 @@ class MyAxes:
         """Returns the PGFPlots code for an axis environment."""
         self.data = data
         self.obj = obj
-        self.content = []
+        self.content: List[str] = []
 
         # Are we dealing with an axis that hosts a colorbar? Skip then, those are
         # treated implicitily by the associated axis.
@@ -37,7 +37,7 @@ class MyAxes:
         if isinstance(obj, Subplot):
             self._subplot()
 
-        self.axis_options = []
+        self.axis_options: List[str] = []
 
         self._set_hide_axis()
         self._set_plot_title()
@@ -72,7 +72,7 @@ class MyAxes:
         if xlabel:
             xlabel = _common_texification(xlabel)
 
-            labelcolor = self.obj.xaxis.label.get_c()
+            labelcolor = self.obj.xaxis.label.get_color()
 
             if labelcolor != "black":
                 col, _ = _color.mpl_color2xcolor(self.data, labelcolor)
@@ -88,7 +88,7 @@ class MyAxes:
         if ylabel:
             ylabel = _common_texification(ylabel)
 
-            labelcolor = self.obj.yaxis.label.get_c()
+            labelcolor = self.obj.yaxis.label.get_color()
             if labelcolor != "black":
                 col, _ = _color.mpl_color2xcolor(self.data, labelcolor)
                 self.axis_options.append(f"ylabel=\\textcolor{{{col}}}{{{ylabel}}}")
@@ -145,7 +145,9 @@ class MyAxes:
             return 1.0
         return float(aspect)
 
-    def _set_axis_dimensions(self, aspect_num: float, xlim: List[float], ylim: List[float]) -> None:
+    def _set_axis_dimensions(
+        self, aspect_num: float | None, xlim: List[float], ylim: List[float]
+    ) -> None:
         if self.data["axis width"] and self.data["axis height"]:
             # width and height overwrite aspect ratio
             self.axis_options.append("width=" + self.data["axis width"])
@@ -443,14 +445,17 @@ class MyAxes:
         if x_tick_position == y_tick_position and x_tick_position is not None:
             self.axis_options.append(f"tick pos={x_tick_position}")
         else:
-            self.axis_options.append(x_tick_position_string)
-            self.axis_options.append(y_tick_position_string)
+            if x_tick_position_string is not None:
+                self.axis_options.append(x_tick_position_string)
+            if y_tick_position_string is not None:
+                self.axis_options.append(y_tick_position_string)
 
     def _subplot(self) -> None:
         # https://github.com/matplotlib/matplotlib/issues/7225#issuecomment-252173667
-        if self.obj.get_subplotspec() is None:
+        subplotspec = self.obj.get_subplotspec()
+        if subplotspec is None:
             return
-        geom = self.obj.get_subplotspec().get_topmost_subplotspec().get_geometry()
+        geom = subplotspec.get_topmost_subplotspec().get_geometry()
 
         self.nsubplots = geom[0] * geom[1]
         if self.nsubplots > 1:
@@ -481,7 +486,7 @@ class MyAxes:
         )
 
         if not major_tick_labels:
-            return None
+            return ""
 
         tick_label_text_width_identifier = f"{x_or_y} tick label text width"
         if tick_label_text_width_identifier in self.axis_options:
@@ -519,7 +524,7 @@ class MyAxes:
         return label_style
 
 
-def _get_tick_position(obj: Axes, x_or_y: str) -> Tuple[List[str], str]:
+def _get_tick_position(obj: Axes, x_or_y: str) -> Tuple[str | None, str | None]:
     major_ticks = obj.xaxis.majorTicks if x_or_y == "x" else obj.yaxis.majorTicks
 
     major_ticks_bottom = [tick.tick1line.get_visible() for tick in major_ticks]
@@ -550,7 +555,7 @@ def _get_tick_position(obj: Axes, x_or_y: str) -> Tuple[List[str], str]:
     return position_string, major_ticks_position
 
 
-def _get_ticks(data: Dict, xy: str, ticks: np.ndarray, ticklabels: List) -> List[str]:
+def _get_ticks(data: Dict, xy: str, ticks: List | np.ndarray, ticklabels: List) -> List[str]:
     """Gets a {'x','y'}, a number of ticks and ticks labels.
 
     Returns the necessary axis options for the given configuration.
@@ -586,7 +591,7 @@ def _get_ticks(data: Dict, xy: str, ticks: np.ndarray, ticklabels: List) -> List
     return axis_options
 
 
-def _is_label_required(ticks: np.ndarray, ticklabels: List) -> bool:
+def _is_label_required(ticks: List | np.ndarray, ticklabels: List) -> bool:
     """Check if the label is necessary.
 
     If one of the labels is, then all of them must appear in the TikZ plot.
@@ -738,7 +743,7 @@ def _handle_linear_segmented_color_map(
     # (2010-05-06) it is crucial for PGFPlots that the difference between two successive
     # points is an integer multiple of a given unity (parameter to the colormap; e.g.,
     # 1cm).  At the same time, TeX suffers from significant round-off errors, so make
-    # sure that this unit is not too small such that the round- off errors don't play
+    # sure that this unit is not too small such that the round-off errors don't play
     # much of a role. A unit of 1pt, e.g., does most often not work.
     unit = "pt"
 
@@ -776,19 +781,25 @@ def _handle_listed_color_map(cmap: ListedColormap, data: Dict) -> Tuple[str, boo
         "viridis": "viridis",
         # 'winter': 'winter',  # noqa: ERA001
     }
-    for mpl_cm, pgf_cm in cm_translate.items():
-        if cmap.colors == plt.get_cmap(mpl_cm).colors:
+    for mpl_cm_name, pgf_cm in cm_translate.items():
+        mpl_cm = plt.get_cmap(mpl_cm_name)
+        if isinstance(mpl_cm, ListedColormap) and cmap.colors == mpl_cm.colors:
             is_custom_colormap = False
             return pgf_cm, is_custom_colormap
 
     unit = "pt"
     ff = data["float format"]
-    if cmap.N is None or len(cmap.colors) == cmap.N:
+    if cmap.N is None or (
+        isinstance(cmap.colors, Sized)
+        and len(cmap.colors) == cmap.N
+        and isinstance(cmap.colors, Iterable)
+    ):
         colors = [
             f"rgb({k}{unit})=({rgb[0]:{ff}},{rgb[1]:{ff}},{rgb[2]:{ff}})"
             for k, rgb in enumerate(cmap.colors)
+            if isinstance(rgb, list)
         ]
-    else:
+    elif isinstance(cmap.colors, list):
         reps = int(float(cmap.N) / len(cmap.colors) - 0.5) + 1
         repeated_cols = reps * cmap.colors
         colors = [

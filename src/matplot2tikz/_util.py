@@ -20,8 +20,10 @@ def has_legend(axes: Axes | Axes3D) -> bool:
     return axes.get_legend() is not None
 
 
-def get_legend_text(obj: Line2D | PathCollection) -> [None, str]:
+def get_legend_text(obj: Line2D | PathCollection) -> str | None:
     """Check if line is in legend."""
+    if obj.axes is None:
+        return None
     leg = obj.axes.get_legend()
     if leg is None:
         return None
@@ -54,7 +56,8 @@ def transform_to_data_coordinates(
         transform = matplotlib.transforms.composite_transform_factory(
             obj.get_transform(), obj.axes.transData.inverted()
         )
-        return transform.transform(points).T
+        xdata, ydata = transform.transform(points).T
+        return xdata, ydata
     return xdata, ydata
 
 

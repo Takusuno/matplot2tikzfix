@@ -1,6 +1,8 @@
 """Process text objects."""
 
-from typing import Tuple
+from __future__ import annotations
+
+from typing import Dict, List, Tuple
 
 import matplotlib as mpl
 from matplotlib.patches import ArrowStyle, BoxStyle, FancyArrowPatch, FancyBboxPatch
@@ -9,16 +11,16 @@ from matplotlib.text import Annotation, Text
 from . import _color
 
 
-def draw_text(data: dict, obj: Text) -> list:
+def draw_text(data: Dict, obj: Text) -> List[str]:
     """Paints text on the graph.
 
-    :return: Tuple with data and content.
+    :return: Content for tikz plot.
     """
-    content = []
-    properties = []
-    style = []
+    content: List[str] = []
+    properties: List[str] = []
+    style: List[str] = []
     ff = data["float format"]
-    tikz_pos = _get_tikz_pos(obj, data, content)
+    tikz_pos = _get_tikz_pos(data, obj, content)
 
     text = obj.get_text()
 
@@ -36,12 +38,12 @@ def draw_text(data: dict, obj: Text) -> list:
         properties.append(f"scale={scaling:{ff}}")
 
     if bbox is not None:
-        _bbox(bbox, data, properties, scaling)
+        _bbox(data, bbox, properties, scaling)
 
     ha = obj.get_ha()
     va = obj.get_va()
     anchor = _transform_positioning(ha, va)
-    if anchor is not None:
+    if anchor:
         properties.append(anchor)
     col, _ = _color.mpl_color2xcolor(data, converter.to_rgb(obj.get_color()))
     properties.append(f"text={col}")
@@ -50,7 +52,7 @@ def draw_text(data: dict, obj: Text) -> list:
     if obj.get_style() == "italic":
         style.append("\\itshape")
     elif obj.get_style() != "normal":
-        msg = f"Object style '{obj.get_style}' not implemented."
+        msg = f"Object style '{obj.get_style()}' not implemented."
         raise NotImplementedError(msg)
 
     # get_weights returns a numeric value in the range 0-1000 or one of (value in parenthesis)
@@ -80,9 +82,9 @@ def draw_text(data: dict, obj: Text) -> list:
     return content
 
 
-def _get_tikz_pos(obj: Text, data: dict, content: list) -> str:
+def _get_tikz_pos(data: Dict, obj: Text, content: List[str]) -> str:
     """Gets the position in tikz format."""
-    pos = _annotation(obj, data, content) if isinstance(obj, Annotation) else obj.get_position()
+    pos = _annotation(data, obj, content) if isinstance(obj, Annotation) else obj.get_position()
 
     if isinstance(pos, str):
         return pos
@@ -107,7 +109,7 @@ def _transform_positioning(horizontal_alignment: str, vertical_aligment: str) ->
     Not quite accurate but the results are equivalent more or less.
     """
     if horizontal_alignment == "center" and vertical_aligment == "center":
-        return None
+        return ""
 
     ha_mpl_to_tikz = {"right": "east", "left": "west", "center": ""}
     va_mpl_to_tikz = {"top": "north", "bottom": "south", "center": "", "baseline": "base"}
@@ -137,7 +139,7 @@ def _parse_annotation_coords(float_format: str, coords: str, xy: Tuple[float, fl
     raise NotImplementedError
 
 
-def _get_arrow_style(obj: FancyArrowPatch, data: dict) -> list:
+def _get_arrow_style(data: Dict, obj: FancyArrowPatch) -> list:
     # get a style string from a FancyArrowPatch
     arrow_translate = {
         "-": ["-"],
@@ -178,9 +180,12 @@ def _get_arrow_style(obj: FancyArrowPatch, data: dict) -> list:
     return [*latex_style, "draw=" + col]
 
 
-def _annotation(obj: Text, data: dict, content: list) -> str:
+def _annotation(data: dict, obj: Annotation, content: List[str]) -> str | Tuple[float, float]:
     ann_xy = obj.xy
     ann_xycoords = obj.xycoords
+    if not isinstance(ann_xycoords, str):
+        # Anything else except for explicit positioning is not supported yet
+        return obj.get_position()
     ann_xytext = obj.xyann
     ann_textcoords = obj.anncoords
 
@@ -205,13 +210,13 @@ def _annotation(obj: Text, data: dict, content: list) -> str:
             return obj.get_position()
 
     if obj.arrow_patch:
-        style = ",".join(_get_arrow_style(obj.arrow_patch, data))
+        style = ",".join(_get_arrow_style(data, obj.arrow_patch))
         the_arrow = f"\\draw[{style}] {text_pos} -- {xy_pos};\n"
         content.append(the_arrow)
     return text_pos
 
 
-def _bbox(bbox: FancyBboxPatch, data: dict, properties: list, scaling: float) -> None:
+def _bbox(data: Dict, bbox: FancyBboxPatch, properties: List[str], scaling: float) -> None:
     bbox_style = bbox.get_boxstyle()
     if bbox.get_fill():
         facecolor, _ = _color.mpl_color2xcolor(data, bbox.get_facecolor())
@@ -229,11 +234,24 @@ def _bbox(bbox: FancyBboxPatch, data: dict, properties: list, scaling: float) ->
         properties.append(f"fill opacity={bbox.get_alpha()}")
 
     # Process the style and linestyle of the bounding box.
-    _bbox_style(bbox_style, data, properties)
+    _bbox_style(data, bbox_style, properties)
     _bbox_linestyle(bbox, properties, scaling)
 
 
-def _bbox_style(bbox_style: BoxStyle, data: dict, properties: list) -> None:
+def _bbox_style(
+    data: Dict,
+    bbox_style: BoxStyle.Square
+    | BoxStyle.Circle
+    | BoxStyle.Ellipse
+    | BoxStyle.LArrow
+    | BoxStyle.RArrow
+    | BoxStyle.DArrow
+    | BoxStyle.Round
+    | BoxStyle.Round4
+    | BoxStyle.Sawtooth
+    | BoxStyle.Roundtooth,
+    properties: List[str],
+) -> None:
     # Rounded boxes
     if isinstance(bbox_style, BoxStyle.Round):
         properties.append("rounded corners")
@@ -260,16 +278,17 @@ def _bbox_style(bbox_style: BoxStyle, data: dict, properties: list) -> None:
         raise NotImplementedError(msg)
 
 
-def _bbox_linestyle(bbox: FancyBboxPatch, properties: list, scaling: float) -> None:
-    if bbox.get_ls() == "dotted":
+def _bbox_linestyle(bbox: FancyBboxPatch, properties: List[str], scaling: float) -> None:
+    bbox_ls = bbox.get_ls()
+    if bbox_ls == "dotted":
         properties.append("dotted")
-    elif bbox.get_ls() == "dashed":
+    elif bbox_ls == "dashed":
         properties.append("dashed")
-    elif bbox.get_ls() == "dashdot":
+    elif bbox_ls == "dashdot":
         s1 = 1.0 / scaling
         s3 = 3.0 / scaling
         s6 = 6.0 / scaling
         properties.append(f"dash pattern=on {s1:.3g}pt off {s3:.3g}pt on {s6:.3g}pt off {s3:.3g}pt")
-    elif bbox.get_ls() != "solid":
-        msg = f"bbox line style '{bbox.get_ls()}' not implemented."
+    elif bbox_ls != "solid":
+        msg = f"bbox line style '{bbox_ls}' not implemented."
         raise NotImplementedError(msg)

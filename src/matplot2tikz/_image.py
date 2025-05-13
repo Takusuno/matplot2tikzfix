@@ -16,6 +16,9 @@ def draw_image(data: Dict, obj: AxesImage) -> List[str]:
 
     # store the image as in a file
     img_array = obj.get_array()
+    if img_array is None:
+        msg = "No data in image?"
+        raise ValueError(msg)
 
     dims = img_array.shape
     if len(dims) == 2:  # noqa: PLR2004
@@ -43,8 +46,8 @@ def draw_image(data: Dict, obj: AxesImage) -> List[str]:
 
         # Convert mpl image to PIL
         if img_array.dtype != np.uint8:
-            img_array = np.uint8(img_array * 255)
-        image = PIL.Image.fromarray(img_array)
+            img_uint8 = np.uint8(img_array * 255)
+        image = PIL.Image.fromarray(img_uint8)
 
         image.save(filepath, origin=obj.origin)
 

@@ -198,10 +198,11 @@ can do, or if you are just looking for more information, then please visit
 
 For contributing, follow these steps:
 
-1. Download the git repository, e.g., using `git clone git@github.com:ErwindeGelder/matplot2tikz.git`
-2. Create a virtual environment, e.g., using python -m venv venv
-3. Activate the virtual environment (e.g., on Windows, `venv\Scripts\activate.bat`)
-4. Install the necessary libraries using `pip install -e .[dev]`
+1. Download the git repository, e.g., using
+   `git clone git@github.com:ErwindeGelder/matplot2tikz.git`.
+2. Create a virtual environment, e.g., using `python -m venv venv`.
+3. Activate the virtual environment (e.g., on Windows, `venv\Scripts\activate.bat`).
+4. Install the necessary libraries using `pip install -e .[dev]`.
 5. The main branch is protected, meaning that you cannot directly push changes to this branch. 
    Therefore, if you want to make changes, do so in a seperate branch. For example, you can create 
    a new branch using `git checkout -b feature/my_awesome_new_feature`.
@@ -209,23 +210,23 @@ For contributing, follow these steps:
    successful. To run the linting and testing, tox first needs to know where it can find the
    different Python versions that are supported. One way to do so is by making use of pyenv or 
    pyenv-win. Note that you only need to do this once for a single machine.
-7. Run tox run -e lint. If issues arise, fix them. You can do the linting commands manually using:
-   1. `ruff format . --check` (remove the `--check` flag to let `ruff` do the formatting)
-   2. `ruff check .`
-   3. `mypy .`
-   4. NOTE: Currently, the last step results in many errors. Ideally, we come to a state where
-      all checks pass succesfully and that only commits without errors are merged into the main
-      branch. For now, however, commits that do not make performance worse, should be allowed to be
-      merged on the main branch.
-8. Run `tox run -f test`
-9. Check if the tests covered everything using the coverage report in 
-   `/reports/coverage_html/index.html`
+7. Run `tox`. This does a linting check and runs all test scripts. To manually perform these steps,
+   use the following commands (note that to ensure the same output is generated, Python 3.8 is used 
+   in step 2 above):
+   1. Run `tox run -e lint`. If issues arise, fix them. You can do the linting commands manually 
+      using:
+      1. `ruff format . --check` (remove the `--check` flag to let `ruff` do the formatting)
+      2. `ruff check .`
+      3. `mypy .`
+   2. Run `tox run -f test`.
+8. Check if the tests covered everything using the coverage report in 
+   `/reports/coverage_html/index.html`.
 
    NOTE: Currently, now all code is covered. Ideally, all code is covered, but for now, ensure that 
    all *new* code is covered by the testing.
-10. Push changes to GitHub. If everything is OK and you want to merge your changes to the `main`
-    branch, create a pull request.
-    Ideally, there is at least one reviewer who reviews the pull request before the merge.
+9. Push changes to GitHub. If everything is OK and you want to merge your changes to the `main`
+   branch, create a pull request.
+   Ideally, there is at least one reviewer who reviews the pull request before the merge.
 
 Note that currently only "Code owners" can merge pull requests onto the `main` branch. This is to
 ensure that not everyone can break the main code (even unintentially). If you want to be a "Code
