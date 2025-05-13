@@ -353,15 +353,15 @@ def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
     return xdata, ydata
 
 
-def _get_ydata_mask(obj: Line2D) -> List:
+def _get_ydata_mask(obj: Line2D) -> np.ndarray:
     ydata = obj.get_ydata()
     if not hasattr(ydata, "mask"):
-        return []
+        return np.array([], dtype=bool)
     ydata_mask = ydata.mask
     if isinstance(ydata_mask, np.bool_) and not ydata_mask:
-        return []
+        return np.array([], dtype=bool)
     if callable(ydata_mask):
         # pandas.Series have the method mask
         # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.mask.html
-        return []
+        return np.array([], dtype=bool)
     return ydata_mask
