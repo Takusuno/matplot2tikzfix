@@ -238,7 +238,20 @@ def _bbox(data: Dict, bbox: FancyBboxPatch, properties: List[str], scaling: floa
     _bbox_linestyle(bbox, properties, scaling)
 
 
-def _bbox_style(data: Dict, bbox_style: BoxStyle, properties: List[str]) -> None:
+def _bbox_style(
+    data: Dict,
+    bbox_style: BoxStyle.Square
+    | BoxStyle.Circle
+    | BoxStyle.Ellipse
+    | BoxStyle.LArrow
+    | BoxStyle.RArrow
+    | BoxStyle.DArrow
+    | BoxStyle.Round
+    | BoxStyle.Round4
+    | BoxStyle.Sawtooth
+    | BoxStyle.Roundtooth,
+    properties: List[str],
+) -> None:
     # Rounded boxes
     if isinstance(bbox_style, BoxStyle.Round):
         properties.append("rounded corners")
