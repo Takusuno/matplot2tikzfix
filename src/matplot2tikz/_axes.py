@@ -743,7 +743,7 @@ def _handle_linear_segmented_color_map(
     # (2010-05-06) it is crucial for PGFPlots that the difference between two successive
     # points is an integer multiple of a given unity (parameter to the colormap; e.g.,
     # 1cm).  At the same time, TeX suffers from significant round-off errors, so make
-    # sure that this unit is not too small such that the round- off errors don't play
+    # sure that this unit is not too small such that the round-off errors don't play
     # much of a role. A unit of 1pt, e.g., does most often not work.
     unit = "pt"
 
