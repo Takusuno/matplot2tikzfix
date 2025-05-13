@@ -24,7 +24,7 @@ jobs:
           pip install tox tox-gh-actions pytest-cov
 
       - name: Run tests
-        run: tox run -f test -- --cov --cov-branch --cov-report=xml
+        run: tox run -f test -- --cov matplot2tikz --cov-branch --cov-report=xml
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v5
