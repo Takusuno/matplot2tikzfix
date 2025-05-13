@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Dict, List, Tuple
+
 # for matplotlib markers, see https://matplotlib.org/api/markers_api.html
 _MP_MARKER2PGF_MARKER = {
     ".": "*",  # point
@@ -40,8 +42,8 @@ _MP_MARKER2PLOTMARKS = {
 
 
 def _mpl_marker2pgfp_marker(
-    data: dict, mpl_marker: str, *, is_filled: bool
-) -> tuple[str | None, list]:
+    data: Dict, mpl_marker: str, *, is_filled: bool
+) -> Tuple[str | None, List[str]]:
     """Translates a marker style of matplotlib to the corresponding style in PGFPlots."""
     # try default list
     try:
@@ -52,8 +54,7 @@ def _mpl_marker2pgfp_marker(
         if is_filled and pgfplots_marker == "o":
             pgfplots_marker = "*"
             data["tikz libs"].add("plotmarks")
-        marker_options = []
-        return pgfplots_marker, marker_options
+        return pgfplots_marker, []
 
     # try plotmarks list
     try:
