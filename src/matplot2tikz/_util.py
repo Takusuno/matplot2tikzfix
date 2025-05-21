@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import functools
 import re
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 import matplotlib.transforms
 import numpy as np
@@ -41,7 +41,7 @@ def get_legend_text(obj: Line2D | PathCollection) -> str | None:
 
 def transform_to_data_coordinates(
     obj: Line2D, xdata: np.ndarray, ydata: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """The coordinates might not be in data coordinates, but could be sometimes in axes coordinates.
 
     For example, the matplotlib command

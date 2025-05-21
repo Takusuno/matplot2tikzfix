@@ -14,7 +14,6 @@ Requires \usetikzlibrary{patterns}
 # hatch_density is mentioned in mpl API Changes in 2.0.1
 
 import warnings
-from typing import Dict, List
 
 import numpy as np
 
@@ -55,8 +54,8 @@ def __validate_hatch(hatch: str) -> str:
 
 
 def _mpl_hatch2pgfp_pattern(
-    data: Dict, hatch: str, color_name: str, color_rgba: np.ndarray
-) -> List[str]:
+    data: dict, hatch: str, color_name: str, color_rgba: np.ndarray
+) -> list[str]:
     r"""Translates a hatch from matplotlib to the corresponding pattern in PGFPlots.
 
     Input:

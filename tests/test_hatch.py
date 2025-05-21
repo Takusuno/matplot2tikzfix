@@ -48,7 +48,7 @@ def plot() -> Figure:
         zorder=2,
         label="Polygon",
     )
-    p._hatch_color = (0.5, 0.3, 0.8, 0.7)  # noqa: SLF001
+    p._hatch_color = (0.5, 0.3, 0.8, 0.7)  # type: ignore[attr-defined]  # noqa: SLF001
     ax3.add_patch(p)
     ax3.set_xlim((0, 6))
     ax3.set_ylim((0, 2.5))

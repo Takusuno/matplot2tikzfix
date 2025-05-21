@@ -1,5 +1,4 @@
 import warnings
-from typing import Dict, List
 
 import numpy as np
 from matplotlib.figure import Figure
@@ -8,7 +7,7 @@ from matplotlib.legend import Legend
 from . import _color as mycol
 
 
-def draw_legend(data: Dict, obj: Legend) -> None:
+def draw_legend(data: dict, obj: Legend) -> None:
     """Adds legend code."""
     texts = []
     children_alignment = []
@@ -64,7 +63,7 @@ def draw_legend(data: Dict, obj: Legend) -> None:
         data["current axes"].axis_options.append(style)
 
 
-def _legend_position_anchor(data: Dict, obj: Legend, legend_style: List[str]) -> None:
+def _legend_position_anchor(data: dict, obj: Legend, legend_style: list[str]) -> None:
     # Get the location.
     # http://matplotlib.org/api/legend_api.html
     loc = obj._loc if obj._loc != 0 else _get_location_from_best(obj)  # noqa: SLF001
@@ -177,7 +176,7 @@ def _get_location_from_best(obj: Legend) -> int:
     return min(distances, key=lambda k: distances[k])
 
 
-def _legend_edgecolor(data: Dict, obj: Legend, legend_style: List[str]) -> None:
+def _legend_edgecolor(data: dict, obj: Legend, legend_style: list[str]) -> None:
     if obj.get_frame_on():
         edgecolor = obj.get_frame().get_edgecolor()
         frame_xcolor, _ = mycol.mpl_color2xcolor(data, edgecolor)
@@ -187,7 +186,7 @@ def _legend_edgecolor(data: Dict, obj: Legend, legend_style: List[str]) -> None:
         legend_style.append("draw=none")
 
 
-def _legend_facecolor(data: Dict, obj: Legend, legend_style: List[str]) -> None:
+def _legend_facecolor(data: dict, obj: Legend, legend_style: list[str]) -> None:
     facecolor = obj.get_frame().get_facecolor()
     fill_xcolor, _ = mycol.mpl_color2xcolor(data, facecolor)
     if fill_xcolor != "white":  # white is default

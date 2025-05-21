@@ -2,7 +2,6 @@
 
 import tempfile
 from pathlib import Path
-from typing import Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -15,7 +14,7 @@ import matplot2tikz
 mpl.use("Agg")
 
 
-def __plot() -> Tuple[Figure, Axes]:
+def __plot() -> tuple[Figure, Axes]:
     fig, ax = plt.subplots()
 
     x = [1, 2, 3, 4]

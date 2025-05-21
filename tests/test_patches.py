@@ -1,7 +1,5 @@
 """Test all kind of patches."""
 
-from typing import List
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,7 +23,7 @@ def plot() -> Figure:
     x = rng.random(size=n_points)
     y = rng.random(size=n_points)
     radii = 0.1 * rng.random(size=n_points)
-    patches: List[Patch] = []
+    patches: list[Patch] = []
     for x1, y1, r in zip(x, y, radii):
         circle = Circle((x1, y1), r)
         patches.append(circle)

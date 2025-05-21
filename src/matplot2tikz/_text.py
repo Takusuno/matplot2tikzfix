@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
 import matplotlib as mpl
 from matplotlib.patches import ArrowStyle, BoxStyle, FancyArrowPatch, FancyBboxPatch
 from matplotlib.text import Annotation, Text
@@ -11,14 +9,14 @@ from matplotlib.text import Annotation, Text
 from . import _color
 
 
-def draw_text(data: Dict, obj: Text) -> List[str]:
+def draw_text(data: dict, obj: Text) -> list[str]:
     """Paints text on the graph.
 
     :return: Content for tikz plot.
     """
-    content: List[str] = []
-    properties: List[str] = []
-    style: List[str] = []
+    content: list[str] = []
+    properties: list[str] = []
+    style: list[str] = []
     ff = data["float format"]
     tikz_pos = _get_tikz_pos(data, obj, content)
 
@@ -82,7 +80,7 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
     return content
 
 
-def _get_tikz_pos(data: Dict, obj: Text, content: List[str]) -> str:
+def _get_tikz_pos(data: dict, obj: Text, content: list[str]) -> str:
     """Gets the position in tikz format."""
     pos = _annotation(data, obj, content) if isinstance(obj, Annotation) else obj.get_position()
 
@@ -119,7 +117,7 @@ def _transform_positioning(horizontal_alignment: str, vertical_aligment: str) ->
     return f"anchor={anchor}"
 
 
-def _parse_annotation_coords(float_format: str, coords: str, xy: Tuple[float, float]) -> str:
+def _parse_annotation_coords(float_format: str, coords: str, xy: tuple[float, float]) -> str:
     """Convert a coordinate name and xy into a tikz coordinate string."""
     if coords == "data":
         x, y = xy
@@ -139,7 +137,7 @@ def _parse_annotation_coords(float_format: str, coords: str, xy: Tuple[float, fl
     raise NotImplementedError
 
 
-def _get_arrow_style(data: Dict, obj: FancyArrowPatch) -> list:
+def _get_arrow_style(data: dict, obj: FancyArrowPatch) -> list:
     # get a style string from a FancyArrowPatch
     arrow_translate = {
         "-": ["-"],
@@ -180,7 +178,7 @@ def _get_arrow_style(data: Dict, obj: FancyArrowPatch) -> list:
     return [*latex_style, "draw=" + col]
 
 
-def _annotation(data: dict, obj: Annotation, content: List[str]) -> str | Tuple[float, float]:
+def _annotation(data: dict, obj: Annotation, content: list[str]) -> str | tuple[float, float]:
     ann_xy = obj.xy
     ann_xycoords = obj.xycoords
     if not isinstance(ann_xycoords, str):
@@ -216,7 +214,7 @@ def _annotation(data: dict, obj: Annotation, content: List[str]) -> str | Tuple[
     return text_pos
 
 
-def _bbox(data: Dict, bbox: FancyBboxPatch, properties: List[str], scaling: float) -> None:
+def _bbox(data: dict, bbox: FancyBboxPatch, properties: list[str], scaling: float) -> None:
     bbox_style = bbox.get_boxstyle()
     if bbox.get_fill():
         facecolor, _ = _color.mpl_color2xcolor(data, bbox.get_facecolor())
@@ -239,7 +237,7 @@ def _bbox(data: Dict, bbox: FancyBboxPatch, properties: List[str], scaling: floa
 
 
 def _bbox_style(
-    data: Dict,
+    data: dict,
     bbox_style: BoxStyle.Square
     | BoxStyle.Circle
     | BoxStyle.Ellipse
@@ -250,7 +248,7 @@ def _bbox_style(
     | BoxStyle.Round4
     | BoxStyle.Sawtooth
     | BoxStyle.Roundtooth,
-    properties: List[str],
+    properties: list[str],
 ) -> None:
     # Rounded boxes
     if isinstance(bbox_style, BoxStyle.Round):
@@ -278,7 +276,7 @@ def _bbox_style(
         raise NotImplementedError(msg)
 
 
-def _bbox_linestyle(bbox: FancyBboxPatch, properties: List[str], scaling: float) -> None:
+def _bbox_linestyle(bbox: FancyBboxPatch, properties: list[str], scaling: float) -> None:
     bbox_ls = bbox.get_ls()
     if bbox_ls == "dotted":
         properties.append("dotted")

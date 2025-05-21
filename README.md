@@ -213,7 +213,7 @@ For contributing, follow these steps:
    different Python versions that are supported. One way to do so is by making use of pyenv or 
    pyenv-win. Note that you only need to do this once for a single machine.
 7. Run `tox`. This does a linting check and runs all test scripts. To manually perform these steps,
-   use the following commands (note that to ensure the same output is generated, Python 3.8 is used 
+   use the following commands (note that to ensure the same output is generated, Python 3.9 is used 
    in step 2 above):
    1. Run `tox run -e lint`. If issues arise, fix them. You can do the linting commands manually 
       using:

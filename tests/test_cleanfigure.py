@@ -1,7 +1,5 @@
 """Multiple tests for testing _cleanfigure's functionality."""
 
-from typing import Tuple
-
 import matplotlib as mpl
 import numpy as np
 import pytest
@@ -262,7 +260,7 @@ class TestPlottypes:
             ax: axes3d.Axes3D = plt.axes(projection="3d")
             rng = np.random.default_rng(42)
 
-            def cc(arg: str) -> Tuple[float, float, float, float]:
+            def cc(arg: str) -> tuple[float, float, float, float]:
                 return mcolors.to_rgba(arg, alpha=0.6)
 
             xs = np.arange(0, 10, 0.4)

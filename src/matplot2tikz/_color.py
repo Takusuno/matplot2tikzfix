@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
 import numpy as np
 import webcolors
 from matplotlib.colors import ColorConverter
@@ -29,8 +27,8 @@ builtin_colors = {
 }
 
 
-def _get_closest_colour_name(rgb: np.ndarray) -> Tuple[str, int]:
-    wnames: List[str] = webcolors.names("css3")
+def _get_closest_colour_name(rgb: np.ndarray) -> tuple[str, int]:
+    wnames: list[str] = webcolors.names("css3")
     match = wnames[0]
     mindiff = 195076  # = 255**2 * 3 + 1 (maximum difference possible + 1)
     for name in wnames:
@@ -52,14 +50,14 @@ def _get_closest_colour_name(rgb: np.ndarray) -> Tuple[str, int]:
 
 
 def mpl_color2xcolor(
-    data: Dict,
+    data: dict,
     matplotlib_color: str
-    | Tuple[float, float, float]
-    | Tuple[float, float, float, float]
-    | Tuple[str | Tuple[float, float, float], float]
-    | Tuple[Tuple[float, float, float, float], float]
+    | tuple[float, float, float]
+    | tuple[float, float, float, float]
+    | tuple[str | tuple[float, float, float], float]
+    | tuple[tuple[float, float, float, float], float]
     | np.ndarray,
-) -> Tuple[str, np.ndarray]:
+) -> tuple[str, np.ndarray]:
     """Translates a matplotlib color specification into a proper LaTeX xcolor."""
     # Ensure type is right.
     if isinstance(matplotlib_color, np.ndarray):

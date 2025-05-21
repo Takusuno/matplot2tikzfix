@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import contextlib
+from collections.abc import Iterable, Sequence, Sized
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence, Sized, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from matplotlib.dates import DateConverter, num2date
-from matplotlib.lines import Line2D, _get_dash_pattern
+from matplotlib.lines import Line2D, _get_dash_pattern  # type: ignore[attr-defined]
 from matplotlib.markers import MarkerStyle
 from matplotlib.path import Path
 
@@ -24,13 +25,13 @@ from ._util import get_legend_text, has_legend
 @dataclass
 class LineData:
     obj: Collection | Patch
-    ec: Optional[str | Tuple] = None  # edgecolor
+    ec: Optional[str | tuple] = None  # edgecolor
     ec_name: Optional[str] = None
     ec_rgba: Optional[np.ndarray] = None
-    fc: Optional[str | Tuple] = None  # facecolor
+    fc: Optional[str | tuple] = None  # facecolor
     fc_name: Optional[str] = None
     fc_rgba: Optional[np.ndarray] = None
-    ls: Optional[str | Tuple[float, Sequence[float] | None]] = None  # linestyle
+    ls: Optional[str | tuple[float, Sequence[float] | None]] = None  # linestyle
     lw: Optional[float] = None  # linewidth
     hatch: Optional[str] = None
 
@@ -50,11 +51,11 @@ class PathCollectionData:
 
 
 def draw_path(
-    data: Dict,
+    data: dict,
     path: Path,
-    draw_options: Optional[List[str]] = None,
+    draw_options: Optional[list[str]] = None,
     simplify: Optional[bool] = None,
-) -> Tuple[str, bool]:
+) -> tuple[str, bool]:
     """Adds code for drawing an ordinary path in PGFPlots (TikZ)."""
     # For some reasons, matplotlib sometimes adds void paths which consist of
     # only one point and have 0 fill opacity. To not let those clutter the
@@ -146,7 +147,7 @@ def draw_path(
     return path_command, is_area
 
 
-def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
+def draw_pathcollection(data: dict, obj: PathCollection) -> list[str]:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
     # gather data
@@ -159,7 +160,7 @@ def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
         obj=obj,
         dd_strings=np.array(
             [
-                [f"{val:{data['float format']}}" for val in row]
+                [f"{val:{data['float format']}}" for val in row]  # type: ignore[str-bytes-safe]
                 for row in dd
                 if isinstance(row, Iterable)
             ]
@@ -231,7 +232,7 @@ def draw_pathcollection(data: Dict, obj: PathCollection) -> List[str]:
     return content
 
 
-def _draw_pathcollection_scatter_colormap(data: Dict, pcd: PathCollectionData) -> None:
+def _draw_pathcollection_scatter_colormap(data: dict, pcd: PathCollectionData) -> None:
     obj_array = pcd.obj.get_array()
     if obj_array is not None:
         pcd.dd_strings = np.column_stack([pcd.dd_strings, obj_array])
@@ -245,10 +246,10 @@ def _draw_pathcollection_scatter_colormap(data: Dict, pcd: PathCollectionData) -
 
 
 def _draw_pathcollection_get_edgecolors(
-    data: Dict, pcd: PathCollectionData, line_data: LineData
+    data: dict, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     try:
-        edgecolors = pcd.obj.get_edgecolors()
+        edgecolors = pcd.obj.get_edgecolors()  # type: ignore[attr-defined]
     except TypeError:
         pass
     else:
@@ -266,10 +267,10 @@ def _draw_pathcollection_get_edgecolors(
 
 
 def _draw_pathcollection_get_facecolors(
-    data: Dict, pcd: PathCollectionData, line_data: LineData
+    data: dict, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     try:
-        facecolors = pcd.obj.get_facecolors()
+        facecolors = pcd.obj.get_facecolors()  # type: ignore[attr-defined]
     except TypeError:
         pass
     else:
@@ -332,7 +333,7 @@ def _draw_pathcollection_get_marker(pcd: PathCollectionData) -> None:
 
 
 def _draw_pathcollection_drawoptions(
-    data: Dict, pcd: PathCollectionData, line_data: LineData
+    data: dict, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     if pcd.is_contour:
         pcd.draw_options = ["draw=none"]
@@ -352,7 +353,7 @@ def _draw_pathcollection_drawoptions(
         pcd.draw_options.append("forget plot")
 
 
-def _draw_pathcollection_draw_contour(path: Path, data: Dict, pcd: PathCollectionData) -> None:
+def _draw_pathcollection_draw_contour(path: Path, data: dict, pcd: PathCollectionData) -> None:
     if pcd.is_contour:
         ff = data["float format"]
         dd = path.vertices
@@ -360,7 +361,7 @@ def _draw_pathcollection_draw_contour(path: Path, data: Dict, pcd: PathCollectio
             return  # We cannot draw a path
         # https://matplotlib.org/stable/api/path_api.html
         codes = path.codes if path.codes is not None else [1] + [2] * (len(dd) - 1)
-        dd_strings: List[List[str]] = []
+        dd_strings: list[list[str]] = []
         if not isinstance(codes, Iterable):
             return  # We cannot draw a path
         for row, code in zip(dd, codes):
@@ -369,7 +370,7 @@ def _draw_pathcollection_draw_contour(path: Path, data: Dict, pcd: PathCollectio
                 dd_strings.append([])
             if not isinstance(row, Iterable):
                 raise TypeError
-            dd_strings.append([f"{val:{ff}}" for val in row])
+            dd_strings.append([f"{val:{ff}}" for val in row])  # type: ignore[str-bytes-safe]
         pcd.dd_strings = np.array(dd_strings[1:], dtype=object)
 
 
@@ -389,7 +390,7 @@ def _draw_pathcollection_scatter_sizes(pcd: PathCollectionData) -> None:
         )
 
 
-def get_draw_options(data: Dict, line_data: LineData) -> List[str]:
+def get_draw_options(data: dict, line_data: LineData) -> list[str]:
     """Get the draw options for a given (patch) object."""
     return (
         _get_draw_options_ec(data, line_data)
@@ -401,7 +402,7 @@ def get_draw_options(data: Dict, line_data: LineData) -> List[str]:
     )
 
 
-def _get_draw_options_ec(data: dict, line_data: LineData) -> List[str]:
+def _get_draw_options_ec(data: dict, line_data: LineData) -> list[str]:
     if line_data.ec is None:
         return []
 
@@ -411,7 +412,7 @@ def _get_draw_options_ec(data: dict, line_data: LineData) -> List[str]:
     return ["draw=none"]
 
 
-def _get_draw_options_fc(data: dict, line_data: LineData) -> List[str]:
+def _get_draw_options_fc(data: dict, line_data: LineData) -> list[str]:
     if line_data.fc is None:
         return []
     line_data.fc_name, line_data.fc_rgba = _color.mpl_color2xcolor(data, line_data.fc)
@@ -421,7 +422,7 @@ def _get_draw_options_fc(data: dict, line_data: LineData) -> List[str]:
     return []
 
 
-def _get_draw_options_transparency(data: Dict, line_data: LineData) -> List[str]:
+def _get_draw_options_transparency(data: dict, line_data: LineData) -> list[str]:
     ff = data["float format"]
     if (
         line_data.ec_rgba is not None
@@ -438,7 +439,7 @@ def _get_draw_options_transparency(data: Dict, line_data: LineData) -> List[str]
     return draw_options
 
 
-def _get_draw_options_linewidth(data: Dict, line_data: LineData) -> List[str]:
+def _get_draw_options_linewidth(data: dict, line_data: LineData) -> list[str]:
     if line_data.lw is None:
         return []
     lw_ = mpl_linewidth2pgfp_linewidth(data, line_data.lw)
@@ -447,7 +448,7 @@ def _get_draw_options_linewidth(data: Dict, line_data: LineData) -> List[str]:
     return []
 
 
-def _get_draw_options_linestyle(data: Dict, line_data: LineData) -> List[str]:
+def _get_draw_options_linestyle(data: dict, line_data: LineData) -> list[str]:
     if line_data.ls is None:
         return []
     ls_ = mpl_linestyle2pgfplots_linestyle(data, line_data.ls)
@@ -456,7 +457,7 @@ def _get_draw_options_linestyle(data: Dict, line_data: LineData) -> List[str]:
     return []
 
 
-def _get_draw_options_hatch(data: Dict, line_data: LineData) -> List[str]:
+def _get_draw_options_hatch(data: dict, line_data: LineData) -> list[str]:
     if line_data.hatch is None:
         return []
 
@@ -469,7 +470,7 @@ def _get_draw_options_hatch(data: Dict, line_data: LineData) -> List[str]:
     # There exist an obj.get_hatch_color() method in the mpl API,
     # but it seems to be unused
     try:
-        hc = line_data.obj._hatch_color  # noqa: SLF001
+        hc = line_data.obj._hatch_color  # type: ignore[union-attr]  # noqa: SLF001
     except AttributeError:  # Fallback to edge color
         if (
             line_data.ec_name is not None
@@ -491,7 +492,7 @@ def _get_draw_options_hatch(data: Dict, line_data: LineData) -> List[str]:
     return pattern
 
 
-def mpl_linewidth2pgfp_linewidth(data: Dict, line_width: float) -> str | None:
+def mpl_linewidth2pgfp_linewidth(data: dict, line_width: float) -> str | None:
     """PGFplots gives line widths in pt, matplotlib in axes space. Translate.
 
     Scale such that the default mpl line width (1.5) is mapped to the PGFplots
@@ -518,8 +519,8 @@ def mpl_linewidth2pgfp_linewidth(data: Dict, line_width: float) -> str | None:
 
 
 def mpl_linestyle2pgfplots_linestyle(
-    data: Dict,
-    line_style: str | Tuple[float, Sequence[float] | None],
+    data: dict,
+    line_style: str | tuple[float, Sequence[float] | None],
     line: Optional[Line2D] = None,
 ) -> str | None:
     """Translates a line style of matplotlib to the corresponding style in PGFPlots."""
@@ -552,7 +553,7 @@ def mpl_linestyle2pgfplots_linestyle(
         default_dash_offset, default_dash_seq = _get_dash_pattern(line_style)
 
         # get dash format of line under test
-        dash_offset, dash_seq = line._unscaled_dash_pattern  # noqa: SLF001
+        dash_offset, dash_seq = line._unscaled_dash_pattern  # type: ignore[attr-defined]  # noqa: SLF001
 
         lst = []
         if dash_seq != default_dash_seq:
