@@ -89,6 +89,7 @@ def _tex_escape(text: str) -> str:
     # Work around <https://github.com/matplotlib/matplotlib/issues/15493>
     text = text.replace("&", r"\&")
     text = text.replace("_", r"\_")
+    text = text.replace("%", r"\%")
     # split text into normaltext and inline math parts
     parts = _split_math(text)
     for i, s in enumerate(parts):
