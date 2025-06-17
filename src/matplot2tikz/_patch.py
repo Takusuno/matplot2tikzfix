@@ -153,6 +153,13 @@ def _draw_rectangle(data: dict, obj: Rectangle, draw_options: list) -> List[str]
 
     left_lower_x = obj.get_x()
     left_lower_y = obj.get_y()
+
+    # If we are dealing with a bar plot, left_lower_y will be 0. This is a problem if the y-scale is
+    # logarithmic (see https://github.com/ErwindeGelder/matplot2tikz/issues/25)
+    # To resolve this, the lower y limit will be used as lower_left_y
+    if data["current mpl axes obj"].get_yscale() == "log":
+        left_lower_y = data["current mpl axes obj"].get_ylim()[0]
+
     ff = data["float format"]
     do = ",".join(draw_options)
     right_upper_x = left_lower_x + obj.get_width()
