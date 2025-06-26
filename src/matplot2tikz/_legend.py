@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+from matplotlib.backends import backend_agg
 from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 
@@ -96,8 +97,6 @@ def _legend_position_anchor(data: dict, obj: Legend, legend_style: list[str]) ->
 
 def _get_location_from_best(obj: Legend) -> int:
     # Create a renderer
-    from matplotlib.backends import backend_agg
-
     figure = obj.figure
     if not isinstance(figure, Figure):
         raise TypeError

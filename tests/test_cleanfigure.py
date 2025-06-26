@@ -57,7 +57,7 @@ class TestPlottypes:
             ax.step(x, y)
             ax.set_ylim(20, 80)
             ax.set_xlim(20, 80)
-            with pytest.warns(Warning):
+            with pytest.warns(Warning, match="step plot simplification not yet implemented."):
                 clean_figure(fig)
         plt.close("all")
 
@@ -94,7 +94,9 @@ class TestPlottypes:
             ax.bar(x, y)
             ax.set_ylim(20, 80)
             ax.set_xlim(20, 80)
-            with pytest.warns(Warning):
+            with pytest.warns(
+                Warning, match=r"Cleaning Bar Container \(bar plot\) is not supported yet."
+            ):
                 clean_figure(fig)
         plt.close("all")
 
@@ -106,7 +108,9 @@ class TestPlottypes:
             ax.hist(x)
             ax.set_ylim(20, 80)
             ax.set_xlim(20, 80)
-            with pytest.warns(Warning):
+            with pytest.warns(
+                Warning, match=r"Cleaning Bar Container \(bar plot\) is not supported yet."
+            ):
                 clean_figure(fig)
         plt.close("all")
 
@@ -178,7 +182,9 @@ class TestPlottypes:
 
             # Plot a basic wireframe.
             ax.plot_wireframe(x, y, z, rstride=10, cstride=10)
-            with pytest.warns(Warning):
+            with pytest.warns(
+                Warning, match=r"Cleaning Line Collections \(scatter plot\) is not supported yet."
+            ):
                 clean_figure(fig)
         plt.close("all")
 
@@ -208,7 +214,9 @@ class TestPlottypes:
             # Add a color bar which maps values to colors.
             fig.colorbar(surf, shrink=0.5, aspect=5)
 
-            with pytest.warns(Warning):
+            with pytest.warns(
+                Warning, match=r"Cleaning Line Collections \(scatter plot\) is not supported yet."
+            ):
                 clean_figure(fig)
         plt.close("all")
 
@@ -237,7 +245,7 @@ class TestPlottypes:
             ax: axes3d.Axes3D = plt.axes(projection="3d")
 
             ax.plot_trisurf(x, y, z, linewidth=0.2, antialiased=True)
-            with pytest.warns(Warning):
+            with pytest.warns(Warning, match="Cleaning Poly3DCollections is not supported yet."):
                 clean_figure(fig)
         plt.close("all")
 
@@ -249,7 +257,9 @@ class TestPlottypes:
             x, y, z = axes3d.get_test_data(0.05)
             cset = ax.contour(x, y, z, cmap=plt.get_cmap("coolwarm"))
             ax.clabel(cset, fontsize=9, inline=1)
-            with pytest.warns(Warning):
+            with pytest.warns(
+                Warning, match=r"Cleaning Line Collections \(scatter plot\) is not supported yet."
+            ):
                 clean_figure(fig)
         plt.close("all")
 
@@ -281,7 +291,7 @@ class TestPlottypes:
             ax.set_ylim3d(-1, 4)
             ax.set_zlabel("Z")
             ax.set_zlim3d(0, 1)
-            with pytest.warns(Warning):
+            with pytest.warns(Warning, match="Cleaning Poly3DCollections is not supported yet."):
                 clean_figure(fig)
         plt.close("all")
 
@@ -305,7 +315,9 @@ class TestPlottypes:
             ax.set_xlabel("X")
             ax.set_ylabel("Y")
             ax.set_zlabel("Z")
-            with pytest.warns(Warning):
+            with pytest.warns(
+                Warning, match=r"Cleaning Bar Container \(bar plot\) is not supported yet."
+            ):
                 clean_figure(fig)
         plt.close("all")
 
@@ -328,7 +340,9 @@ class TestPlottypes:
             w = np.sqrt(2.0 / 3.0) * np.cos(np.pi * x) * np.cos(np.pi * y) * np.sin(np.pi * z)
 
             ax.quiver(x, y, z, u, v, w, length=0.1, normalize=True)
-            with pytest.warns(Warning):
+            with pytest.warns(
+                Warning, match=r"Cleaning Line Collections \(scatter plot\) is not supported yet."
+            ):
                 clean_figure(fig)
         plt.close("all")
 

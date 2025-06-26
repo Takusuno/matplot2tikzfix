@@ -29,7 +29,7 @@ class TransformedEllipseCollection(Collection):
         """Initialize TransformedEllipseCollection."""
         super().__init__(**kwargs)
         self.set_transform(IdentityTransform())
-        self._transforms = np.zeros(matrices.shape[:-2] + (3, 3))
+        self._transforms = np.zeros((*matrices.shape[:-2], 3, 3))
         self._transforms[..., :2, :2] = matrices
         self._transforms[..., 2, 2] = 1
         self._paths = [Path.unit_circle()]

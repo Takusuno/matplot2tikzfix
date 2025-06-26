@@ -58,5 +58,8 @@ def plot() -> Figure:
 
 
 def test() -> None:
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning,
+        match=r"matplot2tikz: The hatches \['o', 'O'\] do not have good PGF counterparts.",
+    ):
         assert_equality(plot, "test_hatch_reference.tex")

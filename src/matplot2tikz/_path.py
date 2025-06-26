@@ -54,6 +54,7 @@ def draw_path(
     data: dict,
     path: Path,
     draw_options: Optional[list[str]] = None,
+    *,
     simplify: Optional[bool] = None,
 ) -> tuple[str, bool]:
     """Adds code for drawing an ordinary path in PGFPlots (TikZ)."""
