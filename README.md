@@ -236,11 +236,11 @@ For contributing, follow these steps:
       1. `ruff format . --check` (remove the `--check` flag to let `ruff` do the formatting)
       2. `ruff check .`
       3. `mypy .`
-   2. Run `tox -e py38`.
-   3. Run `tox -e py39`.
-   4. Run `tox -e py310`.
-   5. Run `tox -e py311`.
-   6. Run `tox -e py312`.
+   2. Run `tox -e py39`.
+   3. Run `tox -e py310`.
+   4. Run `tox -e py311`.
+   5. Run `tox -e py312`.
+   6. Run `tox -e py313`.
    7. Run `tox -e combine-test-reports`
 8. Check if the tests covered everything using the coverage report in 
    `/reports/coverage_html/index.html`.
