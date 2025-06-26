@@ -31,7 +31,7 @@ def get_legend_text(obj: Line2D | PathCollection) -> str | None:
     try:
         leg_handles = leg.legend_handles  # matplotlib version >= 3.7.0
     except AttributeError:
-        leg_handles = leg.legendHandles  # matplotlib version < 3.7.0
+        leg_handles = leg.legendHandles  # type: ignore[attr-defined]  # matplotlib version < 3.7.0
     keys = [h.get_label() for h in leg_handles if h is not None]
     values = [t.get_text() for t in leg.texts]
 

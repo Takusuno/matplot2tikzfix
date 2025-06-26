@@ -256,7 +256,7 @@ def _clean_collections(
 
 def _is_step(linehandle: Line2D | art3d.Line3D) -> bool:
     """Check if plot is a step plot."""
-    return linehandle._drawstyle in STEP_DRAW_STYLES  # noqa: SLF001
+    return linehandle._drawstyle in STEP_DRAW_STYLES  # type: ignore[union-attr]  # noqa: SLF001
 
 
 def _get_visual_limits(axhandle: Axes) -> tuple[np.ndarray, np.ndarray]:
@@ -435,7 +435,7 @@ def _get_collection_data(collection: PathCollection | art3d.Path3DCollection) ->
         data = _stack_data_3d(x_data, y_data, z_data)
     else:
         offsets = collection.get_offsets()
-        data = offsets.data
+        data = offsets.data  # type: ignore[union-attr]
     return data
 
 

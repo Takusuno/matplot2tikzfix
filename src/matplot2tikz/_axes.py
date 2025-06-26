@@ -120,12 +120,12 @@ class MyAxes:
         if self.obj.get_xscale() == "log":
             self.axis_options.append("xmode=log")
             self.axis_options.append(
-                f"log basis x={{{_try_f2i(self.obj.xaxis._scale.base)}}}"  # noqa: SLF001
+                f"log basis x={{{_try_f2i(self.obj.xaxis._scale.base)}}}"  # type: ignore[attr-defined]  # noqa: SLF001
             )
         if self.obj.get_yscale() == "log":
             self.axis_options.append("ymode=log")
             self.axis_options.append(
-                f"log basis y={{{_try_f2i(self.obj.yaxis._scale.base)}}}"  # noqa: SLF001
+                f"log basis y={{{_try_f2i(self.obj.yaxis._scale.base)}}}"  # type: ignore[attr-defined]  # noqa: SLF001
             )
 
     def _set_axis_on_top(self) -> None:
@@ -204,15 +204,15 @@ class MyAxes:
         try:
             # mpl 3.3.3+
             # <https://github.com/matplotlib/matplotlib/pull/18769>
-            has_major_xgrid = self.obj.xaxis._major_tick_kw["gridOn"]  # noqa: SLF001
-            has_minor_xgrid = self.obj.xaxis._minor_tick_kw["gridOn"]  # noqa: SLF001
-            has_major_ygrid = self.obj.yaxis._major_tick_kw["gridOn"]  # noqa: SLF001
-            has_minor_ygrid = self.obj.yaxis._minor_tick_kw["gridOn"]  # noqa: SLF001
+            has_major_xgrid = self.obj.xaxis._major_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_xgrid = self.obj.xaxis._minor_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
+            has_major_ygrid = self.obj.yaxis._major_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_ygrid = self.obj.yaxis._minor_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
         except KeyError:
-            has_major_xgrid = self.obj.xaxis._gridOnMajor  # noqa: SLF001
-            has_minor_xgrid = self.obj.xaxis._gridOnMinor  # noqa: SLF001
-            has_major_ygrid = self.obj.yaxis._gridOnMajor  # noqa: SLF001
-            has_minor_ygrid = self.obj.yaxis._gridOnMinor  # noqa: SLF001
+            has_major_xgrid = self.obj.xaxis._gridOnMajor  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_xgrid = self.obj.xaxis._gridOnMinor  # type: ignore[attr-defined]  # noqa: SLF001
+            has_major_ygrid = self.obj.yaxis._gridOnMajor  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_ygrid = self.obj.yaxis._gridOnMinor  # type: ignore[attr-defined]  # noqa: SLF001
 
         if has_major_xgrid:
             self.axis_options.append("xmajorgrids")
@@ -403,8 +403,8 @@ class MyAxes:
         # doesn't seem to be quite accurate. See
         # <https://github.com/matplotlib/matplotlib/issues/5311>.  For now, just take
         # the first tick direction of each of the axes.
-        x_tick_dirs = [tick._tickdir for tick in self.obj.xaxis.get_major_ticks()]  # noqa: SLF001
-        y_tick_dirs = [tick._tickdir for tick in self.obj.yaxis.get_major_ticks()]  # noqa: SLF001
+        x_tick_dirs = [tick._tickdir for tick in self.obj.xaxis.get_major_ticks()]  # type: ignore[attr-defined]  # noqa: SLF001
+        y_tick_dirs = [tick._tickdir for tick in self.obj.yaxis.get_major_ticks()]  # type: ignore[attr-defined]  # noqa: SLF001
         if x_tick_dirs or y_tick_dirs:
             if x_tick_dirs and y_tick_dirs:
                 direction = x_tick_dirs[0] if x_tick_dirs[0] == y_tick_dirs[0] else None
@@ -685,7 +685,7 @@ def _handle_linear_segmented_color_map(
     # elements in each row in the cdict entry for a given color as (x, y0, y1). Then
     # for values of x between x[i] and x[i+1] the color value is interpolated between
     # y1[i] and y0[i+1].
-    segdata = cmap._segmentdata  # noqa: SLF001
+    segdata = cmap._segmentdata  # type: ignore[attr-defined]  # noqa: SLF001
     red = segdata["red"]
     green = segdata["green"]
     blue = segdata["blue"]
@@ -857,7 +857,7 @@ def _find_associated_colorbar(obj: Axes) -> Colorbar | None:
     """
     for child in obj.get_children():
         try:
-            cbar = child.colorbar
+            cbar = child.colorbar  # type: ignore[attr-defined]
         except AttributeError:
             continue
         if cbar is not None:  # really necessary?

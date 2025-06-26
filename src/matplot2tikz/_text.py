@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import matplotlib as mpl
+from matplotlib.font_manager import font_scalings
 from matplotlib.patches import ArrowStyle, BoxStyle, FancyArrowPatch, FancyBboxPatch
 from matplotlib.text import Annotation, Text
 
@@ -27,7 +28,9 @@ def draw_text(data: dict, obj: Text) -> list[str]:
         # already captured by the `title` property of pgfplots axes, so skip them here.
         return content
 
-    size = obj.get_size()
+    size = obj.get_fontsize()
+    if isinstance(size, str):
+        size = font_scalings[size]
     bbox = obj.get_bbox_patch()
     converter = mpl.colors.ColorConverter()
     # without the factor 0.5, the fonts are too big most of the time.
@@ -38,8 +41,8 @@ def draw_text(data: dict, obj: Text) -> list[str]:
     if bbox is not None:
         _bbox(data, bbox, properties, scaling)
 
-    ha = obj.get_ha()
-    va = obj.get_va()
+    ha = obj.get_horizontalalignment()
+    va = obj.get_verticalalignment()
     anchor = _transform_positioning(ha, va)
     if anchor:
         properties.append(anchor)
@@ -47,10 +50,10 @@ def draw_text(data: dict, obj: Text) -> list[str]:
     properties.append(f"text={col}")
     properties.append(f"rotate={obj.get_rotation():.1f}")
 
-    if obj.get_style() == "italic":
+    if obj.get_fontstyle() == "italic":
         style.append("\\itshape")
-    elif obj.get_style() != "normal":
-        msg = f"Object style '{obj.get_style()}' not implemented."
+    elif obj.get_fontstyle() != "normal":
+        msg = f"Object style '{obj.get_fontstyle()}' not implemented."
         raise NotImplementedError(msg)
 
     # get_weights returns a numeric value in the range 0-1000 or one of (value in parenthesis)
@@ -58,7 +61,7 @@ def draw_text(data: dict, obj: Text) -> list[str]:
     # `medium` (500), `roman` (500), `semibold` (600), `demibold` (600), `demi` (600), `bold` (700),
     # `heavy` (800), `extra bold` (800), `black` (900)
     # (from matplotlib/font_manager.py)
-    weight = obj.get_weight()
+    weight = obj.get_fontweight()
     min_weight_bold = 550
     if weight in ["semibold", "demibold", "demi", "bold", "heavy", "extra bold", "black"] or (
         isinstance(weight, int) and weight > min_weight_bold
@@ -163,10 +166,10 @@ def _get_arrow_style(data: dict, obj: FancyArrowPatch) -> list:
     # To support multiple mpl versions, check in a loop instead of a dictionary lookup.
     latex_style = None
     for key, value in arrow_translate.items():
-        if key not in ArrowStyle._style_list:  # noqa: SLF001  (there is no other way; not all ArrowStyle contain the .arrow attribute)
+        if key not in ArrowStyle._style_list:  # type: ignore[attr-defined]  # noqa: SLF001  (there is no other way; not all ArrowStyle contain the .arrow attribute)
             continue
 
-        if ArrowStyle._style_list[key] == style_cls:  # noqa: SLF001
+        if ArrowStyle._style_list[key] == style_cls:  # type: ignore[attr-defined]  # noqa: SLF001
             latex_style = value
             break
 
@@ -174,7 +177,7 @@ def _get_arrow_style(data: dict, obj: FancyArrowPatch) -> list:
         msg = f"Unknown arrow style {style_cls}"
         raise NotImplementedError(msg)
 
-    col, _ = _color.mpl_color2xcolor(data, obj.get_ec())
+    col, _ = _color.mpl_color2xcolor(data, obj.get_edgecolor())
     return [*latex_style, "draw=" + col]
 
 
@@ -224,9 +227,9 @@ def _bbox(data: dict, bbox: FancyBboxPatch, properties: list[str], scaling: floa
     if edgecolor:
         properties.append(f"draw={edgecolor}")
     ff = data["float format"]
-    line_width = bbox.get_lw() * 0.4
+    line_width = bbox.get_linewidth() * 0.4
     properties.append(f"line width={line_width:{ff}}pt")
-    inner_sep = bbox_style.pad * data["font size"]
+    inner_sep = bbox_style.pad * data["font size"]  # type: ignore[attr-defined]
     properties.append(f"inner sep={inner_sep:{ff}}pt")
     if bbox.get_alpha():
         properties.append(f"fill opacity={bbox.get_alpha()}")
@@ -238,19 +241,9 @@ def _bbox(data: dict, bbox: FancyBboxPatch, properties: list[str], scaling: floa
 
 def _bbox_style(
     data: dict,
-    bbox_style: BoxStyle.Square
-    | BoxStyle.Circle
-    | BoxStyle.Ellipse
-    | BoxStyle.LArrow
-    | BoxStyle.RArrow
-    | BoxStyle.DArrow
-    | BoxStyle.Round
-    | BoxStyle.Round4
-    | BoxStyle.Sawtooth
-    | BoxStyle.Roundtooth,
+    bbox_style: BoxStyle,
     properties: list[str],
 ) -> None:
-    # Rounded boxes
     if isinstance(bbox_style, BoxStyle.Round):
         properties.append("rounded corners")
     elif isinstance(bbox_style, BoxStyle.RArrow):
@@ -277,7 +270,7 @@ def _bbox_style(
 
 
 def _bbox_linestyle(bbox: FancyBboxPatch, properties: list[str], scaling: float) -> None:
-    bbox_ls = bbox.get_ls()
+    bbox_ls = bbox.get_linestyle()
     if bbox_ls == "dotted":
         properties.append("dotted")
     elif bbox_ls == "dashed":
