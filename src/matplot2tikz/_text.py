@@ -241,7 +241,15 @@ def _bbox(data: dict, bbox: FancyBboxPatch, properties: list[str], scaling: floa
 
 def _bbox_style(
     data: dict,
-    bbox_style: BoxStyle,
+    bbox_style: BoxStyle
+    | BoxStyle.Round
+    | BoxStyle.RArrow
+    | BoxStyle.LArrow
+    | BoxStyle.DArrow
+    | BoxStyle.Circle
+    | BoxStyle.Roundtooth
+    | BoxStyle.Sawtooth
+    | BoxStyle.Square,
     properties: list[str],
 ) -> None:
     if isinstance(bbox_style, BoxStyle.Round):

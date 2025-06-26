@@ -257,9 +257,7 @@ class TestPlottypes:
             x, y, z = axes3d.get_test_data(0.05)
             cset = ax.contour(x, y, z, cmap=plt.get_cmap("coolwarm"))
             ax.clabel(cset, fontsize=9, inline=1)
-            with pytest.warns(
-                Warning, match=r"Cleaning Line Collections \(scatter plot\) is not supported yet."
-            ):
+            with pytest.warns(Warning, match=r"Cleaning QuadContourSet is not supported yet."):
                 clean_figure(fig)
         plt.close("all")
 
