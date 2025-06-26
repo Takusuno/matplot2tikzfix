@@ -189,8 +189,24 @@ to install.
     The command will remove points that are outside the axes limits, simplify curves and
     reduce point density for the specified target resolution.
 
-    The feature originated from the
-    [tikzplotlib](https://github.com/nschloe/tikzplotlib) project.
+## matplot2tikz vs. tikzplotlib
+
+This matplot2tikz library originated from the [tikzplotlib](https://github.com/nschloe/tikzplotlib)
+project.
+The reason a new library has been created is because tikzplotlib is no longer maintained and 
+maintainance could only be done by the single owner of the tikzplotlib library.
+If you need to use third-party code that already depends on tikzplotlib, it is suggested to change
+the tikzplotlib dependency to matplot2tikz. 
+If this is not possible, a workaround is to put the following code *before* importing the 
+third-party code:
+
+   ```
+   import sys
+   import matplot2tikz
+   sys.modules["tikzplotlib"] = matplot2tikz
+   # Do other imports, e.g., using `import my_third_party_library`
+   # If tikzplotlib is used in this library, it will automatically use matplot2tikz instead.
+   ```
 
 ## Contributing
 
@@ -215,12 +231,17 @@ For contributing, follow these steps:
 7. Run `tox`. This does a linting check and runs all test scripts. To manually perform these steps,
    use the following commands (note that to ensure the same output is generated, Python 3.9 is used 
    in step 2 above):
-   1. Run `tox run -e lint`. If issues arise, fix them. You can do the linting commands manually 
+   1. Run `tox -e lint`. If issues arise, fix them. You can do the linting commands manually 
       using:
       1. `ruff format . --check` (remove the `--check` flag to let `ruff` do the formatting)
       2. `ruff check .`
       3. `mypy .`
-   2. Run `tox run -f test`.
+   2. Run `tox -e py38`.
+   3. Run `tox -e py39`.
+   4. Run `tox -e py310`.
+   5. Run `tox -e py311`.
+   6. Run `tox -e py312`.
+   7. Run `tox -e combine-test-reports`
 8. Check if the tests covered everything using the coverage report in 
    `/reports/coverage_html/index.html`.
 

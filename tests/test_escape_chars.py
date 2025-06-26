@@ -15,9 +15,9 @@ mpl.use("Agg")
 def plot() -> Figure:
     fig = plt.figure()
     plt.plot(0, 0, "kx")
-    plt.title("Foo & Bar Dogs_N_Cats")
-    plt.xlabel("Foo & Bar Dogs_N_Cats")
-    plt.ylabel("Foo & Bar Dogs_N_Cats")
+    plt.title("Foo & Bar Dogs_N_Cats %")
+    plt.xlabel("Foo & Bar Dogs_N_Cats %")
+    plt.ylabel("Foo & Bar Dogs_N_Cats %")
     return fig
 
 
