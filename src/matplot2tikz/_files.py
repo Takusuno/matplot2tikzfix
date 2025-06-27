@@ -1,8 +1,7 @@
 from pathlib import Path
-from typing import Dict, Tuple
 
 
-def _gen_filepath(data: Dict, nb_key: str, ext: str) -> Tuple[Path, Path]:
+def _gen_filepath(data: dict, nb_key: str, ext: str) -> tuple[Path, Path]:
     rel_filepath = Path(f"{data['base name']}-{data[nb_key]:03d}{ext}")
 
     if data["rel data path"]:
@@ -11,7 +10,7 @@ def _gen_filepath(data: Dict, nb_key: str, ext: str) -> Tuple[Path, Path]:
     return data["output dir"] / rel_filepath, rel_filepath
 
 
-def new_filepath(data: Dict, file_kind: str, ext: str) -> Tuple[Path, Path]:
+def new_filepath(data: dict, file_kind: str, ext: str) -> tuple[Path, Path]:
     """Returns an available filepath.
 
     :param data: Dictionary with various config options.

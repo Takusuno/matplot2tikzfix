@@ -2,23 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
 import matplotlib as mpl
+from matplotlib.font_manager import font_scalings
 from matplotlib.patches import ArrowStyle, BoxStyle, FancyArrowPatch, FancyBboxPatch
 from matplotlib.text import Annotation, Text
 
 from . import _color
 
 
-def draw_text(data: Dict, obj: Text) -> List[str]:
+def draw_text(data: dict, obj: Text) -> list[str]:
     """Paints text on the graph.
 
     :return: Content for tikz plot.
     """
-    content: List[str] = []
-    properties: List[str] = []
-    style: List[str] = []
+    content: list[str] = []
+    properties: list[str] = []
+    style: list[str] = []
     ff = data["float format"]
     tikz_pos = _get_tikz_pos(data, obj, content)
 
@@ -29,7 +28,9 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
         # already captured by the `title` property of pgfplots axes, so skip them here.
         return content
 
-    size = obj.get_size()
+    size = obj.get_fontsize()
+    if isinstance(size, str):
+        size = font_scalings[size]
     bbox = obj.get_bbox_patch()
     converter = mpl.colors.ColorConverter()
     # without the factor 0.5, the fonts are too big most of the time.
@@ -40,8 +41,8 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
     if bbox is not None:
         _bbox(data, bbox, properties, scaling)
 
-    ha = obj.get_ha()
-    va = obj.get_va()
+    ha = obj.get_horizontalalignment()
+    va = obj.get_verticalalignment()
     anchor = _transform_positioning(ha, va)
     if anchor:
         properties.append(anchor)
@@ -49,10 +50,10 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
     properties.append(f"text={col}")
     properties.append(f"rotate={obj.get_rotation():.1f}")
 
-    if obj.get_style() == "italic":
+    if obj.get_fontstyle() == "italic":
         style.append("\\itshape")
-    elif obj.get_style() != "normal":
-        msg = f"Object style '{obj.get_style()}' not implemented."
+    elif obj.get_fontstyle() != "normal":
+        msg = f"Object style '{obj.get_fontstyle()}' not implemented."
         raise NotImplementedError(msg)
 
     # get_weights returns a numeric value in the range 0-1000 or one of (value in parenthesis)
@@ -60,7 +61,7 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
     # `medium` (500), `roman` (500), `semibold` (600), `demibold` (600), `demi` (600), `bold` (700),
     # `heavy` (800), `extra bold` (800), `black` (900)
     # (from matplotlib/font_manager.py)
-    weight = obj.get_weight()
+    weight = obj.get_fontweight()
     min_weight_bold = 550
     if weight in ["semibold", "demibold", "demi", "bold", "heavy", "extra bold", "black"] or (
         isinstance(weight, int) and weight > min_weight_bold
@@ -82,7 +83,7 @@ def draw_text(data: Dict, obj: Text) -> List[str]:
     return content
 
 
-def _get_tikz_pos(data: Dict, obj: Text, content: List[str]) -> str:
+def _get_tikz_pos(data: dict, obj: Text, content: list[str]) -> str:
     """Gets the position in tikz format."""
     pos = _annotation(data, obj, content) if isinstance(obj, Annotation) else obj.get_position()
 
@@ -119,7 +120,7 @@ def _transform_positioning(horizontal_alignment: str, vertical_aligment: str) ->
     return f"anchor={anchor}"
 
 
-def _parse_annotation_coords(float_format: str, coords: str, xy: Tuple[float, float]) -> str:
+def _parse_annotation_coords(float_format: str, coords: str, xy: tuple[float, float]) -> str:
     """Convert a coordinate name and xy into a tikz coordinate string."""
     if coords == "data":
         x, y = xy
@@ -139,7 +140,7 @@ def _parse_annotation_coords(float_format: str, coords: str, xy: Tuple[float, fl
     raise NotImplementedError
 
 
-def _get_arrow_style(data: Dict, obj: FancyArrowPatch) -> list:
+def _get_arrow_style(data: dict, obj: FancyArrowPatch) -> list:
     # get a style string from a FancyArrowPatch
     arrow_translate = {
         "-": ["-"],
@@ -165,10 +166,10 @@ def _get_arrow_style(data: Dict, obj: FancyArrowPatch) -> list:
     # To support multiple mpl versions, check in a loop instead of a dictionary lookup.
     latex_style = None
     for key, value in arrow_translate.items():
-        if key not in ArrowStyle._style_list:  # noqa: SLF001  (there is no other way; not all ArrowStyle contain the .arrow attribute)
+        if key not in ArrowStyle._style_list:  # type: ignore[attr-defined]  # noqa: SLF001  (there is no other way; not all ArrowStyle contain the .arrow attribute)
             continue
 
-        if ArrowStyle._style_list[key] == style_cls:  # noqa: SLF001
+        if ArrowStyle._style_list[key] == style_cls:  # type: ignore[attr-defined]  # noqa: SLF001
             latex_style = value
             break
 
@@ -176,11 +177,11 @@ def _get_arrow_style(data: Dict, obj: FancyArrowPatch) -> list:
         msg = f"Unknown arrow style {style_cls}"
         raise NotImplementedError(msg)
 
-    col, _ = _color.mpl_color2xcolor(data, obj.get_ec())
+    col, _ = _color.mpl_color2xcolor(data, obj.get_edgecolor())
     return [*latex_style, "draw=" + col]
 
 
-def _annotation(data: dict, obj: Annotation, content: List[str]) -> str | Tuple[float, float]:
+def _annotation(data: dict, obj: Annotation, content: list[str]) -> str | tuple[float, float]:
     ann_xy = obj.xy
     ann_xycoords = obj.xycoords
     if not isinstance(ann_xycoords, str):
@@ -216,7 +217,7 @@ def _annotation(data: dict, obj: Annotation, content: List[str]) -> str | Tuple[
     return text_pos
 
 
-def _bbox(data: Dict, bbox: FancyBboxPatch, properties: List[str], scaling: float) -> None:
+def _bbox(data: dict, bbox: FancyBboxPatch, properties: list[str], scaling: float) -> None:
     bbox_style = bbox.get_boxstyle()
     if bbox.get_fill():
         facecolor, _ = _color.mpl_color2xcolor(data, bbox.get_facecolor())
@@ -226,9 +227,9 @@ def _bbox(data: Dict, bbox: FancyBboxPatch, properties: List[str], scaling: floa
     if edgecolor:
         properties.append(f"draw={edgecolor}")
     ff = data["float format"]
-    line_width = bbox.get_lw() * 0.4
+    line_width = bbox.get_linewidth() * 0.4
     properties.append(f"line width={line_width:{ff}}pt")
-    inner_sep = bbox_style.pad * data["font size"]
+    inner_sep = bbox_style.pad * data["font size"]  # type: ignore[attr-defined]
     properties.append(f"inner sep={inner_sep:{ff}}pt")
     if bbox.get_alpha():
         properties.append(f"fill opacity={bbox.get_alpha()}")
@@ -239,20 +240,18 @@ def _bbox(data: Dict, bbox: FancyBboxPatch, properties: List[str], scaling: floa
 
 
 def _bbox_style(
-    data: Dict,
-    bbox_style: BoxStyle.Square
-    | BoxStyle.Circle
-    | BoxStyle.Ellipse
-    | BoxStyle.LArrow
-    | BoxStyle.RArrow
-    | BoxStyle.DArrow
+    data: dict,
+    bbox_style: BoxStyle
     | BoxStyle.Round
-    | BoxStyle.Round4
+    | BoxStyle.RArrow
+    | BoxStyle.LArrow
+    | BoxStyle.DArrow
+    | BoxStyle.Circle
+    | BoxStyle.Roundtooth
     | BoxStyle.Sawtooth
-    | BoxStyle.Roundtooth,
-    properties: List[str],
+    | BoxStyle.Square,
+    properties: list[str],
 ) -> None:
-    # Rounded boxes
     if isinstance(bbox_style, BoxStyle.Round):
         properties.append("rounded corners")
     elif isinstance(bbox_style, BoxStyle.RArrow):
@@ -278,8 +277,8 @@ def _bbox_style(
         raise NotImplementedError(msg)
 
 
-def _bbox_linestyle(bbox: FancyBboxPatch, properties: List[str], scaling: float) -> None:
-    bbox_ls = bbox.get_ls()
+def _bbox_linestyle(bbox: FancyBboxPatch, properties: list[str], scaling: float) -> None:
+    bbox_ls = bbox.get_linestyle()
     if bbox_ls == "dotted":
         properties.append("dotted")
     elif bbox_ls == "dashed":

@@ -19,7 +19,7 @@ def plot() -> Figure:
     axis.add_collection(col)
     axis.set_xlim(0.5, 2.5)
     axis.set_ylim(0.5, 2.5)
-    axis.collections[0].set_verts([[[1, 1], [1, 2], [2, 2], [2, 1]]])
+    axis.collections[0].set_verts([[[1, 1], [1, 2], [2, 2], [2, 1]]])  # type: ignore[attr-defined]
     return fig
 
 

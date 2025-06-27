@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Dict, Iterable, List, Sized, Tuple
+from collections.abc import Iterable, Sized
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,11 +18,11 @@ if TYPE_CHECKING:
 
 
 class MyAxes:
-    def __init__(self, data: Dict, obj: Axes) -> None:
+    def __init__(self, data: dict, obj: Axes) -> None:
         """Returns the PGFPlots code for an axis environment."""
         self.data = data
         self.obj = obj
-        self.content: List[str] = []
+        self.content: list[str] = []
 
         # Are we dealing with an axis that hosts a colorbar? Skip then, those are
         # treated implicitily by the associated axis.
@@ -37,7 +38,7 @@ class MyAxes:
         if isinstance(obj, Subplot):
             self._subplot()
 
-        self.axis_options: List[str] = []
+        self.axis_options: list[str] = []
 
         self._set_hide_axis()
         self._set_plot_title()
@@ -99,7 +100,7 @@ class MyAxes:
             if yrotation != 90:  # noqa: PLR2004
                 self.axis_options.append(f"ylabel style={{rotate={yrotation - 90}}}")
 
-    def _set_axis_limits(self) -> Tuple[List[float], List[float]]:
+    def _set_axis_limits(self) -> tuple[list[float], list[float]]:
         ff = self.data["float format"]
         xlim = list(self.obj.get_xlim())
         xlim0, xlim1 = sorted(xlim)
@@ -119,12 +120,12 @@ class MyAxes:
         if self.obj.get_xscale() == "log":
             self.axis_options.append("xmode=log")
             self.axis_options.append(
-                f"log basis x={{{_try_f2i(self.obj.xaxis._scale.base)}}}"  # noqa: SLF001
+                f"log basis x={{{_try_f2i(self.obj.xaxis._scale.base)}}}"  # type: ignore[attr-defined]  # noqa: SLF001
             )
         if self.obj.get_yscale() == "log":
             self.axis_options.append("ymode=log")
             self.axis_options.append(
-                f"log basis y={{{_try_f2i(self.obj.yaxis._scale.base)}}}"  # noqa: SLF001
+                f"log basis y={{{_try_f2i(self.obj.yaxis._scale.base)}}}"  # type: ignore[attr-defined]  # noqa: SLF001
             )
 
     def _set_axis_on_top(self) -> None:
@@ -146,7 +147,7 @@ class MyAxes:
         return float(aspect)
 
     def _set_axis_dimensions(
-        self, aspect_num: float | None, xlim: List[float], ylim: List[float]
+        self, aspect_num: float | None, xlim: list[float], ylim: list[float]
     ) -> None:
         if self.data["axis width"] and self.data["axis height"]:
             # width and height overwrite aspect ratio
@@ -203,15 +204,15 @@ class MyAxes:
         try:
             # mpl 3.3.3+
             # <https://github.com/matplotlib/matplotlib/pull/18769>
-            has_major_xgrid = self.obj.xaxis._major_tick_kw["gridOn"]  # noqa: SLF001
-            has_minor_xgrid = self.obj.xaxis._minor_tick_kw["gridOn"]  # noqa: SLF001
-            has_major_ygrid = self.obj.yaxis._major_tick_kw["gridOn"]  # noqa: SLF001
-            has_minor_ygrid = self.obj.yaxis._minor_tick_kw["gridOn"]  # noqa: SLF001
+            has_major_xgrid = self.obj.xaxis._major_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_xgrid = self.obj.xaxis._minor_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
+            has_major_ygrid = self.obj.yaxis._major_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_ygrid = self.obj.yaxis._minor_tick_kw["gridOn"]  # type: ignore[attr-defined]  # noqa: SLF001
         except KeyError:
-            has_major_xgrid = self.obj.xaxis._gridOnMajor  # noqa: SLF001
-            has_minor_xgrid = self.obj.xaxis._gridOnMinor  # noqa: SLF001
-            has_major_ygrid = self.obj.yaxis._gridOnMajor  # noqa: SLF001
-            has_minor_ygrid = self.obj.yaxis._gridOnMinor  # noqa: SLF001
+            has_major_xgrid = self.obj.xaxis._gridOnMajor  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_xgrid = self.obj.xaxis._gridOnMinor  # type: ignore[attr-defined]  # noqa: SLF001
+            has_major_ygrid = self.obj.yaxis._gridOnMajor  # type: ignore[attr-defined]  # noqa: SLF001
+            has_minor_ygrid = self.obj.yaxis._gridOnMinor  # type: ignore[attr-defined]  # noqa: SLF001
 
         if has_major_xgrid:
             self.axis_options.append("xmajorgrids")
@@ -336,7 +337,7 @@ class MyAxes:
         else:
             self.content.append(self.data["flavor"].start("axis"))
 
-    def get_begin_code(self) -> List[str]:
+    def get_begin_code(self) -> list[str]:
         if self.axis_options:
             # Put axis_options in a deterministic order to avoid diff churn.
             self.axis_options.sort()
@@ -402,8 +403,8 @@ class MyAxes:
         # doesn't seem to be quite accurate. See
         # <https://github.com/matplotlib/matplotlib/issues/5311>.  For now, just take
         # the first tick direction of each of the axes.
-        x_tick_dirs = [tick._tickdir for tick in self.obj.xaxis.get_major_ticks()]  # noqa: SLF001
-        y_tick_dirs = [tick._tickdir for tick in self.obj.yaxis.get_major_ticks()]  # noqa: SLF001
+        x_tick_dirs = [tick._tickdir for tick in self.obj.xaxis.get_major_ticks()]  # type: ignore[attr-defined]  # noqa: SLF001
+        y_tick_dirs = [tick._tickdir for tick in self.obj.yaxis.get_major_ticks()]  # type: ignore[attr-defined]  # noqa: SLF001
         if x_tick_dirs or y_tick_dirs:
             if x_tick_dirs and y_tick_dirs:
                 direction = x_tick_dirs[0] if x_tick_dirs[0] == y_tick_dirs[0] else None
@@ -524,7 +525,7 @@ class MyAxes:
         return label_style
 
 
-def _get_tick_position(obj: Axes, x_or_y: str) -> Tuple[str | None, str | None]:
+def _get_tick_position(obj: Axes, x_or_y: str) -> tuple[str | None, str | None]:
     major_ticks = obj.xaxis.majorTicks if x_or_y == "x" else obj.yaxis.majorTicks
 
     major_ticks_bottom = [tick.tick1line.get_visible() for tick in major_ticks]
@@ -555,7 +556,7 @@ def _get_tick_position(obj: Axes, x_or_y: str) -> Tuple[str | None, str | None]:
     return position_string, major_ticks_position
 
 
-def _get_ticks(data: Dict, xy: str, ticks: List | np.ndarray, ticklabels: List) -> List[str]:
+def _get_ticks(data: dict, xy: str, ticks: list | np.ndarray, ticklabels: list) -> list[str]:
     """Gets a {'x','y'}, a number of ticks and ticks labels.
 
     Returns the necessary axis options for the given configuration.
@@ -591,7 +592,7 @@ def _get_ticks(data: Dict, xy: str, ticks: List | np.ndarray, ticklabels: List) 
     return axis_options
 
 
-def _is_label_required(ticks: List | np.ndarray, ticklabels: List) -> bool:
+def _is_label_required(ticks: list | np.ndarray, ticklabels: list) -> bool:
     """Check if the label is necessary.
 
     If one of the labels is, then all of them must appear in the TikZ plot.
@@ -619,7 +620,7 @@ def _is_label_required(ticks: List | np.ndarray, ticklabels: List) -> bool:
     return False
 
 
-def _get_pgfplots_ticklabels(ticklabels: List) -> List[str]:
+def _get_pgfplots_ticklabels(ticklabels: list) -> list[str]:
     pgfplots_ticklabels = []
     for ticklabel in ticklabels:
         label = ticklabel.get_text()
@@ -660,7 +661,7 @@ def _is_colorbar_heuristic(obj: Axes) -> bool:
     )
 
 
-def _mpl_cmap2pgf_cmap(cmap: Colormap, data: Dict) -> Tuple[str, bool]:
+def _mpl_cmap2pgf_cmap(cmap: Colormap, data: dict) -> tuple[str, bool]:
     """Converts a color map as given in matplotlib to a color map as represented in PGFPlots."""
     if isinstance(cmap, LinearSegmentedColormap):
         return _handle_linear_segmented_color_map(cmap, data)
@@ -671,8 +672,8 @@ def _mpl_cmap2pgf_cmap(cmap: Colormap, data: Dict) -> Tuple[str, bool]:
 
 
 def _handle_linear_segmented_color_map(
-    cmap: LinearSegmentedColormap, data: Dict
-) -> Tuple[str, bool]:
+    cmap: LinearSegmentedColormap, data: dict
+) -> tuple[str, bool]:
     if cmap.is_gray():
         is_custom_colormap = False
         return "blackwhite", is_custom_colormap
@@ -684,7 +685,7 @@ def _handle_linear_segmented_color_map(
     # elements in each row in the cdict entry for a given color as (x, y0, y1). Then
     # for values of x between x[i] and x[i+1] the color value is interpolated between
     # y1[i] and y0[i+1].
-    segdata = cmap._segmentdata  # noqa: SLF001
+    segdata = cmap._segmentdata  # type: ignore[attr-defined]  # noqa: SLF001
     red = segdata["red"]
     green = segdata["green"]
     blue = segdata["blue"]
@@ -765,7 +766,7 @@ def _handle_linear_segmented_color_map(
     return colormap_string, is_custom_colormap
 
 
-def _handle_listed_color_map(cmap: ListedColormap, data: Dict) -> Tuple[str, bool]:
+def _handle_listed_color_map(cmap: ListedColormap, data: dict) -> tuple[str, bool]:
     # check for predefined colormaps in both matplotlib and pgfplots
     cm_translate = {
         # All the rest are LinearSegmentedColorMaps. :/
@@ -811,7 +812,7 @@ def _handle_listed_color_map(cmap: ListedColormap, data: Dict) -> Tuple[str, boo
     return colormap_string, is_custom_colormap
 
 
-def _scale_to_int(array: np.ndarray, max_val: float) -> List[int]:
+def _scale_to_int(array: np.ndarray, max_val: float) -> list[int]:
     """Scales the array X such that it contains only integers."""
     array = array / max(1 / max_val, _gcd_array(array))
     return [int(entry) for entry in array]
@@ -842,7 +843,7 @@ def _gcd(a: float, b: float) -> float:
     return b
 
 
-def _linear_interpolation(x: float, a: Tuple[float, float], b: Tuple[float, float]) -> float:
+def _linear_interpolation(x: float, a: tuple[float, float], b: tuple[float, float]) -> float:
     """Given two data points [a,b], linearly interpolate those at x."""
     return (b[1] * (x - a[0]) + b[0] * (a[1] - x)) / (a[1] - a[0])
 
@@ -856,7 +857,7 @@ def _find_associated_colorbar(obj: Axes) -> Colorbar | None:
     """
     for child in obj.get_children():
         try:
-            cbar = child.colorbar
+            cbar = child.colorbar  # type: ignore[attr-defined]
         except AttributeError:
             continue
         if cbar is not None:  # really necessary?

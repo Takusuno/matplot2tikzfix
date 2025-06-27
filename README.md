@@ -229,18 +229,18 @@ For contributing, follow these steps:
    different Python versions that are supported. One way to do so is by making use of pyenv or 
    pyenv-win. Note that you only need to do this once for a single machine.
 7. Run `tox`. This does a linting check and runs all test scripts. To manually perform these steps,
-   use the following commands (note that to ensure the same output is generated, Python 3.8 is used 
+   use the following commands (note that to ensure the same output is generated, Python 3.9 is used 
    in step 2 above):
    1. Run `tox -e lint`. If issues arise, fix them. You can do the linting commands manually 
       using:
       1. `ruff format . --check` (remove the `--check` flag to let `ruff` do the formatting)
       2. `ruff check .`
       3. `mypy .`
-   2. Run `tox -e py38`.
-   3. Run `tox -e py39`.
-   4. Run `tox -e py310`.
-   5. Run `tox -e py311`.
-   6. Run `tox -e py312`.
+   2. Run `tox -e py39`.
+   3. Run `tox -e py310`.
+   4. Run `tox -e py311`.
+   5. Run `tox -e py312`.
+   6. Run `tox -e py313`.
    7. Run `tox -e combine-test-reports`
 8. Check if the tests covered everything using the coverage report in 
    `/reports/coverage_html/index.html`.

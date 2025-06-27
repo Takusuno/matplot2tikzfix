@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "matplot2tikz"
 description = "Convert matplotlib figures into TikZ/PGFPlots"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "MIT"
 keywords = ["latex", "tikz", "matplotlib", "graphics"]
 dynamic = ["version"]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
   "matplotlib >= 1.4.0",
   "numpy",
@@ -23,11 +23,11 @@ authors = [
 ]
 classifiers=[
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 # Enables the usage of setuptools_scm
@@ -39,20 +39,20 @@ lint = [
     "ruff",
 ]
 test = [
-    "pytest==7.4.1",
-    "pytest-cov==4.1.0",
-    "coverage[toml]==7.3.1",
-    "typeguard==4.4.0",
+    "pytest>=7.4.1",
+    "pytest-cov>=6.0.0",
+    "coverage[toml]>=7.0.0",
+    "typeguard>=4.4.0",
 ]
 dev = [
     "tox",
     "tox-pyenv-redux",
     "mypy",
     "ruff",
-    "pytest==7.4.1",
-    "pytest-cov==4.1.0",
-    "coverage[toml]==7.3.1",
-    "typeguard==4.4.0",
+    "pytest>=7.4.1",
+    "pytest-cov>=6.0.0",
+    "coverage[toml]>=7.0.0",
+    "typeguard>=4.4.0",
 ]
 
 [tool.ruff]
@@ -61,7 +61,7 @@ src = ["src"]
 extend-exclude = [
     "conf.py",
 ]
-target-version = "py38"
+target-version = "py39"
 lint.select = ["ALL"]
 lint.ignore = [
     "COM812",   # Conflicts with the formatter

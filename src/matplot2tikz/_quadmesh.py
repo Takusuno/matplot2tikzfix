@@ -1,5 +1,6 @@
 from matplotlib.backends.backend_agg import RendererAgg
 from matplotlib.collections import QuadMesh
+from matplotlib.figure import Figure
 from PIL import Image
 
 from . import _files
@@ -8,14 +9,17 @@ from . import _files
 def draw_quadmesh(data: dict, obj: QuadMesh) -> list:
     """Returns the PGFPlots code for a graphics environment holding a rendering of the object."""
     content = []
+    figure = obj.figure
+    if not isinstance(figure, Figure):
+        raise TypeError
 
     # Generate file name for current object
     filepath, rel_filepath = _files.new_filepath(data, "img", ".png")
 
     # Get the dpi for rendering and store the original dpi of the figure
     dpi = data["dpi"]
-    fig_dpi = obj.figure.get_dpi()
-    obj.figure.set_dpi(dpi)
+    fig_dpi = figure.get_dpi()
+    figure.set_dpi(dpi)
 
     # Render the object and save as png file
     cbox = obj.get_clip_box()
@@ -45,7 +49,7 @@ def draw_quadmesh(data: dict, obj: QuadMesh) -> list:
     cropped.save(filepath)
 
     # Restore the original dpi of the figure
-    obj.figure.set_dpi(fig_dpi)
+    figure.set_dpi(fig_dpi)
 
     # write the corresponding information to the TikZ file
     axes = obj.axes

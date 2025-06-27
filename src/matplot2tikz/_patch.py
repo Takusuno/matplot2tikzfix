@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Generator, Iterable
 from itertools import cycle, islice, tee
-from typing import TYPE_CHECKING, Dict, Generator, Iterable, List
+from typing import TYPE_CHECKING
 
 from matplotlib.axes import Axes
 from matplotlib.patches import Circle, Ellipse, FancyArrowPatch, Patch, Rectangle
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
     from matplotlib.collections import Collection
 
 
-def draw_patch(data: Dict, obj: Patch) -> List[str]:
+def draw_patch(data: dict, obj: Patch) -> list[str]:
     """Return the PGFPlots code for patches."""
     if isinstance(obj, FancyArrowPatch):
         draw_options = mypath.get_draw_options(
@@ -63,7 +64,7 @@ def _is_in_legend(obj: Collection | Patch) -> bool:
     return label in [txt.get_text() for txt in leg.get_texts()]
 
 
-def _patch_legend(obj: Collection | Patch, draw_options: List, legend_type: str) -> str:
+def _patch_legend(obj: Collection | Patch, draw_options: list, legend_type: str) -> str:
     """Decorator for handling legend Collection and Patch."""
     legend = ""
     if _is_in_legend(obj):
@@ -89,7 +90,7 @@ def zip_modulo(*iterables: Iterable) -> Generator:
         yield tuple(next(iterable) for iterable in max_length_iterables)
 
 
-def draw_patchcollection(data: Dict, obj: Collection) -> List[str]:
+def draw_patchcollection(data: dict, obj: Collection) -> list[str]:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
 
@@ -127,13 +128,13 @@ def draw_patchcollection(data: Dict, obj: Collection) -> List[str]:
     return content
 
 
-def _draw_polygon(data: dict, obj: Patch, draw_options: list) -> List[str]:
+def _draw_polygon(data: dict, obj: Patch, draw_options: list) -> list[str]:
     str_path, is_area = mypath.draw_path(data, obj.get_path(), draw_options=draw_options)
     legend_type = "area legend" if is_area else "line legend"
     return [str_path, _patch_legend(obj, draw_options, legend_type)]
 
 
-def _draw_rectangle(data: dict, obj: Rectangle, draw_options: list) -> List[str]:
+def _draw_rectangle(data: dict, obj: Rectangle, draw_options: list) -> list[str]:
     """Return the PGFPlots code for rectangles."""
     # Objects with labels are plot objects (from bar charts, etc).  Even those without
     # labels explicitly set have a label of "_nolegend_".  Everything else should be
@@ -178,7 +179,7 @@ def _draw_rectangle(data: dict, obj: Rectangle, draw_options: list) -> List[str]
     return content
 
 
-def _draw_ellipse(data: dict, obj: Ellipse, draw_options: list) -> List[str]:
+def _draw_ellipse(data: dict, obj: Ellipse, draw_options: list) -> list[str]:
     """Return the PGFPlots code for ellipses."""
     if isinstance(obj, Circle):
         # circle specialization
@@ -199,7 +200,7 @@ def _draw_ellipse(data: dict, obj: Ellipse, draw_options: list) -> List[str]:
     return content
 
 
-def _draw_circle(data: dict, obj: Circle, draw_options: list) -> List[str]:
+def _draw_circle(data: dict, obj: Circle, draw_options: list) -> list[str]:
     """Return the PGFPlots code for circles."""
     x, y = obj.center
     ff = data["float format"]
@@ -210,11 +211,11 @@ def _draw_circle(data: dict, obj: Circle, draw_options: list) -> List[str]:
     ]
 
 
-def _draw_fancy_arrow(data: dict, obj: FancyArrowPatch, draw_options: list) -> List[str]:
+def _draw_fancy_arrow(data: dict, obj: FancyArrowPatch, draw_options: list) -> list[str]:
     style = _get_arrow_style(data, obj)
     ff = data["float format"]
-    if obj._posA_posB is not None:  # noqa: SLF001  (no known method to obtain posA and posB)
-        pos_a, pos_b = obj._posA_posB  # noqa: SLF001
+    if obj._posA_posB is not None:  # type: ignore[attr-defined]  # noqa: SLF001  (no known method to obtain posA and posB)
+        pos_a, pos_b = obj._posA_posB  # type: ignore[attr-defined]  # noqa: SLF001
         do = ",".join(style)
         str_path = (
             f"\\draw[{do}] (axis cs:{pos_a[0]:{ff}},{pos_a[1]:{ff}}) -- "
@@ -223,7 +224,7 @@ def _draw_fancy_arrow(data: dict, obj: FancyArrowPatch, draw_options: list) -> L
     else:
         str_path, _ = mypath.draw_path(
             data,
-            obj._path_original,  # noqa: SLF001
+            obj._path_original,  # type: ignore[attr-defined]  # noqa: SLF001
             draw_options=draw_options + style,
         )
     return [str_path, _patch_legend(obj, draw_options, "line legend")]

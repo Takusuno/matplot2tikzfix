@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 
+from .helpers import assert_equality
+
 mpl.use("Agg")
 
 
@@ -19,10 +21,4 @@ def plot() -> Figure:
 
 
 def test() -> None:
-    from .helpers import assert_equality
-
-    # test relative data path
-    assert_equality(
-        plot,
-        __file__[:-3] + "_reference.tex",
-    )
+    assert_equality(plot, __file__[:-3] + "_reference.tex")

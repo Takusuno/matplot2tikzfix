@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import datetime
+from collections.abc import Iterable, Sized
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sized, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from matplotlib.dates import num2date
@@ -22,31 +23,31 @@ if TYPE_CHECKING:
 @dataclass
 class MarkerData:
     marker: str | None
-    mark_options: List
+    mark_options: list
     fc: Optional[
         str
-        | Tuple[float, float, float]
-        | Tuple[float, float, float, float]
-        | Tuple[str | Tuple[float, float, float], float]
-        | Tuple[Tuple[float, float, float, float], float]
+        | tuple[float, float, float]
+        | tuple[float, float, float, float]
+        | tuple[str | tuple[float, float, float], float]
+        | tuple[tuple[float, float, float, float], float]
     ] = None  # facecolor
     ec: Optional[
         str
-        | Tuple[float, float, float]
-        | Tuple[float, float, float, float]
-        | Tuple[str | Tuple[float, float, float], float]
-        | Tuple[Tuple[float, float, float, float], float]
+        | tuple[float, float, float]
+        | tuple[float, float, float, float]
+        | tuple[str | tuple[float, float, float], float]
+        | tuple[tuple[float, float, float, float], float]
     ] = None  # edgecolor
     lc: Optional[
         str
-        | Tuple[float, float, float]
-        | Tuple[float, float, float, float]
-        | Tuple[str | Tuple[float, float, float], float]
-        | Tuple[Tuple[float, float, float, float], float]
+        | tuple[float, float, float]
+        | tuple[float, float, float, float]
+        | tuple[str | tuple[float, float, float], float]
+        | tuple[tuple[float, float, float, float], float]
     ] = None  # linecolor
 
 
-def draw_line2d(data: Dict, obj: Line2D) -> List[str]:
+def draw_line2d(data: dict, obj: Line2D) -> list[str]:
     r"""Returns the PGFPlots code for an Line2D environment.
 
     If line is of length 0, do nothing.  Otherwise, an empty \addplot table will be
@@ -85,7 +86,7 @@ def draw_line2d(data: Dict, obj: Line2D) -> List[str]:
     return content
 
 
-def _get_line2d_options(data: Dict, obj: Line2D) -> List[str]:
+def _get_line2d_options(data: dict, obj: Line2D) -> list[str]:
     addplot_options = []
 
     line_width = mypath.mpl_linewidth2pgfp_linewidth(data, obj.get_linewidth())
@@ -133,7 +134,7 @@ def _get_line2d_options(data: Dict, obj: Line2D) -> List[str]:
     return addplot_options
 
 
-def _get_linecolor_line2d(data: Dict, obj: Line2D) -> str:
+def _get_linecolor_line2d(data: dict, obj: Line2D) -> str:
     color = obj.get_color()
     return mycol.mpl_color2xcolor(data, color)[0]
 
@@ -152,13 +153,13 @@ def _get_drawstyle_line2d(obj: Line2D) -> str | None:
     raise NotImplementedError(msg)
 
 
-def draw_linecollection(data: Dict, obj: LineCollection) -> List[str]:
+def draw_linecollection(data: dict, obj: LineCollection) -> list[str]:
     """Returns Pgfplots code for a number of patch objects."""
     content = []
 
-    edgecolors = obj.get_edgecolors()
-    linestyles = obj.get_linestyles()
-    linewidths = obj.get_linewidths()
+    edgecolors = obj.get_edgecolors()  # type: ignore[attr-defined]
+    linestyles = obj.get_linestyles()  # type: ignore[attr-defined]
+    linewidths = obj.get_linewidths()  # type: ignore[attr-defined]
     paths = obj.get_paths()
 
     for i, path in enumerate(paths):
@@ -179,7 +180,7 @@ def draw_linecollection(data: Dict, obj: LineCollection) -> List[str]:
     return content
 
 
-def _marker(data: Dict, obj: Line2D, marker_data: MarkerData, addplot_options: List[str]) -> None:
+def _marker(data: dict, obj: Line2D, marker_data: MarkerData, addplot_options: list[str]) -> None:
     if marker_data.marker is None:
         msg = "Marker must be set."
         raise ValueError(msg)
@@ -190,7 +191,7 @@ def _marker(data: Dict, obj: Line2D, marker_data: MarkerData, addplot_options: L
     _marker_options(data, marker_data, addplot_options)
 
 
-def _marker_size(data: Dict, obj: Line2D, addplot_options: List[str]) -> None:
+def _marker_size(data: dict, obj: Line2D, addplot_options: list[str]) -> None:
     mark_size = obj.get_markersize()
     if mark_size:
         ff = data["float format"]
@@ -199,7 +200,7 @@ def _marker_size(data: Dict, obj: Line2D, addplot_options: List[str]) -> None:
         addplot_options.append(f"mark size={pgf_size:{ff}}")
 
 
-def _marker_every(obj: Line2D, addplot_options: List[str]) -> None:
+def _marker_every(obj: Line2D, addplot_options: list[str]) -> None:
     mark_every = obj.get_markevery()
     if mark_every:
         if isinstance(mark_every, (int, float)):
@@ -212,7 +213,7 @@ def _marker_every(obj: Line2D, addplot_options: List[str]) -> None:
             addplot_options.append("mark indices = {" + ", ".join(map(str, pgf_marker)) + "}")
 
 
-def _marker_options(data: Dict, marker_data: MarkerData, addplot_options: List[str]) -> None:
+def _marker_options(data: dict, marker_data: MarkerData, addplot_options: list[str]) -> None:
     mark_options = ["solid"]
     mark_options += marker_data.mark_options
     if marker_data.fc is None or (isinstance(marker_data.fc, str) and marker_data.fc == "none"):
@@ -236,7 +237,7 @@ def _marker_options(data: Dict, marker_data: MarkerData, addplot_options: List[s
     addplot_options.append(f"mark options={{{opts}}}")
 
 
-def _table(data: Dict, obj: Line2D) -> List[str]:
+def _table(data: dict, obj: Line2D) -> list[str]:
     xdata, ydata = _get_xy_data(data, obj)
     ydata_mask = _get_ydata_mask(obj)
 
@@ -312,7 +313,7 @@ def _table(data: Dict, obj: Line2D) -> List[str]:
     return content
 
 
-def _get_xy_data(data: Dict, obj: Line2D) -> Tuple[np.ndarray, np.ndarray]:
+def _get_xy_data(data: dict, obj: Line2D) -> tuple[np.ndarray, np.ndarray]:
     # get_xydata() always gives float data, no matter what
     xy = obj.get_xydata()
     if isinstance(xy, np.ndarray):

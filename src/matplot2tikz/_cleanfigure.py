@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -35,7 +35,7 @@ def initial_axis_limits() -> np.ndarray:
 class CleanFigureData:
     fig: FigureBase
     axes: Axes | Axes3D
-    target_resolution: int | List[int] | np.ndarray
+    target_resolution: int | list[int] | np.ndarray
     scale_precision: float
     data: np.ndarray = field(default_factory=initial_data)
     visual_data: Optional[np.ndarray] = None
@@ -47,7 +47,7 @@ class CleanFigureData:
 
 def clean_figure(
     fig: Optional[FigureBase] = None,
-    target_resolution: int | List[int] | np.ndarray = 600,
+    target_resolution: int | list[int] | np.ndarray = 600,
     scale_precision: float = 1.0,
 ) -> None:
     r"""Cleans figure as a preparation for tikz export.
@@ -131,7 +131,7 @@ def clean_figure(
 
 
 def _recursive_cleanfigure(
-    obj: Artist, target_resolution: int | List[int] | np.ndarray, scale_precision: float
+    obj: Artist, target_resolution: int | list[int] | np.ndarray, scale_precision: float
 ) -> None:
     """Recursively visit child objects and clean them.
 
@@ -177,7 +177,7 @@ def _clean_containers(axes: Axes) -> None:
 
 def _cleanline(
     linehandle: Line2D | art3d.Line3D,
-    target_resolution: int | List[int] | np.ndarray,
+    target_resolution: int | list[int] | np.ndarray,
     scale_precision: float,
 ) -> None:
     """Clean a 2D or 3D Line plot figure."""
@@ -217,7 +217,7 @@ def _cleanline(
 
 def _clean_collections(
     collection: PathCollection | art3d.Path3DCollection,
-    target_resolution: int | List[int] | np.ndarray,
+    target_resolution: int | list[int] | np.ndarray,
     scale_precision: float,
 ) -> None:
     """Clean a 2D or 3D collection, i.e., scatter plot."""
@@ -256,10 +256,10 @@ def _clean_collections(
 
 def _is_step(linehandle: Line2D | art3d.Line3D) -> bool:
     """Check if plot is a step plot."""
-    return linehandle._drawstyle in STEP_DRAW_STYLES  # noqa: SLF001
+    return linehandle._drawstyle in STEP_DRAW_STYLES  # type: ignore[union-attr]  # noqa: SLF001
 
 
-def _get_visual_limits(axhandle: Axes) -> Tuple[np.ndarray, np.ndarray]:
+def _get_visual_limits(axhandle: Axes) -> tuple[np.ndarray, np.ndarray]:
     """Returns the visual representation of the axis limits (x & y).
 
     Respecting possible log_scaling and projection into the image plane.
@@ -343,7 +343,7 @@ def _update_line_data(linehandle: Line2D | art3d.Line3D, data: np.ndarray) -> No
         linehandle.set_ydata(y_data)
 
 
-def _split_data_2d(data: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def _split_data_2d(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Convert data to 2 different arrays."""
     x_data, y_data = np.split(data, 2, axis=1)
     return x_data.reshape((-1,)), y_data.reshape((-1,))
@@ -354,7 +354,7 @@ def _stack_data_2d(x_data: np.ndarray, y_data: np.ndarray) -> np.ndarray:
     return np.stack([x_data, y_data], axis=1)
 
 
-def _split_data_3d(data: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _split_data_3d(data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Convert data to 3 different arrays."""
     x_data, y_data, z_data = np.split(data, 3, axis=1)
     return x_data.reshape((-1,)), y_data.reshape((-1,)), z_data.reshape((-1,))
@@ -435,7 +435,7 @@ def _get_collection_data(collection: PathCollection | art3d.Path3DCollection) ->
         data = _stack_data_3d(x_data, y_data, z_data)
     else:
         offsets = collection.get_offsets()
-        data = offsets.data
+        data = offsets.data  # type: ignore[union-attr]
     return data
 
 
@@ -594,11 +594,11 @@ def _simplify_line(cfd: CleanFigureData) -> np.ndarray:
     """
     if (
         (
-            not isinstance(cfd.target_resolution, (List, np.ndarray))
+            not isinstance(cfd.target_resolution, (list, np.ndarray))
             and (np.isinf(cfd.target_resolution) or cfd.target_resolution == 0)
         )
         or (
-            isinstance(cfd.target_resolution, (List, np.ndarray))
+            isinstance(cfd.target_resolution, (list, np.ndarray))
             and any(np.logical_or(np.isinf(cfd.target_resolution), cfd.target_resolution == 0))
         )
         or cfd.visual_data is None
@@ -698,8 +698,8 @@ def _pixelate(x: np.ndarray, y: np.ndarray, x_to_pix: float, y_to_pix: float) ->
 
 
 def _get_width_height_in_pixels(
-    fighandle: FigureBase, target_resolution: float | List | np.ndarray
-) -> Tuple[float, float]:
+    fighandle: FigureBase, target_resolution: float | list | np.ndarray
+) -> tuple[float, float]:
     """Target resolution as ppi / dpi. Return width and height in pixels.
 
     :param fighandle: matplotlib figure object handle
@@ -896,7 +896,7 @@ def _segment_visible(
 
 def _corners2d(
     x_lim: np.ndarray, y_lim: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Determine the corners of the axes as defined by xLim and yLim."""
     bottom_left = np.array([x_lim[0], y_lim[0]])
     top_left = np.array([x_lim[0], y_lim[1]])
@@ -906,7 +906,7 @@ def _corners2d(
 
 
 def _corners3d(
-    x_lim: List | np.ndarray, y_lim: List | np.ndarray, z_lim: List | np.ndarray
+    x_lim: list | np.ndarray, y_lim: list | np.ndarray, z_lim: list | np.ndarray
 ) -> np.ndarray:
     """Determine the corners of the 3D axes as defined by xLim, yLim and zLim."""
     # Lower square of the cube

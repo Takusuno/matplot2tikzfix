@@ -6,7 +6,7 @@ import sys
 import tempfile
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, TypedDict
+from typing import TYPE_CHECKING, Optional, TypedDict
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -52,10 +52,10 @@ class TikzArgs(TypedDict):
     strict: NotRequired[bool]
     wrap: NotRequired[bool]
     add_axis_environment: NotRequired[bool]
-    extra_axis_parameters: NotRequired[List | Set | None]
+    extra_axis_parameters: NotRequired[list | set | None]
     extra_groupstyle_parameters: NotRequired[dict]
-    extra_tikzpicture_parameters: NotRequired[list | Set | None]
-    extra_lines_start: NotRequired[List | Set | None]
+    extra_tikzpicture_parameters: NotRequired[list | set | None]
+    extra_lines_start: NotRequired[list | set | None]
     dpi: NotRequired[int | None]
     show_info: NotRequired[bool]
     include_disclaimer: NotRequired[bool]
@@ -78,10 +78,10 @@ def get_tikz_code(  # noqa: PLR0913
     strict: bool = False,  # noqa: FBT001, FBT002
     wrap: bool = True,  # noqa: FBT001, FBT002
     add_axis_environment: bool = True,  # noqa: FBT001, FBT002
-    extra_axis_parameters: List | Set | None = None,
+    extra_axis_parameters: list | set | None = None,
     extra_groupstyle_parameters: Optional[dict] = None,
-    extra_tikzpicture_parameters: List | Set | None = None,
-    extra_lines_start: List | Set | None = None,
+    extra_tikzpicture_parameters: list | set | None = None,
+    extra_lines_start: list | set | None = None,
     dpi: int | None = None,
     show_info: bool = False,  # noqa: FBT001, FBT002
     include_disclaimer: bool = True,  # noqa: FBT001, FBT002
@@ -358,7 +358,7 @@ class _ContentManager:
     """
 
     def __init__(self) -> None:
-        self._content: Dict[float, List[str]] = {}
+        self._content: dict[float, list[str]] = {}
 
     def extend(self, content: list, zorder: float) -> None:
         """Extends with a list and a z-order."""
@@ -374,7 +374,7 @@ class _ContentManager:
         return content_out
 
 
-def _draw_collection(data: Dict, child: Collection) -> List[str]:
+def _draw_collection(data: dict, child: Collection) -> list[str]:
     if isinstance(child, PathCollection):
         return _path.draw_pathcollection(data, child)
     if isinstance(child, LineCollection):
@@ -384,7 +384,7 @@ def _draw_collection(data: Dict, child: Collection) -> List[str]:
     return _patch.draw_patchcollection(data, child)
 
 
-def _recurse(data: Dict, obj: Artist) -> Tuple[Dict, List]:
+def _recurse(data: dict, obj: Artist) -> tuple[dict, list]:
     """Iterates over all children of the current object and gathers the contents.
 
     Data and content are returned.
@@ -411,7 +411,7 @@ def _recurse(data: Dict, obj: Artist) -> Tuple[Dict, List]:
                 (Text, _text.draw_text),
             ):
                 if isinstance(child, child_type):
-                    content.extend(process_func(data, child), child.get_zorder())
+                    content.extend(process_func(data, child), child.get_zorder())  # type: ignore[arg-type]
                     break
             else:
                 warnings.warn(

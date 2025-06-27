@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
@@ -8,7 +6,7 @@ from matplotlib.image import AxesImage
 from . import _files
 
 
-def draw_image(data: Dict, obj: AxesImage) -> List[str]:
+def draw_image(data: dict, obj: AxesImage) -> list[str]:
     """Returns the PGFPlots code for an image environment."""
     content = []
 
