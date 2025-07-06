@@ -1,14 +1,10 @@
-from typing import TYPE_CHECKING
-
 from matplotlib.backends.backend_agg import RendererAgg
 from matplotlib.collections import QuadMesh
 from matplotlib.figure import Figure
 from PIL import Image
 
 from . import _files
-
-if TYPE_CHECKING:
-    from ._save import TikzData
+from ._save import TikzData
 
 
 def draw_quadmesh(data: TikzData, obj: QuadMesh) -> list:

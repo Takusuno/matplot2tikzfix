@@ -1,14 +1,10 @@
-from typing import TYPE_CHECKING
-
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
 from matplotlib.image import AxesImage
 
 from . import _files
-
-if TYPE_CHECKING:
-    from ._save import TikzData
+from ._save import TikzData
 
 
 def draw_image(data: TikzData, obj: AxesImage) -> list[str]:

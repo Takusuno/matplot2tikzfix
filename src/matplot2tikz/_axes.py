@@ -15,6 +15,7 @@ from ._util import _common_texification
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.colorbar import Colorbar
+
     from ._save import TikzData
 
 

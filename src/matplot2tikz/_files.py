@@ -1,9 +1,6 @@
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-
-if TYPE_CHECKING:
-    from ._save import TikzData
+from ._save import TikzData
 
 
 def _gen_filepath(data: TikzData, nb_key: str, ext: str) -> tuple[Path, Path]:

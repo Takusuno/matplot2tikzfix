@@ -14,12 +14,10 @@ Requires \usetikzlibrary{patterns}
 # hatch_density is mentioned in mpl API Changes in 2.0.1
 
 import warnings
-from typing import TYPE_CHECKING
 
 import numpy as np
 
-if TYPE_CHECKING:
-    from ._save import TikzData
+from ._save import TikzData
 
 BAD_MP_HATCH = ["o", "O"]  # Bad hatch/pattern correspondence
 UNUSED_PGF_PATTERN = ["dots"]

@@ -14,6 +14,7 @@ from matplotlib.path import Path
 if TYPE_CHECKING:
     from matplotlib.collections import Collection, PathCollection
     from matplotlib.patches import Patch
+
     from ._save import TikzData
 
 from . import _color, _files

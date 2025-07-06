@@ -18,6 +18,7 @@ from ._util import get_legend_text, has_legend, transform_to_data_coordinates
 if TYPE_CHECKING:
     from matplotlib.collections import LineCollection
     from matplotlib.lines import Line2D
+
     from ._save import TikzData
 
 
@@ -181,7 +182,9 @@ def draw_linecollection(data: TikzData, obj: LineCollection) -> list[str]:
     return content
 
 
-def _marker(data: TikzData, obj: Line2D, marker_data: MarkerData, addplot_options: list[str]) -> None:
+def _marker(
+    data: TikzData, obj: Line2D, marker_data: MarkerData, addplot_options: list[str]
+) -> None:
     if marker_data.marker is None:
         msg = "Marker must be set."
         raise ValueError(msg)

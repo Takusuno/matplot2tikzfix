@@ -1,5 +1,4 @@
 import warnings
-from typing import TYPE_CHECKING
 
 import numpy as np
 from matplotlib.backends import backend_agg
@@ -7,9 +6,7 @@ from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 
 from . import _color as mycol
-
-if TYPE_CHECKING:
-    from ._save import TikzData
+from ._save import TikzData
 
 
 def draw_legend(data: TikzData, obj: Legend) -> None:

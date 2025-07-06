@@ -203,35 +203,29 @@ def get_tikz_code(  # noqa: PLR0913
         raise ValueError(msg)
 
     data = TikzData()
-    data.axis_width = axis_width
-    data.axis_height = axis_height
-    if tex_relative_path_to_data is not None:
-        data.rel_data_path = Path(tex_relative_path_to_data)
+
     data.externalize_tables = externalize_tables
     data.override_externals = override_externals
-    data.externals_search_path = externals_search_path
-    data.strict = strict
-    data.font_size = textsize
+    data.include_disclaimer = include_disclaimer
+    data.wrap = wrap
     data.add_axis_environment = add_axis_environment
     data.show_info = show_info
+    data.strict = strict
+    data.standalone = standalone
+
+    data.axis_width, data.axis_height = axis_width, axis_height
+    if tex_relative_path_to_data is not None:
+        data.rel_data_path = Path(tex_relative_path_to_data)
+    data.externals_search_path = externals_search_path
+    data.font_size = textsize
     if extra_groupstyle_parameters is not None:
         data.extra_groupstyle_options = set(extra_groupstyle_parameters)
     data.float_format = float_format
     data.table_row_sep = table_row_sep
-    data.include_disclaimer = include_disclaimer
-    data.wrap = wrap
     data.extra_tikzpicture_parameters = set(extra_tikzpicture_parameters)
     data.extra_lines_start = extra_lines_start
-    data.standalone = standalone
 
-    if filepath:
-        filepath = Path(filepath)
-        data.output_dir = filepath.parent
-        data.base_name = filepath.stem
-    else:
-        directory = tempfile.mkdtemp()
-        data.output_dir = Path(directory)
-        data.base_name = "tmp"
+    _set_filepath(data, filepath)
 
     if extra_axis_parameters:
         data.extra_axis_parameters = set(extra_axis_parameters).copy()
@@ -263,6 +257,17 @@ def get_tikz_code(  # noqa: PLR0913
         content.extend(data.flavor.end("groupplot") + "\n\n")
 
     return _generate_code(data, content)
+
+
+def _set_filepath(data: TikzData, filepath: str | Path | None) -> None:
+    if filepath:
+        filepath = Path(filepath)
+        data.output_dir = filepath.parent
+        data.base_name = filepath.stem
+    else:
+        directory = tempfile.mkdtemp()
+        data.output_dir = Path(directory)
+        data.base_name = "tmp"
 
 
 def save(

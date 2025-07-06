@@ -13,6 +13,7 @@ from ._text import _get_arrow_style
 
 if TYPE_CHECKING:
     from matplotlib.collections import Collection
+
     from ._save import TikzData
 
 
