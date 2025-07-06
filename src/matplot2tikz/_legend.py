@@ -6,7 +6,7 @@ from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 
 from . import _color as mycol
-from ._save import TikzData
+from ._tikzdata import TikzData
 
 
 def draw_legend(data: TikzData, obj: Legend) -> None:
@@ -41,16 +41,16 @@ def draw_legend(data: TikzData, obj: Legend) -> None:
             alignment = None
             break
 
-    if alignment and data.current_axes is not None:
-        data.current_axes.axis_options.append(f"legend cell align={{{alignment}}}")
+    if alignment:
+        data.current_axis_options.add(f"legend cell align={{{alignment}}}")
 
     try:
         ncols = obj._ncols  # type: ignore[attr-defined]  # noqa: SLF001
     except AttributeError:
         # backwards-compatibility with matplotlib < 3.6.0
         ncols = obj._ncol  # type: ignore[attr-defined]  # noqa: SLF001
-    if ncols != 1 and data.current_axes is not None:
-        data.current_axes.axis_options.append(f"legend columns={ncols}")
+    if ncols != 1:
+        data.current_axis_options.add(f"legend columns={ncols}")
 
     # Write styles to data
     if legend_style:
@@ -62,7 +62,7 @@ def draw_legend(data: TikzData, obj: Legend) -> None:
         )
         string = j1.join(legend_style)
         style = f"legend style={{{j0}{string}{j2}}}"
-        data.current_axes.axis_options.append(style)
+        data.current_axis_options.add(style)
 
 
 def _legend_position_anchor(data: TikzData, obj: Legend, legend_style: list[str]) -> None:

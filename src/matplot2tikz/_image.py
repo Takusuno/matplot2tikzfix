@@ -4,7 +4,7 @@ import PIL
 from matplotlib.image import AxesImage
 
 from . import _files
-from ._save import TikzData
+from ._tikzdata import TikzData
 
 
 def draw_image(data: TikzData, obj: AxesImage) -> list[str]:

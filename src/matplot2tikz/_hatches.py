@@ -17,7 +17,7 @@ import warnings
 
 import numpy as np
 
-from ._save import TikzData
+from ._tikzdata import TikzData
 
 BAD_MP_HATCH = ["o", "O"]  # Bad hatch/pattern correspondence
 UNUSED_PGF_PATTERN = ["dots"]

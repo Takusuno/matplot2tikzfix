@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ._save import TikzData
+from ._tikzdata import TikzData
 
 
 def _gen_filepath(data: TikzData, nb_key: str, ext: str) -> tuple[Path, Path]:

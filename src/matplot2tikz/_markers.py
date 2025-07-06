@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._save import TikzData
+    from ._tikzdata import TikzData
 
 # for matplotlib markers, see https://matplotlib.org/api/markers_api.html
 _MP_MARKER2PGF_MARKER = {

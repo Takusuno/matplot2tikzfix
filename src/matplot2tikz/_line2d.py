@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from matplotlib.collections import LineCollection
     from matplotlib.lines import Line2D
 
-    from ._save import TikzData
+    from ._tikzdata import TikzData
 
 
 @dataclass
@@ -250,23 +250,26 @@ def _table(data: TikzData, obj: Line2D) -> list[str]:
         xformat = ""
         col_sep = ","
         opts = ["header=false", "col sep=comma"]
-        data.current_axes.axis_options.append("date coordinates in=x")
+        data.current_axis_options.add("date coordinates in=x")
         # Replace float xmin/xmax by datetime
         # <https://github.com/matplotlib/matplotlib/issues/13727>.
-        data.current_axes.axis_options = [
-            option for option in data.current_axes.axis_options if not option.startswith("xmin")
-        ]
+        data.current_axis_options = {
+            option for option in data.current_axis_options if not option.startswith("xmin")
+        }
+        if data.current_mpl_axes is None:
+            msg = "Matplotlib axes should be set to get the x-axis limits."
+            raise ValueError(msg)
         xmin, xmax = data.current_mpl_axes.get_xlim()
         mindate = num2date(xmin).strftime("%Y-%m-%d %H:%M")
         maxdate = num2date(xmax).strftime("%Y-%m-%d %H:%M")
-        data.current_axes.axis_options.append(f"xmin={mindate}, xmax={maxdate}")
+        data.current_axis_options.add(f"xmin={mindate}, xmax={maxdate}")
 
         # Also remove xtick stuff, as it will result in compilation error in LaTeX
-        data.current_axes.axis_options = [
+        data.current_axis_options = {
             option
-            for option in data.current_axes.axis_options
+            for option in data.current_axis_options
             if not option.startswith(("xtick=", "xticklabels="))
-        ]
+        }
     else:
         opts = []
         xformat = data.float_format
@@ -281,10 +284,10 @@ def _table(data: TikzData, obj: Line2D) -> list[str]:
     # matplotlib jumps at masked or nan values, while PGFPlots by default
     # interpolates. Hence, if we have a masked plot, make sure that PGFPlots jumps
     # as well.
-    if (np.any(ydata_mask) or ~np.all(np.isfinite(ydata))) and "unbounded coords=jump" not in data[
-        "current axes"
-    ].axis_options:
-        data.current_axes.axis_options.append("unbounded coords=jump")
+    if (
+        np.any(ydata_mask) or ~np.all(np.isfinite(ydata))
+    ) and "unbounded coords=jump" not in data.current_axis_options:
+        data.current_axis_options.add("unbounded coords=jump")
 
     ff = data.float_format
     plot_table = [f"{x:{xformat}}{col_sep}{y:{ff}}{table_row_sep}" for x, y in zip(xdata, ydata)]
@@ -337,15 +340,17 @@ def _get_xy_data(data: TikzData, obj: Line2D) -> tuple[np.ndarray, np.ndarray]:
     else:
         if isinstance(xdata_iterable[0], str):
             # Remove old xtick,xticklabels (if any).
-            data.current_axes.axis_options = [
+            data.current_axis_options = {
                 option
-                for option in data.current_axes.axis_options
+                for option in data.current_axis_options
                 if not option.startswith(("xtick=", "xticklabels="))
-            ]
-            data.current_axes.axis_options += [
-                "xtick={{{}}}".format(",".join([f"{x:{ff}}" for x in xdata])),
-                "xticklabels={{{}}}".format(",".join([str(x) for x in xdata_iterable])),
-            ]
+            }
+            data.current_axis_options.update(
+                [
+                    "xtick={{{}}}".format(",".join([f"{x:{ff}}" for x in xdata])),
+                    "xticklabels={{{}}}".format(",".join([str(x) for x in xdata_iterable])),
+                ]
+            )
         xdata, ydata = transform_to_data_coordinates(obj, xdata, ydata)
 
     # matplotlib allows plotting of data containing `astropy.units`, but they will break

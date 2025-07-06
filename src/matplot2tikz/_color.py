@@ -7,7 +7,7 @@ import webcolors
 from matplotlib.colors import ColorConverter
 
 if TYPE_CHECKING:
-    from ._save import TikzData
+    from ._tikzdata import TikzData
 
 # RGB values (as taken from xcolor.dtx):
 builtin_colors = {

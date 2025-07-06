@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from matplotlib.collections import Collection, PathCollection
     from matplotlib.patches import Patch
 
-    from ._save import TikzData
+    from ._tikzdata import TikzData
 
 from . import _color, _files
 from ._axes import _mpl_cmap2pgf_cmap
@@ -71,11 +71,8 @@ def draw_path(
     ):
         return "", False
 
-    try:
-        converter = data.current_mpl_axes.xaxis.get_converter()
-    except AttributeError:
-        converter = data.current_mpl_axes.xaxis.converter
-    x_is_date = isinstance(converter, DateConverter)
+    x_is_date = _check_x_is_date(data)
+
     nodes = []
     ff = data.float_format
     xformat = "" if x_is_date else ff
@@ -150,6 +147,19 @@ def draw_path(
     return path_command, is_area
 
 
+def _check_x_is_date(data: TikzData) -> bool:
+    if data.current_mpl_axes is None:
+        # This shouldn't be the case
+        msg = "No axes defined."
+        raise ValueError(msg)
+
+    try:
+        converter = data.current_mpl_axes.xaxis.get_converter()  # type: ignore[attr-defined]
+    except AttributeError:
+        converter = data.current_mpl_axes.xaxis.converter
+    return isinstance(converter, DateConverter)
+
+
 def draw_pathcollection(data: TikzData, obj: PathCollection) -> list[str]:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
@@ -163,7 +173,7 @@ def draw_pathcollection(data: TikzData, obj: PathCollection) -> list[str]:
         obj=obj,
         dd_strings=np.array(
             [
-                [f"{val:{data['float format']}}" for val in row]  # type: ignore[str-bytes-safe]
+                [f"{val:{data.float_format}}" for val in row]  # type: ignore[str-bytes-safe]
                 for row in dd
                 if isinstance(row, Iterable)
             ]
@@ -262,7 +272,7 @@ def _draw_pathcollection_get_edgecolors(
             pcd.labels.append("draw")
 
             ec_strings = [
-                ",".join(f"{item:{data['float format']}}" for item in row)
+                ",".join(f"{item:{data.float_format}}" for item in row)
                 for row in edgecolors[:, :3] * 255
             ]
             pcd.dd_strings = np.column_stack([pcd.dd_strings, ec_strings])
@@ -283,7 +293,7 @@ def _draw_pathcollection_get_facecolors(
         elif len(facecolors) > 1:
             pcd.labels.append("fill")
             fc_strings = [
-                ",".join(f"{item:{data['float format']}}" for item in row)
+                ",".join(f"{item:{data.float_format}}" for item in row)
                 for row in facecolors[:, :3] * 255
             ]
             pcd.dd_strings = np.column_stack([pcd.dd_strings, fc_strings])

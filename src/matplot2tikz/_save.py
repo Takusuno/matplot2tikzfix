@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import enum
 import logging
 import sys
 import tempfile
 import warnings
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
@@ -30,6 +28,7 @@ from . import _axes, _legend, _line2d, _patch, _path, _text
 from . import _image as img
 from . import _quadmesh as qmsh
 from .__about__ import __version__
+from ._tikzdata import Flavors, TikzData
 
 # Set logger to be used to print some info
 LOGGER = logging.getLogger(__name__)
@@ -195,14 +194,14 @@ def get_tikz_code(  # noqa: PLR0913
        Invisible nodes at the respective location will be created which can be
        referenced from outside the axis environment.
     """
-    # not as default value because gcf() would be evaluated at import time
-    if figure == "gcf":
-        figure = plt.gcf()
-    elif not isinstance(figure, Figure):
-        msg = "Argument 'figure' must be a Figure or string 'gcf'."
-        raise ValueError(msg)
-
-    data = TikzData()
+    try:
+        flavor_object = Flavors[flavor.lower()]
+    except KeyError:
+        msg = (
+            f"Unsupported TeX flavor {flavor!r}. Please choose from {', '.join(map(repr, Flavors))}"
+        )
+        raise ValueError(msg) from None
+    data = TikzData(flavor=flavor_object)
 
     data.externalize_tables = externalize_tables
     data.override_externals = override_externals
@@ -222,8 +221,10 @@ def get_tikz_code(  # noqa: PLR0913
         data.extra_groupstyle_options = set(extra_groupstyle_parameters)
     data.float_format = float_format
     data.table_row_sep = table_row_sep
-    data.extra_tikzpicture_parameters = set(extra_tikzpicture_parameters)
-    data.extra_lines_start = extra_lines_start
+    if extra_tikzpicture_parameters:
+        data.extra_tikzpicture_parameters = set(extra_tikzpicture_parameters)
+    if extra_lines_start:
+        data.extra_lines_start = extra_lines_start
 
     _set_filepath(data, filepath)
 
@@ -236,20 +237,12 @@ def get_tikz_code(  # noqa: PLR0913
         savefig_dpi = mpl.rcParams["savefig.dpi"]
         data.dpi = savefig_dpi if isinstance(savefig_dpi, int) else mpl.rcParams["figure.dpi"]
 
-    try:
-        data.flavor = Flavors[flavor.lower()]
-    except KeyError:
-        msg = (
-            f"Unsupported TeX flavor {flavor!r}. Please choose from {', '.join(map(repr, Flavors))}"
-        )
-        raise ValueError(msg) from None
-
     # print message about necessary pgfplot libs to command line
     if show_info:
         _print_pgfplot_libs_message(data)
 
     # gather the file content
-    content = _recurse(data, figure)
+    content = _recurse(data, _get_figure(figure))
 
     # Check if there is still an open groupplot environment. This occurs if not
     # all of the group plot slots are used.
@@ -257,6 +250,15 @@ def get_tikz_code(  # noqa: PLR0913
         content.extend(data.flavor.end("groupplot") + "\n\n")
 
     return _generate_code(data, content)
+
+
+def _get_figure(figure: str | Figure) -> Figure:
+    if figure == "gcf":
+        return plt.gcf()
+    if isinstance(figure, Figure):
+        return figure
+    msg = "Argument 'figure' must be a Figure or string 'gcf'."
+    raise ValueError(msg)
 
 
 def _set_filepath(data: TikzData, filepath: str | Path | None) -> None:
@@ -424,10 +426,9 @@ def _process_axes(data: TikzData, obj: Axes, content: _ContentManager) -> None:
 
     # add extra axis options
     if data.extra_axis_parameters:
-        ax.axis_options.extend(data.extra_axis_parameters)
+        data.current_axis_options.update(data.extra_axis_parameters)
 
     data.current_mpl_axes = obj
-    data.current_axes = ax
 
     # Run through the child objects, gather the content.
     children_content = _recurse(data, obj)
@@ -441,99 +442,3 @@ def _process_axes(data: TikzData, obj: Axes, content: _ContentManager) -> None:
         if data.show_info:
             LOGGER.info("These would have been the properties of the environment:")
             LOGGER.info("".join(ax.get_begin_code()[1:]))
-
-
-class Flavors(enum.Enum):
-    latex = (
-        r"\begin{{{}}}",
-        r"\end{{{}}}",
-        "document",
-        """\
-\\documentclass{{standalone}}
-\\usepackage[utf8]{{inputenc}}
-\\usepackage{{pgfplots}}
-\\DeclareUnicodeCharacter{{2212}}{{-}}
-\\usepgfplotslibrary{{{pgfplotslibs}}}
-\\usetikzlibrary{{{tikzlibs}}}
-\\pgfplotsset{{compat=newest}}
-""",
-    )
-    context = (
-        r"\start{}",
-        r"\stop{}",
-        "text",
-        """\
-\\setupcolors[state=start]
-\\usemodule[tikz]
-\\usemodule[pgfplots]
-\\usepgfplotslibrary[{pgfplotslibs}]
-\\usetikzlibrary[{tikzlibs}]
-\\pgfplotsset{{compat=newest}}
-% groupplot doesn't define ConTeXt stuff
-\\unexpanded\\def\\startgroupplot{{\\groupplot}}
-\\unexpanded\\def\\stopgroupplot{{\\endgroupplot}}
-""",
-    )
-
-    def start(self, what: str) -> str:
-        return self.value[0].format(what)
-
-    def end(self, what: str) -> str:
-        return self.value[1].format(what)
-
-    def preamble(self, data: TikzData | None = None) -> str:
-        if data is None:
-            pgfplotslibs = "groupplots,dateplot"
-            tikzlibs = "patterns,shapes.arrows"
-        else:
-            pgfplotslibs = ",".join(data.pgfplots_libs)
-            tikzlibs = ",".join(data.tikz_libs)
-        return self.value[3].format(pgfplotslibs=pgfplotslibs, tikzlibs=tikzlibs)
-
-    def standalone(self, code: str) -> str:
-        docenv = self.value[2]
-        return f"{self.preamble()}{self.start(docenv)}\n{code}\n{self.end(docenv)}"
-
-
-@dataclass
-class TikzData:
-    externalize_tables: bool = False
-    override_externals: bool = False
-    include_disclaimer: bool = True
-    wrap: bool = True
-    add_axis_environment: bool = True
-    show_info: bool = False
-    strict: bool = False
-    standalone: bool = False
-    is_in_groupplot_env: bool = False
-
-    dpi: int = 100
-    font_size: float = 10.0
-
-    axis_width: str | None = None
-    axis_height: str | None = None
-    externals_search_path: str | None = None
-    float_format: str = ".15g"
-    table_row_sep: str = "\n"
-    base_name: str = ""
-    current_axis_title: str = ""
-
-    rel_data_path: Path | None = None
-    output_dir: Path = Path()
-
-    tikz_libs: set[str] = field(default_factory=set)
-    pgfplots_libs: set[str] = field(default_factory=set)
-    rectangle_legends: set[str] = field(default_factory=set)
-    extra_axis_parameters: set[str] = field(default_factory=set)
-    extra_groupstyle_options: set[str] = field(default_factory=set)
-    extra_tikzpicture_parameters: set[str] = field(default_factory=set)
-
-    legend_colors: list[str] = field(default_factory=list)
-    extra_lines_start: list[str] = field(default_factory=list)
-
-    custom_colors: dict = field(default_factory=dict)
-    nb_keys: dict = field(default_factory=dict)
-
-    flavor: Flavors = Flavors["latex"]
-    current_mpl_axes: Axes | None = None
-    current_axes: _axes.MyAxes | None = None

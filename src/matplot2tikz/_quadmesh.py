@@ -4,7 +4,7 @@ from matplotlib.figure import Figure
 from PIL import Image
 
 from . import _files
-from ._save import TikzData
+from ._tikzdata import TikzData
 
 
 def draw_quadmesh(data: TikzData, obj: QuadMesh) -> list:

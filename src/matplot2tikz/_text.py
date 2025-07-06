@@ -12,7 +12,7 @@ from matplotlib.text import Annotation, Text
 from . import _color
 
 if TYPE_CHECKING:
-    from ._save import TikzData
+    from ._tikzdata import TikzData
 
 
 def draw_text(data: TikzData, obj: Text) -> list[str]:
@@ -96,15 +96,15 @@ def _get_tikz_pos(data: TikzData, obj: Text, content: list[str]) -> str:
         return pos
     if obj.axes:
         # If the coordinates are relative to an axis, use `axis cs`.
-        return f"(axis cs:{pos[0]:{data['float format']}},{pos[1]:{data['float format']}})"
+        return f"(axis cs:{pos[0]:{data.float_format}},{pos[1]:{data.float_format}})"
     # relative to the entire figure, it's a getting a littler harder. See
     # <http://tex.stackexchange.com/a/274902/13262> for a solution to the
     # problem:
     return (
-        f"({{$(current bounding box.south west)!{pos[0]:{data['float format']}}!"
+        f"({{$(current bounding box.south west)!{pos[0]:{data.float_format}}!"
         "(current bounding box.south east)$}"
         "|-"
-        f"{{$(current bounding box.south west)!{pos[1]:{data['float format']}}!"
+        f"{{$(current bounding box.south west)!{pos[1]:{data.float_format}}!"
         "(current bounding box.north west)$})"
     )
 

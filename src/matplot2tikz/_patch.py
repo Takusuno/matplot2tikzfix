@@ -14,7 +14,7 @@ from ._text import _get_arrow_style
 if TYPE_CHECKING:
     from matplotlib.collections import Collection
 
-    from ._save import TikzData
+    from ._tikzdata import TikzData
 
 
 def draw_patch(data: TikzData, obj: Patch) -> list[str]:
@@ -160,7 +160,7 @@ def _draw_rectangle(data: TikzData, obj: Rectangle, draw_options: list) -> list[
     # If we are dealing with a bar plot, left_lower_y will be 0. This is a problem if the y-scale is
     # logarithmic (see https://github.com/ErwindeGelder/matplot2tikz/issues/25)
     # To resolve this, the lower y limit will be used as lower_left_y
-    if data.current_mpl_axes.get_yscale() == "log":
+    if data.current_mpl_axes is not None and data.current_mpl_axes.get_yscale() == "log":
         left_lower_y = data.current_mpl_axes.get_ylim()[0]
 
     ff = data.float_format
@@ -172,8 +172,8 @@ def _draw_rectangle(data: TikzData, obj: Rectangle, draw_options: list) -> list[
         f"rectangle (axis cs:{right_upper_x:{ff}},{right_upper_y:{ff}});\n"
     ]
 
-    if label != "_nolegend_" and label not in data.rectangle_legends:
-        data.rectangle_legends.add(label)
+    if label != "_nolegend_" and str(label) not in data.rectangle_legends:
+        data.rectangle_legends.add(str(label))
         draw_opts = ",".join(draw_options)
         content.append(f"\\addlegendimage{{ybar,ybar legend,{draw_opts}}}\n")
         content.append(f"\\addlegendentry{{{label}}}\n\n")
