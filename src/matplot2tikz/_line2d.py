@@ -18,6 +18,7 @@ from ._util import get_legend_text, has_legend, transform_to_data_coordinates
 if TYPE_CHECKING:
     from matplotlib.collections import LineCollection
     from matplotlib.lines import Line2D
+    from ._save import TikzData
 
 
 @dataclass
@@ -47,7 +48,7 @@ class MarkerData:
     ] = None  # linecolor
 
 
-def draw_line2d(data: dict, obj: Line2D) -> list[str]:
+def draw_line2d(data: TikzData, obj: Line2D) -> list[str]:
     r"""Returns the PGFPlots code for an Line2D environment.
 
     If line is of length 0, do nothing.  Otherwise, an empty \addplot table will be
@@ -86,7 +87,7 @@ def draw_line2d(data: dict, obj: Line2D) -> list[str]:
     return content
 
 
-def _get_line2d_options(data: dict, obj: Line2D) -> list[str]:
+def _get_line2d_options(data: TikzData, obj: Line2D) -> list[str]:
     addplot_options = []
 
     line_width = mypath.mpl_linewidth2pgfp_linewidth(data, obj.get_linewidth())
@@ -134,7 +135,7 @@ def _get_line2d_options(data: dict, obj: Line2D) -> list[str]:
     return addplot_options
 
 
-def _get_linecolor_line2d(data: dict, obj: Line2D) -> str:
+def _get_linecolor_line2d(data: TikzData, obj: Line2D) -> str:
     color = obj.get_color()
     return mycol.mpl_color2xcolor(data, color)[0]
 
@@ -153,7 +154,7 @@ def _get_drawstyle_line2d(obj: Line2D) -> str | None:
     raise NotImplementedError(msg)
 
 
-def draw_linecollection(data: dict, obj: LineCollection) -> list[str]:
+def draw_linecollection(data: TikzData, obj: LineCollection) -> list[str]:
     """Returns Pgfplots code for a number of patch objects."""
     content = []
 
@@ -180,7 +181,7 @@ def draw_linecollection(data: dict, obj: LineCollection) -> list[str]:
     return content
 
 
-def _marker(data: dict, obj: Line2D, marker_data: MarkerData, addplot_options: list[str]) -> None:
+def _marker(data: TikzData, obj: Line2D, marker_data: MarkerData, addplot_options: list[str]) -> None:
     if marker_data.marker is None:
         msg = "Marker must be set."
         raise ValueError(msg)
@@ -191,10 +192,10 @@ def _marker(data: dict, obj: Line2D, marker_data: MarkerData, addplot_options: l
     _marker_options(data, marker_data, addplot_options)
 
 
-def _marker_size(data: dict, obj: Line2D, addplot_options: list[str]) -> None:
+def _marker_size(data: TikzData, obj: Line2D, addplot_options: list[str]) -> None:
     mark_size = obj.get_markersize()
     if mark_size:
-        ff = data["float format"]
+        ff = data.float_format
         # setting half size because pgfplots counts the radius/half-width
         pgf_size = 0.5 * mark_size
         addplot_options.append(f"mark size={pgf_size:{ff}}")
@@ -213,7 +214,7 @@ def _marker_every(obj: Line2D, addplot_options: list[str]) -> None:
             addplot_options.append("mark indices = {" + ", ".join(map(str, pgf_marker)) + "}")
 
 
-def _marker_options(data: dict, marker_data: MarkerData, addplot_options: list[str]) -> None:
+def _marker_options(data: TikzData, marker_data: MarkerData, addplot_options: list[str]) -> None:
     mark_options = ["solid"]
     mark_options += marker_data.mark_options
     if marker_data.fc is None or (isinstance(marker_data.fc, str) and marker_data.fc == "none"):
@@ -237,7 +238,7 @@ def _marker_options(data: dict, marker_data: MarkerData, addplot_options: list[s
     addplot_options.append(f"mark options={{{opts}}}")
 
 
-def _table(data: dict, obj: Line2D) -> list[str]:
+def _table(data: TikzData, obj: Line2D) -> list[str]:
     xdata, ydata = _get_xy_data(data, obj)
     ydata_mask = _get_ydata_mask(obj)
 
@@ -246,33 +247,33 @@ def _table(data: dict, obj: Line2D) -> list[str]:
         xformat = ""
         col_sep = ","
         opts = ["header=false", "col sep=comma"]
-        data["current axes"].axis_options.append("date coordinates in=x")
+        data.current_axes.axis_options.append("date coordinates in=x")
         # Replace float xmin/xmax by datetime
         # <https://github.com/matplotlib/matplotlib/issues/13727>.
-        data["current axes"].axis_options = [
-            option for option in data["current axes"].axis_options if not option.startswith("xmin")
+        data.current_axes.axis_options = [
+            option for option in data.current_axes.axis_options if not option.startswith("xmin")
         ]
-        xmin, xmax = data["current mpl axes obj"].get_xlim()
+        xmin, xmax = data.current_mpl_axes.get_xlim()
         mindate = num2date(xmin).strftime("%Y-%m-%d %H:%M")
         maxdate = num2date(xmax).strftime("%Y-%m-%d %H:%M")
-        data["current axes"].axis_options.append(f"xmin={mindate}, xmax={maxdate}")
+        data.current_axes.axis_options.append(f"xmin={mindate}, xmax={maxdate}")
 
         # Also remove xtick stuff, as it will result in compilation error in LaTeX
-        data["current axes"].axis_options = [
+        data.current_axes.axis_options = [
             option
-            for option in data["current axes"].axis_options
+            for option in data.current_axes.axis_options
             if not option.startswith(("xtick=", "xticklabels="))
         ]
     else:
         opts = []
-        xformat = data["float format"]
+        xformat = data.float_format
         col_sep = " "
 
-    if data["table_row_sep"] != "\n":
+    if data.table_row_sep != "\n":
         # don't want the \n in the table definition, just in the data (below)
-        opts.append("row sep=" + data["table_row_sep"].strip())
+        opts.append("row sep=" + data.table_row_sep.strip())
 
-    table_row_sep = data["table_row_sep"]
+    table_row_sep = data.table_row_sep
     ydata[ydata_mask] = np.nan
     # matplotlib jumps at masked or nan values, while PGFPlots by default
     # interpolates. Hence, if we have a masked plot, make sure that PGFPlots jumps
@@ -280,22 +281,22 @@ def _table(data: dict, obj: Line2D) -> list[str]:
     if (np.any(ydata_mask) or ~np.all(np.isfinite(ydata))) and "unbounded coords=jump" not in data[
         "current axes"
     ].axis_options:
-        data["current axes"].axis_options.append("unbounded coords=jump")
+        data.current_axes.axis_options.append("unbounded coords=jump")
 
-    ff = data["float format"]
+    ff = data.float_format
     plot_table = [f"{x:{xformat}}{col_sep}{y:{ff}}{table_row_sep}" for x, y in zip(xdata, ydata)]
 
     min_extern_length = 3
 
     content = []
-    if data["externalize tables"] and len(xdata) >= min_extern_length:
+    if data.externalize_tables and len(xdata) >= min_extern_length:
         filepath, rel_filepath = _files.new_filepath(data, "table", ".dat")
         with filepath.open("w") as f:
             # No encoding handling required: plot_table is only ASCII
             f.write("".join(plot_table))
 
-        if data["externals search path"] is not None:
-            esp = data["externals search path"]
+        if data.externals_search_path is not None:
+            esp = data.externals_search_path
             opts.append(f"search path={{{esp}}}")
 
         opts_str = ("[" + ",".join(opts) + "] ") if len(opts) > 0 else ""
@@ -313,7 +314,7 @@ def _table(data: dict, obj: Line2D) -> list[str]:
     return content
 
 
-def _get_xy_data(data: dict, obj: Line2D) -> tuple[np.ndarray, np.ndarray]:
+def _get_xy_data(data: TikzData, obj: Line2D) -> tuple[np.ndarray, np.ndarray]:
     # get_xydata() always gives float data, no matter what
     xy = obj.get_xydata()
     if isinstance(xy, np.ndarray):
@@ -326,19 +327,19 @@ def _get_xy_data(data: dict, obj: Line2D) -> tuple[np.ndarray, np.ndarray]:
     xdata_alt = obj.get_xdata()
     xdata_iterable = list(xdata_alt) if isinstance(xdata_alt, Iterable) else [xdata_alt]
 
-    ff = data["float format"]
+    ff = data.float_format
 
     if isinstance(xdata_iterable[0], datetime.datetime):
         xdata = np.array(xdata_iterable)
     else:
         if isinstance(xdata_iterable[0], str):
             # Remove old xtick,xticklabels (if any).
-            data["current axes"].axis_options = [
+            data.current_axes.axis_options = [
                 option
-                for option in data["current axes"].axis_options
+                for option in data.current_axes.axis_options
                 if not option.startswith(("xtick=", "xticklabels="))
             ]
-            data["current axes"].axis_options += [
+            data.current_axes.axis_options += [
                 "xtick={{{}}}".format(",".join([f"{x:{ff}}" for x in xdata])),
                 "xticklabels={{{}}}".format(",".join([str(x) for x in xdata_iterable])),
             ]

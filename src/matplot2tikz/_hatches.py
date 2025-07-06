@@ -14,8 +14,12 @@ Requires \usetikzlibrary{patterns}
 # hatch_density is mentioned in mpl API Changes in 2.0.1
 
 import warnings
+from typing import TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from ._save import TikzData
 
 BAD_MP_HATCH = ["o", "O"]  # Bad hatch/pattern correspondence
 UNUSED_PGF_PATTERN = ["dots"]
@@ -54,7 +58,7 @@ def __validate_hatch(hatch: str) -> str:
 
 
 def _mpl_hatch2pgfp_pattern(
-    data: dict, hatch: str, color_name: str, color_rgba: np.ndarray
+    data: TikzData, hatch: str, color_name: str, color_rgba: np.ndarray
 ) -> list[str]:
     r"""Translates a hatch from matplotlib to the corresponding pattern in PGFPlots.
 
@@ -72,14 +76,14 @@ def _mpl_hatch2pgfp_pattern(
         warnings.warn(f"matplot2tikz: The hatch {hatch} is ignored.", stacklevel=2)
         return []
 
-    data["tikz libs"].add("patterns")
+    data.tikz_libs.add("patterns")
 
     pattern_options = [f"pattern={pgfplots_pattern}"]
     if color_name != "black":
         # PGFPlots render patterns in 'pattern color' (default: black)
         pattern_options += [f"pattern color={color_name}"]
     if color_rgba[3] != 1:
-        ff = data["float format"]
+        ff = data.float_format
         # PGFPlots render patterns according to opacity fill.
         # This change is within the scope of the postaction
         pattern_options.append(f"fill opacity={color_rgba[3]:{ff}}")

@@ -15,10 +15,11 @@ from ._util import _common_texification
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.colorbar import Colorbar
+    from ._save import TikzData
 
 
 class MyAxes:
-    def __init__(self, data: dict, obj: Axes) -> None:
+    def __init__(self, data: TikzData, obj: Axes) -> None:
         """Returns the PGFPlots code for an axis environment."""
         self.data = data
         self.obj = obj
@@ -63,7 +64,7 @@ class MyAxes:
 
     def _set_plot_title(self) -> None:
         title = self.obj.get_title()
-        self.data["current axis title"] = title
+        self.data.current_axis_title = title
         if title:
             title = _common_texification(title)
             self.axis_options.append(f"title={{{title}}}")
@@ -101,7 +102,7 @@ class MyAxes:
                 self.axis_options.append(f"ylabel style={{rotate={yrotation - 90}}}")
 
     def _set_axis_limits(self) -> tuple[list[float], list[float]]:
-        ff = self.data["float format"]
+        ff = self.data.float_format
         xlim = list(self.obj.get_xlim())
         xlim0, xlim1 = sorted(xlim)
         ylim = list(self.obj.get_ylim())
@@ -149,34 +150,34 @@ class MyAxes:
     def _set_axis_dimensions(
         self, aspect_num: float | None, xlim: list[float], ylim: list[float]
     ) -> None:
-        if self.data["axis width"] and self.data["axis height"]:
+        if self.data.axis_width and self.data.axis_height:
             # width and height overwrite aspect ratio
-            self.axis_options.append("width=" + self.data["axis width"])
-            self.axis_options.append("height=" + self.data["axis height"])
-        elif self.data["axis width"]:
-            # only self.data["axis width"] given. calculate height by the aspect ratio
-            self.axis_options.append("width=" + self.data["axis width"])
+            self.axis_options.append("width=" + self.data.axis_width)
+            self.axis_options.append("height=" + self.data.axis_height)
+        elif self.data.axis_width:
+            # only self.data.axis_width given. calculate height by the aspect ratio
+            self.axis_options.append("width=" + self.data.axis_width)
             if aspect_num:
                 alpha = aspect_num * (ylim[1] - ylim[0]) / (xlim[1] - xlim[0])
                 if alpha == 1.0:
-                    self.data["axis height"] = self.data["axis width"]
+                    self.data.axis_height = self.data.axis_width
                 else:
-                    # Concatenate the literals, as self.data["axis width"] could as well
+                    # Concatenate the literals, as self.data.axis_width could as well
                     # be a LaTeX length variable such as \figurewidth.
-                    self.data["axis height"] = str(alpha) + "*" + self.data["axis width"]
-                self.axis_options.append("height=" + self.data["axis height"])
-        elif self.data["axis height"]:
-            # only self.data["axis height"] given. calculate width by the aspect ratio
-            self.axis_options.append("height=" + self.data["axis height"])
+                    self.data.axis_height = str(alpha) + "*" + self.data.axis_width
+                self.axis_options.append("height=" + self.data.axis_height)
+        elif self.data.axis_height:
+            # only self.data.axis_height given. calculate width by the aspect ratio
+            self.axis_options.append("height=" + self.data.axis_height)
             if aspect_num:
                 alpha = aspect_num * (ylim[1] - ylim[0]) / (xlim[1] - xlim[0])
                 if alpha == 1.0:
-                    self.data["axis width"] = self.data["axis height"]
+                    self.data.axis_width = self.data.axis_height
                 else:
-                    # Concatenate the literals, as self.data["axis height"] could as
+                    # Concatenate the literals, as self.data.axis_height could as
                     # well be a LaTeX length variable such as \figureheight.
-                    self.data["axis width"] = str(1.0 / alpha) + "*" + self.data["axis height"]
-                self.axis_options.append("width=" + self.data["axis width"])
+                    self.data.axis_width = str(1.0 / alpha) + "*" + self.data.axis_height
+                self.axis_options.append("width=" + self.data.axis_width)
 
     def _set_axis_positions(self) -> None:
         xaxis_pos = self.obj.get_xaxis().label_position
@@ -324,7 +325,7 @@ class MyAxes:
         else:
             self.axis_options.append("colormap/" + mycolormap)
 
-        ff = self.data["float format"]
+        ff = self.data.float_format
         self.axis_options.append(f"point meta min={limits[0]:{ff}}")
         self.axis_options.append(f"point meta max={limits[1]:{ff}}")
 
@@ -335,7 +336,7 @@ class MyAxes:
         if self.is_subplot:
             self.content.append("\n\\nextgroupplot")
         else:
-            self.content.append(self.data["flavor"].start("axis"))
+            self.content.append(self.data.flavor.start("axis"))
 
     def get_begin_code(self) -> list[str]:
         if self.axis_options:
@@ -346,10 +347,10 @@ class MyAxes:
 
     def get_end_code(self) -> str:
         if not self.is_subplot:
-            return self.data["flavor"].end("axis") + "\n\n"
+            return self.data.flavor.end("axis") + "\n\n"
         if self.is_subplot and self.nsubplots == self.subplot_index:
-            self.data["is_in_groupplot_env"] = False
-            return self.data["flavor"].end("groupplot") + "\n\n"
+            self.data.is_in_groupplot_env = False
+            return self.data.flavor.end("groupplot") + "\n\n"
 
         return ""
 
@@ -467,15 +468,15 @@ class MyAxes:
                 self.is_subplot = True
                 # subplotspec geometry positioning is 0-based
                 self.subplot_index = geom[2] + 1
-                if "is_in_groupplot_env" not in self.data or not self.data["is_in_groupplot_env"]:
+                if "is_in_groupplot_env" not in self.data or not self.data.is_in_groupplot_env:
                     group_style = [f"group size={geom[1]} by {geom[0]}"]
-                    group_style.extend(self.data["extra groupstyle options [base]"])
+                    group_style.extend(self.data.extra_groupstyle_options)
                     options = ["group style={{{}}}".format(", ".join(group_style))]
                     self.content.append(
-                        self.data["flavor"].start("groupplot") + f"[{', '.join(options)}]"
+                        self.data.flavor.start("groupplot") + f"[{', '.join(options)}]"
                     )
-                    self.data["is_in_groupplot_env"] = True
-                    self.data["pgfplots libs"].add("groupplots")
+                    self.data.is_in_groupplot_env = True
+                    self.data.pgfplots_libs.add("groupplots")
 
     def _get_label_rotation_and_horizontal_alignment(self, x_or_y: str) -> str:
         label_style = ""
@@ -556,7 +557,7 @@ def _get_tick_position(obj: Axes, x_or_y: str) -> tuple[str | None, str | None]:
     return position_string, major_ticks_position
 
 
-def _get_ticks(data: dict, xy: str, ticks: list | np.ndarray, ticklabels: list) -> list[str]:
+def _get_ticks(data: TikzData, xy: str, ticks: list | np.ndarray, ticklabels: list) -> list[str]:
     """Gets a {'x','y'}, a number of ticks and ticks labels.
 
     Returns the necessary axis options for the given configuration.
@@ -573,9 +574,9 @@ def _get_ticks(data: dict, xy: str, ticks: list | np.ndarray, ticklabels: list) 
 
     # Leave the ticks to PGFPlots if not in STRICT mode and if there are no explicit
     # labels.
-    if data["strict"] or is_label_required:
+    if data.strict or is_label_required:
         if len(ticks):
-            ff = data["float format"]
+            ff = data.float_format
             axis_options.append(
                 "{}tick={{{}}}".format(xy, ",".join([f"{el:{ff}}" for el in ticks]))
             )
@@ -661,7 +662,7 @@ def _is_colorbar_heuristic(obj: Axes) -> bool:
     )
 
 
-def _mpl_cmap2pgf_cmap(cmap: Colormap, data: dict) -> tuple[str, bool]:
+def _mpl_cmap2pgf_cmap(cmap: Colormap, data: TikzData) -> tuple[str, bool]:
     """Converts a color map as given in matplotlib to a color map as represented in PGFPlots."""
     if isinstance(cmap, LinearSegmentedColormap):
         return _handle_linear_segmented_color_map(cmap, data)
@@ -672,7 +673,7 @@ def _mpl_cmap2pgf_cmap(cmap: Colormap, data: dict) -> tuple[str, bool]:
 
 
 def _handle_linear_segmented_color_map(
-    cmap: LinearSegmentedColormap, data: dict
+    cmap: LinearSegmentedColormap, data: TikzData
 ) -> tuple[str, bool]:
     if cmap.is_gray():
         is_custom_colormap = False
@@ -755,7 +756,7 @@ def _handle_linear_segmented_color_map(
     xx = _scale_to_int(np.array(xx), 1000)
 
     color_changes = []
-    ff = data["float format"]
+    ff = data.float_format
     for k, x in enumerate(xx):
         color_changes.append(
             f"rgb({x}{unit})=({colors[k][0]:{ff}},{colors[k][1]:{ff}},{colors[k][2]:{ff}})"
@@ -766,7 +767,7 @@ def _handle_linear_segmented_color_map(
     return colormap_string, is_custom_colormap
 
 
-def _handle_listed_color_map(cmap: ListedColormap, data: dict) -> tuple[str, bool]:
+def _handle_listed_color_map(cmap: ListedColormap, data: TikzData) -> tuple[str, bool]:
     # check for predefined colormaps in both matplotlib and pgfplots
     cm_translate = {
         # All the rest are LinearSegmentedColorMaps. :/
@@ -789,7 +790,7 @@ def _handle_listed_color_map(cmap: ListedColormap, data: dict) -> tuple[str, boo
             return pgf_cm, is_custom_colormap
 
     unit = "pt"
-    ff = data["float format"]
+    ff = data.float_format
     if cmap.N is None or (
         isinstance(cmap.colors, Sized)
         and len(cmap.colors) == cmap.N

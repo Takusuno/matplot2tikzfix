@@ -66,48 +66,6 @@ class TikzArgs(TypedDict):
     flavor: NotRequired[str]
 
 
-@dataclass
-class TikzData:
-    externalize_tables: bool = False
-    override_externals: bool = False
-    include_disclaimer: bool = True
-    wrap: bool = True
-    add_axis_environment: bool = True
-    show_info: bool = False
-    strict: bool = False
-    standalone: bool = False
-    is_in_groupplot_env: bool = False
-
-    dpi: int = 100
-    font_size: float = 10.0
-
-    axis_width: str | None = None
-    axis_height: str | None = None
-    externals_search_path: str | None = None
-    float_format: str = ".15g"
-    table_row_sep: str = "\n"
-    base_name: str = ""
-    flavor: str = "latex"
-
-    rel_data_path: Path | None = None
-    output_dir: Path = Path()
-
-    tikz_libs: set[str] = field(default_factory=set)
-    pgfplots_libs: set[str] = field(default_factory=set)
-    rectangle_legends: set[str] = field(default_factory=set)
-    extra_axis_parameters: set[str] = field(default_factory=set)
-    extra_groupstyle_options: set[str] = field(default_factory=set)
-    extra_tikzpicture_parameters: set[str] = field(default_factory=set)
-
-    legend_colors: list[str] = field(default_factory=list)
-    extra_lines_start: list[str] = field(default_factory=list)
-
-    custom_colors: dict = field(default_factory=dict)
-
-    current_mpl_ax: Axes | None = None
-    current_ax: _axes.MyAxes | None = None
-
-
 def get_tikz_code(  # noqa: PLR0913
     figure: str | Figure = "gcf",
     filepath: str | Path | None = None,
@@ -284,9 +242,8 @@ def get_tikz_code(  # noqa: PLR0913
         savefig_dpi = mpl.rcParams["savefig.dpi"]
         data.dpi = savefig_dpi if isinstance(savefig_dpi, int) else mpl.rcParams["figure.dpi"]
 
-    data.flavor = flavor.lower()
     try:
-        Flavors[flavor.lower()]
+        data.flavor = Flavors[flavor.lower()]
     except KeyError:
         msg = (
             f"Unsupported TeX flavor {flavor!r}. Please choose from {', '.join(map(repr, Flavors))}"
@@ -303,7 +260,7 @@ def get_tikz_code(  # noqa: PLR0913
     # Check if there is still an open groupplot environment. This occurs if not
     # all of the group plot slots are used.
     if data.is_in_groupplot_env:
-        content.extend(Flavors[data.flavor].end("groupplot") + "\n\n")
+        content.extend(data.flavor.end("groupplot") + "\n\n")
 
     return _generate_code(data, content)
 
@@ -329,22 +286,22 @@ def save(
         f.write(code)
 
 
-def _generate_code(data: dict, content: list) -> str:
+def _generate_code(data: TikzData, content: list) -> str:
     # write disclaimer to the file header
     code = """"""
 
-    if data["include_disclaimer"]:
+    if data.include_disclaimer:
         disclaimer = f"This file was created with matplot2tikz v{__version__}."
         code += _tex_comment(disclaimer)
 
     # write the contents
-    if data["wrap"] and data["add axis environment"]:
-        code += data["flavor"].start("tikzpicture")
-        if data["extra_tikzpicture_parameters"]:
-            code += "[\n" + ",\n".join(data["extra_tikzpicture_parameters"]) + "\n]"
+    if data.wrap and data.add_axis_environment:
+        code += data.flavor.start("tikzpicture")
+        if data.extra_tikzpicture_parameters:
+            code += "[\n" + ",\n".join(data.extra_tikzpicture_parameters) + "\n]"
         code += "\n"
-        if data["extra_lines_start"]:
-            code += "\n".join(data["extra_lines_start"]) + "\n"
+        if data.extra_lines_start:
+            code += "\n".join(data.extra_lines_start) + "\n"
         code += "\n"
 
     coldefs = _get_color_definitions(data)
@@ -353,12 +310,12 @@ def _generate_code(data: dict, content: list) -> str:
 
     code += "".join(content)
 
-    if data["wrap"] and data["add axis environment"]:
-        code += data["flavor"].end("tikzpicture") + "\n"
+    if data.wrap and data.add_axis_environment:
+        code += data.flavor.end("tikzpicture") + "\n"
 
-    if data["standalone"]:
+    if data.standalone:
         # When using pdflatex, \\DeclareUnicodeCharacter is necessary.
-        code = data["flavor"].standalone(code)
+        code = data.flavor.standalone(code)
     return code
 
 
@@ -378,7 +335,7 @@ def _get_color_definitions(data: TikzData) -> list:
 def _print_pgfplot_libs_message(data: TikzData) -> None:
     """Prints message to screen indicating the use of PGFPlots and its libraries."""
     LOGGER.info("Please add the following lines to your LaTeX preamble:")
-    LOGGER.info(Flavors[data.flavor].preamble(data))
+    LOGGER.info(data.flavor.preamble(data))
 
 
 class _ContentManager:
@@ -464,8 +421,8 @@ def _process_axes(data: TikzData, obj: Axes, content: _ContentManager) -> None:
     if data.extra_axis_parameters:
         ax.axis_options.extend(data.extra_axis_parameters)
 
-    data.current_mpl_ax = obj
-    data.current_ax = ax
+    data.current_mpl_axes = obj
+    data.current_axes = ax
 
     # Run through the child objects, gather the content.
     children_content = _recurse(data, obj)
@@ -531,3 +488,47 @@ class Flavors(enum.Enum):
     def standalone(self, code: str) -> str:
         docenv = self.value[2]
         return f"{self.preamble()}{self.start(docenv)}\n{code}\n{self.end(docenv)}"
+
+
+@dataclass
+class TikzData:
+    externalize_tables: bool = False
+    override_externals: bool = False
+    include_disclaimer: bool = True
+    wrap: bool = True
+    add_axis_environment: bool = True
+    show_info: bool = False
+    strict: bool = False
+    standalone: bool = False
+    is_in_groupplot_env: bool = False
+
+    dpi: int = 100
+    font_size: float = 10.0
+
+    axis_width: str | None = None
+    axis_height: str | None = None
+    externals_search_path: str | None = None
+    float_format: str = ".15g"
+    table_row_sep: str = "\n"
+    base_name: str = ""
+    current_axis_title: str = ""
+
+    rel_data_path: Path | None = None
+    output_dir: Path = Path()
+
+    tikz_libs: set[str] = field(default_factory=set)
+    pgfplots_libs: set[str] = field(default_factory=set)
+    rectangle_legends: set[str] = field(default_factory=set)
+    extra_axis_parameters: set[str] = field(default_factory=set)
+    extra_groupstyle_options: set[str] = field(default_factory=set)
+    extra_tikzpicture_parameters: set[str] = field(default_factory=set)
+
+    legend_colors: list[str] = field(default_factory=list)
+    extra_lines_start: list[str] = field(default_factory=list)
+
+    custom_colors: dict = field(default_factory=dict)
+    nb_keys: dict = field(default_factory=dict)
+
+    flavor: Flavors = Flavors["latex"]
+    current_mpl_axes: Axes | None = None
+    current_axes: _axes.MyAxes | None = None

@@ -1,6 +1,7 @@
 """Process text objects."""
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 import matplotlib as mpl
 from matplotlib.font_manager import font_scalings
@@ -9,8 +10,11 @@ from matplotlib.text import Annotation, Text
 
 from . import _color
 
+if TYPE_CHECKING:
+    from ._save import TikzData
 
-def draw_text(data: dict, obj: Text) -> list[str]:
+
+def draw_text(data: TikzData, obj: Text) -> list[str]:
     """Paints text on the graph.
 
     :return: Content for tikz plot.
@@ -18,12 +22,12 @@ def draw_text(data: dict, obj: Text) -> list[str]:
     content: list[str] = []
     properties: list[str] = []
     style: list[str] = []
-    ff = data["float format"]
+    ff = data.float_format
     tikz_pos = _get_tikz_pos(data, obj, content)
 
     text = obj.get_text()
 
-    if text in ["", data["current axis title"]]:
+    if text in ["", data.current_axis_title]:
         # Text nodes which are direct children of Axes are typically titles.  They are
         # already captured by the `title` property of pgfplots axes, so skip them here.
         return content
@@ -34,7 +38,7 @@ def draw_text(data: dict, obj: Text) -> list[str]:
     bbox = obj.get_bbox_patch()
     converter = mpl.colors.ColorConverter()
     # without the factor 0.5, the fonts are too big most of the time.
-    scaling = 0.5 * size / data["font size"]
+    scaling = 0.5 * size / data.font_size
     if scaling != 1.0:
         properties.append(f"scale={scaling:{ff}}")
 
@@ -83,7 +87,7 @@ def draw_text(data: dict, obj: Text) -> list[str]:
     return content
 
 
-def _get_tikz_pos(data: dict, obj: Text, content: list[str]) -> str:
+def _get_tikz_pos(data: TikzData, obj: Text, content: list[str]) -> str:
     """Gets the position in tikz format."""
     pos = _annotation(data, obj, content) if isinstance(obj, Annotation) else obj.get_position()
 
@@ -140,7 +144,7 @@ def _parse_annotation_coords(float_format: str, coords: str, xy: tuple[float, fl
     raise NotImplementedError
 
 
-def _get_arrow_style(data: dict, obj: FancyArrowPatch) -> list:
+def _get_arrow_style(data: TikzData, obj: FancyArrowPatch) -> list:
     # get a style string from a FancyArrowPatch
     arrow_translate = {
         "-": ["-"],
@@ -181,7 +185,7 @@ def _get_arrow_style(data: dict, obj: FancyArrowPatch) -> list:
     return [*latex_style, "draw=" + col]
 
 
-def _annotation(data: dict, obj: Annotation, content: list[str]) -> str | tuple[float, float]:
+def _annotation(data: TikzData, obj: Annotation, content: list[str]) -> str | tuple[float, float]:
     ann_xy = obj.xy
     ann_xycoords = obj.xycoords
     if not isinstance(ann_xycoords, str):
@@ -190,7 +194,7 @@ def _annotation(data: dict, obj: Annotation, content: list[str]) -> str | tuple[
     ann_xytext = obj.xyann
     ann_textcoords = obj.anncoords
 
-    ff = data["float format"]
+    ff = data.float_format
 
     try:
         xy_pos = _parse_annotation_coords(ff, ann_xycoords, ann_xy)
@@ -217,7 +221,7 @@ def _annotation(data: dict, obj: Annotation, content: list[str]) -> str | tuple[
     return text_pos
 
 
-def _bbox(data: dict, bbox: FancyBboxPatch, properties: list[str], scaling: float) -> None:
+def _bbox(data: TikzData, bbox: FancyBboxPatch, properties: list[str], scaling: float) -> None:
     bbox_style = bbox.get_boxstyle()
     if bbox.get_fill():
         facecolor, _ = _color.mpl_color2xcolor(data, bbox.get_facecolor())
@@ -226,10 +230,10 @@ def _bbox(data: dict, bbox: FancyBboxPatch, properties: list[str], scaling: floa
     edgecolor, _ = _color.mpl_color2xcolor(data, bbox.get_edgecolor())
     if edgecolor:
         properties.append(f"draw={edgecolor}")
-    ff = data["float format"]
+    ff = data.float_format
     line_width = bbox.get_linewidth() * 0.4
     properties.append(f"line width={line_width:{ff}}pt")
-    inner_sep = bbox_style.pad * data["font size"]  # type: ignore[attr-defined]
+    inner_sep = bbox_style.pad * data.font_size  # type: ignore[attr-defined]
     properties.append(f"inner sep={inner_sep:{ff}}pt")
     if bbox.get_alpha():
         properties.append(f"fill opacity={bbox.get_alpha()}")
@@ -240,7 +244,7 @@ def _bbox(data: dict, bbox: FancyBboxPatch, properties: list[str], scaling: floa
 
 
 def _bbox_style(
-    data: dict,
+    data: TikzData,
     bbox_style: BoxStyle
     | BoxStyle.Round
     | BoxStyle.RArrow
@@ -255,14 +259,14 @@ def _bbox_style(
     if isinstance(bbox_style, BoxStyle.Round):
         properties.append("rounded corners")
     elif isinstance(bbox_style, BoxStyle.RArrow):
-        data["tikz libs"].add("shapes.arrows")
+        data.tikz_libs.add("shapes.arrows")
         properties.append("single arrow")
     elif isinstance(bbox_style, BoxStyle.LArrow):
-        data["tikz libs"].add("shapes.arrows")
+        data.tikz_libs.add("shapes.arrows")
         properties.append("single arrow")
         properties.append("shape border rotate=180")
     elif isinstance(bbox_style, BoxStyle.DArrow):
-        data["tikz libs"].add("shapes.arrows")
+        data.tikz_libs.add("shapes.arrows")
         properties.append("double arrow")
     elif isinstance(bbox_style, BoxStyle.Circle):
         properties.append("circle")

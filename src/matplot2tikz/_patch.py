@@ -13,9 +13,10 @@ from ._text import _get_arrow_style
 
 if TYPE_CHECKING:
     from matplotlib.collections import Collection
+    from ._save import TikzData
 
 
-def draw_patch(data: dict, obj: Patch) -> list[str]:
+def draw_patch(data: TikzData, obj: Patch) -> list[str]:
     """Return the PGFPlots code for patches."""
     if isinstance(obj, FancyArrowPatch):
         draw_options = mypath.get_draw_options(
@@ -90,7 +91,7 @@ def zip_modulo(*iterables: Iterable) -> Generator:
         yield tuple(next(iterable) for iterable in max_length_iterables)
 
 
-def draw_patchcollection(data: dict, obj: Collection) -> list[str]:
+def draw_patchcollection(data: TikzData, obj: Collection) -> list[str]:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
 
@@ -128,13 +129,13 @@ def draw_patchcollection(data: dict, obj: Collection) -> list[str]:
     return content
 
 
-def _draw_polygon(data: dict, obj: Patch, draw_options: list) -> list[str]:
+def _draw_polygon(data: TikzData, obj: Patch, draw_options: list) -> list[str]:
     str_path, is_area = mypath.draw_path(data, obj.get_path(), draw_options=draw_options)
     legend_type = "area legend" if is_area else "line legend"
     return [str_path, _patch_legend(obj, draw_options, legend_type)]
 
 
-def _draw_rectangle(data: dict, obj: Rectangle, draw_options: list) -> list[str]:
+def _draw_rectangle(data: TikzData, obj: Rectangle, draw_options: list) -> list[str]:
     """Return the PGFPlots code for rectangles."""
     # Objects with labels are plot objects (from bar charts, etc).  Even those without
     # labels explicitly set have a label of "_nolegend_".  Everything else should be
@@ -158,10 +159,10 @@ def _draw_rectangle(data: dict, obj: Rectangle, draw_options: list) -> list[str]
     # If we are dealing with a bar plot, left_lower_y will be 0. This is a problem if the y-scale is
     # logarithmic (see https://github.com/ErwindeGelder/matplot2tikz/issues/25)
     # To resolve this, the lower y limit will be used as lower_left_y
-    if data["current mpl axes obj"].get_yscale() == "log":
-        left_lower_y = data["current mpl axes obj"].get_ylim()[0]
+    if data.current_mpl_axes.get_yscale() == "log":
+        left_lower_y = data.current_mpl_axes.get_ylim()[0]
 
-    ff = data["float format"]
+    ff = data.float_format
     do = ",".join(draw_options)
     right_upper_x = left_lower_x + obj.get_width()
     right_upper_y = left_lower_y + obj.get_height()
@@ -170,8 +171,8 @@ def _draw_rectangle(data: dict, obj: Rectangle, draw_options: list) -> list[str]
         f"rectangle (axis cs:{right_upper_x:{ff}},{right_upper_y:{ff}});\n"
     ]
 
-    if label != "_nolegend_" and label not in data["rectangle_legends"]:
-        data["rectangle_legends"].add(label)
+    if label != "_nolegend_" and label not in data.rectangle_legends:
+        data.rectangle_legends.add(label)
         draw_opts = ",".join(draw_options)
         content.append(f"\\addlegendimage{{ybar,ybar legend,{draw_opts}}}\n")
         content.append(f"\\addlegendentry{{{label}}}\n\n")
@@ -179,13 +180,13 @@ def _draw_rectangle(data: dict, obj: Rectangle, draw_options: list) -> list[str]
     return content
 
 
-def _draw_ellipse(data: dict, obj: Ellipse, draw_options: list) -> list[str]:
+def _draw_ellipse(data: TikzData, obj: Ellipse, draw_options: list) -> list[str]:
     """Return the PGFPlots code for ellipses."""
     if isinstance(obj, Circle):
         # circle specialization
         return _draw_circle(data, obj, draw_options)
     x, y = obj.center
-    ff = data["float format"]
+    ff = data.float_format
 
     if obj.angle != 0:
         draw_options.append(f"rotate around={{{obj.angle:{ff}}:(axis cs:{x:{ff}},{y:{ff}})}}")
@@ -200,10 +201,10 @@ def _draw_ellipse(data: dict, obj: Ellipse, draw_options: list) -> list[str]:
     return content
 
 
-def _draw_circle(data: dict, obj: Circle, draw_options: list) -> list[str]:
+def _draw_circle(data: TikzData, obj: Circle, draw_options: list) -> list[str]:
     """Return the PGFPlots code for circles."""
     x, y = obj.center
-    ff = data["float format"]
+    ff = data.float_format
     do = ",".join(draw_options)
     return [
         f"\\draw[{do}] (axis cs:{x:{ff}},{y:{ff}}) circle ({obj.get_radius():{ff}});\n",
@@ -211,9 +212,9 @@ def _draw_circle(data: dict, obj: Circle, draw_options: list) -> list[str]:
     ]
 
 
-def _draw_fancy_arrow(data: dict, obj: FancyArrowPatch, draw_options: list) -> list[str]:
+def _draw_fancy_arrow(data: TikzData, obj: FancyArrowPatch, draw_options: list) -> list[str]:
     style = _get_arrow_style(data, obj)
-    ff = data["float format"]
+    ff = data.float_format
     if obj._posA_posB is not None:  # type: ignore[attr-defined]  # noqa: SLF001  (no known method to obtain posA and posB)
         pos_a, pos_b = obj._posA_posB  # type: ignore[attr-defined]  # noqa: SLF001
         do = ",".join(style)

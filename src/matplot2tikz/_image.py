@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
@@ -5,8 +7,11 @@ from matplotlib.image import AxesImage
 
 from . import _files
 
+if TYPE_CHECKING:
+    from ._save import TikzData
 
-def draw_image(data: dict, obj: AxesImage) -> list[str]:
+
+def draw_image(data: TikzData, obj: AxesImage) -> list[str]:
     """Returns the PGFPlots code for an image environment."""
     content = []
 
@@ -58,7 +63,7 @@ def draw_image(data: dict, obj: AxesImage) -> list[str]:
 
     # Explicitly use \pgfimage as includegrapics command, as the default
     # \includegraphics fails unexpectedly in some cases
-    ff = data["float format"]
+    ff = data.float_format
     # Always use slash in file paths, see
     # <https://tex.stackexchange.com/a/18923/13262>
     # <https://github.com/nschloe/tikzplotlib/issues/509>
