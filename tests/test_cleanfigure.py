@@ -223,7 +223,7 @@ class TestPlottypes:
             )
             assert len(record) == len(warnings)
             for record_warning, warning in zip(record, warnings):
-                assert str(record_warning) == warning
+                assert str(record_warning.message) == warning
 
         plt.close("all")
 
