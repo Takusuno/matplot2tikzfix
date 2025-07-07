@@ -1,19 +1,21 @@
 from pathlib import Path
 
-
-def _gen_filepath(data: dict, nb_key: str, ext: str) -> tuple[Path, Path]:
-    rel_filepath = Path(f"{data['base name']}-{data[nb_key]:03d}{ext}")
-
-    if data["rel data path"]:
-        rel_filepath = data["rel data path"] / rel_filepath
-
-    return data["output dir"] / rel_filepath, rel_filepath
+from ._tikzdata import TikzData
 
 
-def new_filepath(data: dict, file_kind: str, ext: str) -> tuple[Path, Path]:
+def _gen_filepath(data: TikzData, nb_key: str, ext: str) -> tuple[Path, Path]:
+    rel_filepath = Path(f"{data.base_name}-{data.nb_keys[nb_key]:03d}{ext}")
+
+    if data.rel_data_path:
+        rel_filepath = data.rel_data_path / rel_filepath
+
+    return data.output_dir / rel_filepath, rel_filepath
+
+
+def new_filepath(data: TikzData, file_kind: str, ext: str) -> tuple[Path, Path]:
     """Returns an available filepath.
 
-    :param data: Dictionary with various config options.
+    :param data: TikzData with various config options.
     :param file_kind: Name under which numbering is recorded, such as 'img' or 'table'.
     :param ext: Filename extension.
 
@@ -22,15 +24,15 @@ def new_filepath(data: dict, file_kind: str, ext: str) -> tuple[Path, Path]:
               code.
     """
     nb_key = file_kind + "number"
-    if nb_key not in data:
-        data[nb_key] = -1
+    if nb_key not in data.nb_keys:
+        data.nb_keys[nb_key] = -1
 
-    data[nb_key] += 1
+    data.nb_keys[nb_key] += 1
     filepath, rel_filepath = _gen_filepath(data, nb_key, ext)
-    if not data["override externals"]:
+    if not data.override_externals:
         # Make sure not to overwrite anything.
         while filepath.is_file():
-            data[nb_key] += 1
+            data.nb_keys[nb_key] += 1
             filepath, rel_filepath = _gen_filepath(data, nb_key, ext)
 
     return filepath, rel_filepath

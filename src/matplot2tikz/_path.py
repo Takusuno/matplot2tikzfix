@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from matplotlib.collections import Collection, PathCollection
     from matplotlib.patches import Patch
 
+    from ._tikzdata import TikzData
+
 from . import _color, _files
 from ._axes import _mpl_cmap2pgf_cmap
 from ._hatches import _mpl_hatch2pgfp_pattern
@@ -51,7 +53,7 @@ class PathCollectionData:
 
 
 def draw_path(
-    data: dict,
+    data: TikzData,
     path: Path,
     draw_options: Optional[list[str]] = None,
     *,
@@ -69,13 +71,10 @@ def draw_path(
     ):
         return "", False
 
-    try:
-        converter = data["current mpl axes obj"].xaxis.get_converter()
-    except AttributeError:
-        converter = data["current mpl axes obj"].xaxis.converter
-    x_is_date = isinstance(converter, DateConverter)
+    x_is_date = _check_x_is_date(data)
+
     nodes = []
-    ff = data["float format"]
+    ff = data.float_format
     xformat = "" if x_is_date else ff
     prev = None
     is_area = False
@@ -148,7 +147,20 @@ def draw_path(
     return path_command, is_area
 
 
-def draw_pathcollection(data: dict, obj: PathCollection) -> list[str]:
+def _check_x_is_date(data: TikzData) -> bool:
+    if data.current_mpl_axes is None:
+        # This shouldn't be the case
+        msg = "No axes defined."
+        raise ValueError(msg)
+
+    try:
+        converter = data.current_mpl_axes.xaxis.get_converter()  # type: ignore[attr-defined]
+    except AttributeError:
+        converter = data.current_mpl_axes.xaxis.converter
+    return isinstance(converter, DateConverter)
+
+
+def draw_pathcollection(data: TikzData, obj: PathCollection) -> list[str]:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
     # gather data
@@ -161,7 +173,7 @@ def draw_pathcollection(data: dict, obj: PathCollection) -> list[str]:
         obj=obj,
         dd_strings=np.array(
             [
-                [f"{val:{data['float format']}}" for val in row]  # type: ignore[str-bytes-safe]
+                [f"{val:{data.float_format}}" for val in row]  # type: ignore[str-bytes-safe]
                 for row in dd
                 if isinstance(row, Iterable)
             ]
@@ -201,8 +213,8 @@ def draw_pathcollection(data: dict, obj: PathCollection) -> list[str]:
         do = f" [{j0}{{}}{j2}]".format(j1.join(draw_options)) if draw_options else ""
         content.append(f"\\addplot{do}\n")
 
-        if data["externals search path"] is not None:
-            esp = data["externals search path"]
+        if data.externals_search_path is not None:
+            esp = data.externals_search_path
             path_collection_data.table_options.append(f"search path={{{esp}}}")
 
         if len(path_collection_data.table_options) > 0:
@@ -215,7 +227,7 @@ def draw_pathcollection(data: dict, obj: PathCollection) -> list[str]:
         plot_table.append("  ".join(path_collection_data.labels) + "\n")
         plot_table.extend(" ".join(row) + "\n" for row in path_collection_data.dd_strings)
 
-        if data["externalize tables"]:
+        if data.externalize_tables:
             filepath, rel_filepath = _files.new_filepath(data, "table", ".dat")
             with filepath.open("w") as f:
                 # No encoding handling required: plot_table is only ASCII
@@ -233,7 +245,7 @@ def draw_pathcollection(data: dict, obj: PathCollection) -> list[str]:
     return content
 
 
-def _draw_pathcollection_scatter_colormap(data: dict, pcd: PathCollectionData) -> None:
+def _draw_pathcollection_scatter_colormap(data: TikzData, pcd: PathCollectionData) -> None:
     obj_array = pcd.obj.get_array()
     if obj_array is not None:
         pcd.dd_strings = np.column_stack([pcd.dd_strings, obj_array])
@@ -247,7 +259,7 @@ def _draw_pathcollection_scatter_colormap(data: dict, pcd: PathCollectionData) -
 
 
 def _draw_pathcollection_get_edgecolors(
-    data: dict, pcd: PathCollectionData, line_data: LineData
+    data: TikzData, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     try:
         edgecolors = pcd.obj.get_edgecolors()  # type: ignore[attr-defined]
@@ -260,7 +272,7 @@ def _draw_pathcollection_get_edgecolors(
             pcd.labels.append("draw")
 
             ec_strings = [
-                ",".join(f"{item:{data['float format']}}" for item in row)
+                ",".join(f"{item:{data.float_format}}" for item in row)
                 for row in edgecolors[:, :3] * 255
             ]
             pcd.dd_strings = np.column_stack([pcd.dd_strings, ec_strings])
@@ -268,7 +280,7 @@ def _draw_pathcollection_get_edgecolors(
 
 
 def _draw_pathcollection_get_facecolors(
-    data: dict, pcd: PathCollectionData, line_data: LineData
+    data: TikzData, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     try:
         facecolors = pcd.obj.get_facecolors()  # type: ignore[attr-defined]
@@ -281,7 +293,7 @@ def _draw_pathcollection_get_facecolors(
         elif len(facecolors) > 1:
             pcd.labels.append("fill")
             fc_strings = [
-                ",".join(f"{item:{data['float format']}}" for item in row)
+                ",".join(f"{item:{data.float_format}}" for item in row)
                 for row in facecolors[:, :3] * 255
             ]
             pcd.dd_strings = np.column_stack([pcd.dd_strings, fc_strings])
@@ -334,7 +346,7 @@ def _draw_pathcollection_get_marker(pcd: PathCollectionData) -> None:
 
 
 def _draw_pathcollection_drawoptions(
-    data: dict, pcd: PathCollectionData, line_data: LineData
+    data: TikzData, pcd: PathCollectionData, line_data: LineData
 ) -> None:
     if pcd.is_contour:
         pcd.draw_options = ["draw=none"]
@@ -354,9 +366,9 @@ def _draw_pathcollection_drawoptions(
         pcd.draw_options.append("forget plot")
 
 
-def _draw_pathcollection_draw_contour(path: Path, data: dict, pcd: PathCollectionData) -> None:
+def _draw_pathcollection_draw_contour(path: Path, data: TikzData, pcd: PathCollectionData) -> None:
     if pcd.is_contour:
-        ff = data["float format"]
+        ff = data.float_format
         dd = path.vertices
         if not isinstance(dd, Iterable) or not isinstance(dd, Sized):
             return  # We cannot draw a path
@@ -391,7 +403,7 @@ def _draw_pathcollection_scatter_sizes(pcd: PathCollectionData) -> None:
         )
 
 
-def get_draw_options(data: dict, line_data: LineData) -> list[str]:
+def get_draw_options(data: TikzData, line_data: LineData) -> list[str]:
     """Get the draw options for a given (patch) object."""
     return (
         _get_draw_options_ec(data, line_data)
@@ -403,7 +415,7 @@ def get_draw_options(data: dict, line_data: LineData) -> list[str]:
     )
 
 
-def _get_draw_options_ec(data: dict, line_data: LineData) -> list[str]:
+def _get_draw_options_ec(data: TikzData, line_data: LineData) -> list[str]:
     if line_data.ec is None:
         return []
 
@@ -413,7 +425,7 @@ def _get_draw_options_ec(data: dict, line_data: LineData) -> list[str]:
     return ["draw=none"]
 
 
-def _get_draw_options_fc(data: dict, line_data: LineData) -> list[str]:
+def _get_draw_options_fc(data: TikzData, line_data: LineData) -> list[str]:
     if line_data.fc is None:
         return []
     line_data.fc_name, line_data.fc_rgba = _color.mpl_color2xcolor(data, line_data.fc)
@@ -423,8 +435,8 @@ def _get_draw_options_fc(data: dict, line_data: LineData) -> list[str]:
     return []
 
 
-def _get_draw_options_transparency(data: dict, line_data: LineData) -> list[str]:
-    ff = data["float format"]
+def _get_draw_options_transparency(data: TikzData, line_data: LineData) -> list[str]:
+    ff = data.float_format
     if (
         line_data.ec_rgba is not None
         and line_data.fc_rgba is not None
@@ -440,7 +452,7 @@ def _get_draw_options_transparency(data: dict, line_data: LineData) -> list[str]
     return draw_options
 
 
-def _get_draw_options_linewidth(data: dict, line_data: LineData) -> list[str]:
+def _get_draw_options_linewidth(data: TikzData, line_data: LineData) -> list[str]:
     if line_data.lw is None:
         return []
     lw_ = mpl_linewidth2pgfp_linewidth(data, line_data.lw)
@@ -449,7 +461,7 @@ def _get_draw_options_linewidth(data: dict, line_data: LineData) -> list[str]:
     return []
 
 
-def _get_draw_options_linestyle(data: dict, line_data: LineData) -> list[str]:
+def _get_draw_options_linestyle(data: TikzData, line_data: LineData) -> list[str]:
     if line_data.ls is None:
         return []
     ls_ = mpl_linestyle2pgfplots_linestyle(data, line_data.ls)
@@ -458,7 +470,7 @@ def _get_draw_options_linestyle(data: dict, line_data: LineData) -> list[str]:
     return []
 
 
-def _get_draw_options_hatch(data: dict, line_data: LineData) -> list[str]:
+def _get_draw_options_hatch(data: TikzData, line_data: LineData) -> list[str]:
     if line_data.hatch is None:
         return []
 
@@ -493,7 +505,7 @@ def _get_draw_options_hatch(data: dict, line_data: LineData) -> list[str]:
     return pattern
 
 
-def mpl_linewidth2pgfp_linewidth(data: dict, line_width: float) -> str | None:
+def mpl_linewidth2pgfp_linewidth(data: TikzData, line_width: float) -> str | None:
     """PGFplots gives line widths in pt, matplotlib in axes space. Translate.
 
     Scale such that the default mpl line width (1.5) is mapped to the PGFplots
@@ -515,12 +527,12 @@ def mpl_linewidth2pgfp_linewidth(data: dict, line_width: float) -> str | None:
         }[line_width_decipoint]
     except KeyError:
         # explicit line width
-        ff = data["float format"]
+        ff = data.float_format
         return f"line width={line_width_decipoint / 10:{ff}}pt"
 
 
 def mpl_linestyle2pgfplots_linestyle(
-    data: dict,
+    data: TikzData,
     line_style: str | tuple[float, Sequence[float] | None],
     line: Optional[Line2D] = None,
 ) -> str | None:
@@ -533,7 +545,7 @@ def mpl_linestyle2pgfplots_linestyle(
     # dashed: (0, (6.0, 6.0))                                 # noqa: ERA001
     # dotted: (0, (1.0, 3.0))                                 # noqa: ERA001
     # dashdot: (0, (3.0, 5.0, 1.0, 5.0))                      # noqa: ERA001
-    ff = data["float format"]
+    ff = data.float_format
     if isinstance(line_style, tuple):
         if line_style[0] is None or line_style[1] is None:
             return None

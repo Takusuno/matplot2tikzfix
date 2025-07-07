@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ._tikzdata import TikzData
+
 # for matplotlib markers, see https://matplotlib.org/api/markers_api.html
 _MP_MARKER2PGF_MARKER = {
     ".": "*",  # point
@@ -40,7 +45,7 @@ _MP_MARKER2PLOTMARKS = {
 
 
 def _mpl_marker2pgfp_marker(
-    data: dict, mpl_marker: str, *, is_filled: bool
+    data: TikzData, mpl_marker: str, *, is_filled: bool
 ) -> tuple[str | None, list[str]]:
     """Translates a marker style of matplotlib to the corresponding style in PGFPlots."""
     # try default list
@@ -51,12 +56,12 @@ def _mpl_marker2pgfp_marker(
     else:
         if is_filled and pgfplots_marker == "o":
             pgfplots_marker = "*"
-            data["tikz libs"].add("plotmarks")
+            data.tikz_libs.add("plotmarks")
         return pgfplots_marker, []
 
     # try plotmarks list
     try:
-        data["tikz libs"].add("plotmarks")
+        data.tikz_libs.add("plotmarks")
         pgfplots_marker, marker_options = _MP_MARKER2PLOTMARKS[mpl_marker]
     except KeyError:
         # There's no equivalent for the pixel marker (,) in Pgfplots.

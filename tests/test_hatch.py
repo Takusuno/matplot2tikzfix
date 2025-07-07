@@ -25,7 +25,7 @@ def plot() -> Figure:
         bottom=range(1, 5),
         color="blue",
         edgecolor="black",
-        hatch="//",
+        hatch="/",
     )
     ax1.set_xticks([1.5, 2.5, 3.5, 4.5])
 

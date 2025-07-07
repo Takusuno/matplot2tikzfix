@@ -214,10 +214,17 @@ class TestPlottypes:
             # Add a color bar which maps values to colors.
             fig.colorbar(surf, shrink=0.5, aspect=5)
 
-            with pytest.warns(
-                Warning, match=r"Cleaning Line Collections \(scatter plot\) is not supported yet."
-            ):
+            with pytest.warns(UserWarning) as record:  # noqa: PT030  (we check later for specific warnings)
                 clean_figure(fig)
+
+            warnings = (
+                "Cleaning Poly3DCollections is not supported yet.",
+                "Cleaning Line Collections (scatter plot) is not supported yet.",
+            )
+            assert len(record) == len(warnings)
+            for record_warning, warning in zip(record, warnings):
+                assert str(record_warning.message) == warning
+
         plt.close("all")
 
     def test_trisurface3d(self) -> None:

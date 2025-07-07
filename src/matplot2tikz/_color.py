@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import webcolors
 from matplotlib.colors import ColorConverter
+
+if TYPE_CHECKING:
+    from ._tikzdata import TikzData
 
 # RGB values (as taken from xcolor.dtx):
 builtin_colors = {
@@ -50,7 +55,7 @@ def _get_closest_colour_name(rgb: np.ndarray) -> tuple[str, int]:
 
 
 def mpl_color2xcolor(
-    data: dict,
+    data: TikzData,
     matplotlib_color: str
     | tuple[float, float, float]
     | tuple[float, float, float, float]
@@ -96,6 +101,6 @@ def mpl_color2xcolor(
             name = f"{name}{rgb255[0]}"
         else:
             name = f"{name}{rgb255[0]}{rgb255[1]}{rgb255[2]}"
-    data["custom colors"][name] = ("RGB", ",".join([str(val) for val in rgb255]))
+    data.custom_colors[name] = ("RGB", ",".join([str(val) for val in rgb255]))
 
     return name, my_col

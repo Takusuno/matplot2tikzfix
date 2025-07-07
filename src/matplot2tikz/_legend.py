@@ -6,9 +6,10 @@ from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 
 from . import _color as mycol
+from ._tikzdata import TikzData
 
 
-def draw_legend(data: dict, obj: Legend) -> None:
+def draw_legend(data: TikzData, obj: Legend) -> None:
     """Adds legend code."""
     texts = []
     children_alignment = []
@@ -41,7 +42,7 @@ def draw_legend(data: dict, obj: Legend) -> None:
             break
 
     if alignment:
-        data["current axes"].axis_options.append(f"legend cell align={{{alignment}}}")
+        data.current_axis_options.add(f"legend cell align={{{alignment}}}")
 
     try:
         ncols = obj._ncols  # type: ignore[attr-defined]  # noqa: SLF001
@@ -49,7 +50,7 @@ def draw_legend(data: dict, obj: Legend) -> None:
         # backwards-compatibility with matplotlib < 3.6.0
         ncols = obj._ncol  # type: ignore[attr-defined]  # noqa: SLF001
     if ncols != 1:
-        data["current axes"].axis_options.append(f"legend columns={ncols}")
+        data.current_axis_options.add(f"legend columns={ncols}")
 
     # Write styles to data
     if legend_style:
@@ -61,10 +62,10 @@ def draw_legend(data: dict, obj: Legend) -> None:
         )
         string = j1.join(legend_style)
         style = f"legend style={{{j0}{string}{j2}}}"
-        data["current axes"].axis_options.append(style)
+        data.current_axis_options.add(style)
 
 
-def _legend_position_anchor(data: dict, obj: Legend, legend_style: list[str]) -> None:
+def _legend_position_anchor(data: TikzData, obj: Legend, legend_style: list[str]) -> None:
     # Get the location.
     # http://matplotlib.org/api/legend_api.html
     loc = obj._loc if obj._loc != 0 else _get_location_from_best(obj)  # type: ignore[attr-defined]  # noqa: SLF001
@@ -89,7 +90,7 @@ def _legend_position_anchor(data: dict, obj: Legend, legend_style: list[str]) ->
         position = [bbox_center[0], bbox_center[1]]
 
     if position:
-        ff = data["float format"]
+        ff = data.float_format
         legend_style.append(f"at={{({position[0]:{ff}},{position[1]:{ff}})}}")
     if anchor:
         legend_style.append(f"anchor={anchor}")
@@ -175,7 +176,7 @@ def _get_location_from_best(obj: Legend) -> int:
     return min(distances, key=lambda k: distances[k])
 
 
-def _legend_edgecolor(data: dict, obj: Legend, legend_style: list[str]) -> None:
+def _legend_edgecolor(data: TikzData, obj: Legend, legend_style: list[str]) -> None:
     if obj.get_frame_on():
         edgecolor = obj.get_frame().get_edgecolor()
         frame_xcolor, _ = mycol.mpl_color2xcolor(data, edgecolor)
@@ -185,7 +186,7 @@ def _legend_edgecolor(data: dict, obj: Legend, legend_style: list[str]) -> None:
         legend_style.append("draw=none")
 
 
-def _legend_facecolor(data: dict, obj: Legend, legend_style: list[str]) -> None:
+def _legend_facecolor(data: TikzData, obj: Legend, legend_style: list[str]) -> None:
     facecolor = obj.get_frame().get_facecolor()
     fill_xcolor, _ = mycol.mpl_color2xcolor(data, facecolor)
     if fill_xcolor != "white":  # white is default

@@ -4,9 +4,10 @@ from matplotlib.figure import Figure
 from PIL import Image
 
 from . import _files
+from ._tikzdata import TikzData
 
 
-def draw_quadmesh(data: dict, obj: QuadMesh) -> list:
+def draw_quadmesh(data: TikzData, obj: QuadMesh) -> list:
     """Returns the PGFPlots code for a graphics environment holding a rendering of the object."""
     content = []
     figure = obj.figure
@@ -17,7 +18,7 @@ def draw_quadmesh(data: dict, obj: QuadMesh) -> list:
     filepath, rel_filepath = _files.new_filepath(data, "img", ".png")
 
     # Get the dpi for rendering and store the original dpi of the figure
-    dpi = data["dpi"]
+    dpi = data.dpi
     fig_dpi = figure.get_dpi()
     figure.set_dpi(dpi)
 
@@ -60,7 +61,7 @@ def draw_quadmesh(data: dict, obj: QuadMesh) -> list:
 
     # Explicitly use \pgfimage as includegrapics command, as the default
     # \includegraphics fails unexpectedly in some cases
-    ff = data["float format"]
+    ff = data.float_format
     posix_filepath = rel_filepath.as_posix()
     content.append(
         "\\addplot graphics [includegraphics cmd=\\pgfimage,"
