@@ -143,8 +143,8 @@ def _draw_rectangle(data: TikzData, obj: Rectangle, draw_options: list) -> list[
     # skipped because they likely correspong to axis/legend objects which are handled by
     # PGFPlots
     label = obj.get_label()
-    if label == "":
-        return []
+    #if label == "":
+    #    return []
 
     # Get actual label, bar charts by default only give rectangles labels of
     # "_nolegend_". See <https://stackoverflow.com/q/35881290/353337>.
